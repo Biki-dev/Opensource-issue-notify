@@ -60,19 +60,18 @@ const CustomTabBar = ({ state, descriptors, navigation }) => {
             {/* Animated Indicator */}
             <MotiView
                 animate={{
-                    translateX: (state.index * tabWidth) + (tabWidth / 2) - (isMoving ? 15 : 2.5),
-                    width: isMoving ? 30 : 5,
-                    height: 5,
-                    borderRadius: 2.5,
+                    translateX: (state.index * tabWidth) + (tabWidth / 2) - (isMoving ? 10 : 3),
+                    width: isMoving ? 20 : 6,
+                    height: 6,
+                    borderRadius: 3,
                 }}
                 transition={{
-                    type: 'spring',
-                    damping: 15,
-                    stiffness: 150,
+                    type: 'timing',
+                    duration: 250,
                 }}
                 style={{
                     position: 'absolute',
-                    top: 4,
+                    top: 6,
                     backgroundColor: '#D97706',
                 }}
             />
