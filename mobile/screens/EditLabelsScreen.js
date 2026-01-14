@@ -72,11 +72,11 @@ const EditLabelsScreen = ({ route, navigation }) => {
             <View className="px-6 py-4 flex-row items-center bg-background border-b border-border">
                 <TouchableOpacity
                     onPress={() => navigation.goBack()}
-                    className="w-10 h-10 mr-4 items-center justify-center rounded-xl bg-card border border-border"
+                    className="w-10 h-10 mr-4 items-center justify-center rounded-xl bg-card border border-border shadow-sm shadow-black/5"
                 >
-                    <ArrowLeft size={20} color="#fff" />
+                    <ArrowLeft size={20} color="#0F172A" />
                 </TouchableOpacity>
-                <Text className="text-xl font-bold text-white">Edit Labels</Text>
+                <Text className="text-xl font-black text-primary">Edit Labels</Text>
             </View>
 
             <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 120 }}>
@@ -84,13 +84,13 @@ const EditLabelsScreen = ({ route, navigation }) => {
                     <Card className="mb-6 border border-border">
                         <View className="flex-row items-center">
                             <View className="w-12 h-12 rounded-2xl bg-brand/10 items-center justify-center mr-4">
-                                <GitFork size={24} color="#CEFF00" />
+                                <GitFork size={24} color="#D97706" />
                             </View>
                             <View className="flex-1">
-                                <Text className="text-lg font-bold text-white">
+                                <Text className="text-lg font-bold text-primary">
                                     {sub.repository.owner}/{sub.repository.name}
                                 </Text>
-                                <Text className="text-muted text-xs">Manage tracked labels</Text>
+                                <Text className="text-muted text-xs font-medium">Manage tracked labels</Text>
                             </View>
                         </View>
                     </Card>
@@ -98,7 +98,7 @@ const EditLabelsScreen = ({ route, navigation }) => {
 
                 {repoData && (
                     <MotiView from={{ opacity: 0, translateY: 20 }} animate={{ opacity: 1, translateY: 0 }} transition={{ delay: 200 }}>
-                        <Text className="text-xl font-bold text-white mb-4">Select Labels to Track</Text>
+                        <Text className="text-xl font-black text-primary mb-4">Select Labels to Track</Text>
                         <View className="flex-row flex-wrap mb-10">
                             {repoData.labels.map((label, index) => (
                                 <LabelChip

@@ -49,7 +49,7 @@ const DashboardScreen = ({ navigation }) => {
                     <ExternalLink size={18} color="#A1A1AA" />
                 </View>
 
-                <Text className="text-base font-bold text-white mb-3" numberOfLines={2}>
+                <Text className="text-base font-bold text-primary mb-3" numberOfLines={2}>
                     {item.issueTitle}
                 </Text>
 
@@ -77,8 +77,8 @@ const DashboardScreen = ({ navigation }) => {
                     animate={{ opacity: 1, translateX: 0 }}
                     transition={{ type: 'timing', duration: 500 }}
                 >
-                    <Text className="text-3xl font-bold text-white">Issue Notifier</Text>
-                    <Text className="text-muted text-sm mt-1">Stay updated with your repositories</Text>
+                    <Text className="text-3xl font-black text-primary">Issue Notifier</Text>
+                    <Text className="text-muted text-sm mt-1 font-medium">Stay updated with your repositories</Text>
                 </MotiView>
                 <MotiView
                     from={{ opacity: 0, scale: 0.5 }}
@@ -88,7 +88,7 @@ const DashboardScreen = ({ navigation }) => {
                         onPress={() => navigation.navigate('Notifications')}
                         className="w-12 h-12 rounded-2xl bg-card border border-border items-center justify-center"
                     >
-                        <Bell size={22} color="#CEFF00" />
+                        <Bell size={22} color="#D97706" />
                         {unreadCount > 0 && (
                             <View className="absolute top-3 right-3 w-2.5 h-2.5 bg-accent rounded-full border-2 border-card" />
                         )}
@@ -113,15 +113,15 @@ const DashboardScreen = ({ navigation }) => {
                         <Card className="py-5">
                             <View className="flex-row items-center justify-between">
                                 <View className="flex-row items-center flex-1">
-                                    <View className="w-12 h-12 rounded-2xl bg-accent/10 items-center justify-center mr-4">
-                                        <GitBranch size={24} color="#FF3B72" />
+                                    <View className="w-12 h-12 rounded-2xl bg-brand/10 items-center justify-center mr-4">
+                                        <GitBranch size={24} color="#D97706" />
                                     </View>
                                     <View className="flex-1">
-                                        <Text className="text-lg font-bold text-white">Active Subscriptions</Text>
+                                        <Text className="text-lg font-bold text-primary">Active Subscriptions</Text>
                                         <Text className="text-xs text-muted">Monitoring repositories</Text>
                                     </View>
                                 </View>
-                                <Text className="text-4xl font-black text-white ml-4">{subs.length}</Text>
+                                <Text className="text-4xl font-black text-primary ml-4">{subs.length}</Text>
                             </View>
                         </Card>
 
@@ -129,8 +129,8 @@ const DashboardScreen = ({ navigation }) => {
                             variant="secondary"
                             title={
                                 <View className="flex-row items-center">
-                                    <Text className="text-white font-semibold mr-2">View All</Text>
-                                    <ExternalLink size={14} color="#fff" />
+                                    <Text className="text-primary font-semibold mr-2">View All</Text>
+                                    <ExternalLink size={14} color="#0F172A" />
                                 </View>
                             }
                             className="bg-card border-border mb-8 h-12"
@@ -138,7 +138,7 @@ const DashboardScreen = ({ navigation }) => {
                         />
 
                         <View className="flex-row justify-between items-center mb-4">
-                            <Text className="text-xl font-bold text-white">Recent Issues</Text>
+                            <Text className="text-xl font-bold text-primary">Recent Issues</Text>
                             <Text className="text-xs text-muted">{notifications.length} total</Text>
                         </View>
                     </MotiView>

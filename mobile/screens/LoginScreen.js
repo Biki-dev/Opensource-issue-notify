@@ -30,13 +30,13 @@ const LoginScreen = ({ navigation }) => {
 
     return (
         <SafeAreaView className="flex-1 bg-background px-6 justify-center">
-            <StatusBar barStyle="light-content" />
+            <StatusBar barStyle="dark-content" />
             <View className="items-center mb-10">
-                <View className="w-20 h-20 bg-brand rounded-[28px] items-center justify-center mb-4 shadow-2xl shadow-brand/20">
-                    <Zap size={40} color="black" fill="black" />
+                <View className="w-20 h-20 bg-brand rounded-[28px] items-center justify-center mb-4 shadow-2xl shadow-brand/30">
+                    <Zap size={40} color="white" fill="white" />
                 </View>
-                <Text className="text-3xl font-extrabold text-white">Issue Notify</Text>
-                <Text className="text-muted mt-1 text-base">Track GitHub issues like a pro</Text>
+                <Text className="text-3xl font-black text-primary">Issue Notify</Text>
+                <Text className="text-muted mt-1 text-base font-medium">Track GitHub issues like a pro</Text>
             </View>
 
             <Card className="px-6 py-8">
@@ -72,7 +72,7 @@ const LoginScreen = ({ navigation }) => {
             </Card>
 
             <View className="flex-row justify-center mt-8">
-                <Text className="text-muted font-medium">
+                <Text className="text-muted font-semibold">
                     {isLogin ? "Don't have an account? " : "Already have an account? "}
                 </Text>
                 <TouchableOpacity onPress={() => setIsLogin(!isLogin)}>

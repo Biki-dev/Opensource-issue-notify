@@ -65,18 +65,18 @@ const AddRepoScreen = ({ navigation }) => {
         <SafeAreaView className="flex-1 bg-background">
             <View className="px-6 py-4 flex-row items-center bg-background border-b border-border">
                 <TouchableOpacity
-                    className="w-10 h-10 mr-4 items-center justify-center rounded-xl bg-card border border-border"
+                    className="w-10 h-10 mr-4 items-center justify-center rounded-xl bg-card border border-border shadow-sm shadow-black/5"
                     onPress={() => navigation.goBack()}
                 >
-                    <ArrowLeft size={20} color="#fff" />
+                    <ArrowLeft size={20} color="#0F172A" />
                 </TouchableOpacity>
-                <Text className="text-xl font-bold text-white">Add Repository</Text>
+                <Text className="text-xl font-black text-primary">Add Repository</Text>
             </View>
 
             <ScrollView className="p-6">
                 {step === 1 && (
                     <View>
-                        <Text className="text-muted mb-6 text-base">
+                        <Text className="text-muted mb-6 text-base font-medium">
                             Enter the GitHub repository URL you want to track. We'll fetch the available labels for you.
                         </Text>
                         <Input
@@ -95,12 +95,12 @@ const AddRepoScreen = ({ navigation }) => {
 
                 {step === 2 && repoData && (
                     <View>
-                        <Card className="mb-6 bg-brand/5 border-brand/20">
-                            <Text className="text-xl font-bold text-white mb-1">{repoData.owner}/{repoData.name}</Text>
-                            <Text className="text-muted text-sm" numberOfLines={2}>{repoData.description}</Text>
+                        <Card className="mb-6 bg-brand/5 border border-brand/10">
+                            <Text className="text-xl font-bold text-primary mb-1">{repoData.owner}/{repoData.name}</Text>
+                            <Text className="text-muted text-sm font-medium" numberOfLines={2}>{repoData.description}</Text>
                         </Card>
 
-                        <Text className="text-lg font-bold text-white mb-4">Select Labels to Track</Text>
+                        <Text className="text-lg font-black text-primary mb-4">Select Labels to Track</Text>
 
                         <View className="flex-row flex-wrap">
                             {repoData.labels.map(label => (

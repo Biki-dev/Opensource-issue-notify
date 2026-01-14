@@ -72,19 +72,19 @@ const NotificationsScreen = ({ navigation }) => {
                 <Card className="mb-4">
                     <View className="flex-row justify-between items-start mb-2">
                         <View className="flex-row items-center flex-1">
-                            <GitBranch size={16} color="#A1A1AA" className="mr-2" />
-                            <Text className="text-sm text-muted" numberOfLines={1}>
+                            <GitBranch size={16} color="#55607780" className="mr-2" />
+                            <Text className="text-sm text-muted font-medium" numberOfLines={1}>
                                 {item.repository?.owner}/{item.repository?.name}
                             </Text>
                         </View>
-                        <View className="w-2 h-2 rounded-full bg-accent" />
+                        <View className="w-2 h-2 rounded-full bg-brand" />
                     </View>
 
-                    <Text className="text-lg font-bold text-white mb-3">{item.issueTitle}</Text>
+                    <Text className="text-lg font-bold text-primary mb-3">{item.issueTitle}</Text>
 
                     <View className="flex-row flex-wrap mb-4">
                         {item.matchedLabels.map((l, i) => (
-                            <View key={i} className="bg-brand/10 px-3 py-1 rounded-full mr-2 mb-2 border border-brand/20">
+                            <View key={i} className="bg-brand/5 px-3 py-1.5 rounded-full mr-2 mb-2 border border-brand/10">
                                 <Text className="text-xs text-brand font-bold">#{l}</Text>
                             </View>
                         ))}
@@ -92,7 +92,7 @@ const NotificationsScreen = ({ navigation }) => {
 
                     <View className="flex-row items-center pt-2 border-t border-border/50">
                         <Text className="text-brand font-bold text-sm mr-2">View Issue</Text>
-                        <ExternalLink size={14} color="#CEFF00" />
+                        <ExternalLink size={14} color="#D97706" />
                     </View>
                 </Card>
             </TouchableOpacity>
@@ -105,23 +105,23 @@ const NotificationsScreen = ({ navigation }) => {
                 <View className="flex-row items-center flex-1">
                     <TouchableOpacity
                         onPress={() => navigation.goBack()}
-                        className="w-10 h-10 mr-4 items-center justify-center rounded-xl bg-card border border-border"
+                        className="w-10 h-10 mr-4 items-center justify-center rounded-xl bg-card border border-border shadow-sm shadow-black/5"
                     >
-                        <ArrowLeft size={20} color="#fff" />
+                        <ArrowLeft size={20} color="#0F172A" />
                     </TouchableOpacity>
-                    <Text className="text-xl font-bold text-white">Notifications</Text>
-                    <View className="bg-accent/10 px-2 py-0.5 rounded-full ml-3 border border-accent/20">
-                        <Text className="text-accent text-xs font-bold">{notifs.length}</Text>
+                    <Text className="text-xl font-black text-primary">Notifications</Text>
+                    <View className="bg-brand/10 px-2.5 py-1 rounded-full ml-3 border border-brand/20">
+                        <Text className="text-brand text-xs font-black">{notifs.length}</Text>
                     </View>
                 </View>
 
                 {notifs.length > 0 && (
                     <TouchableOpacity
                         onPress={handleMarkAllRead}
-                        className="flex-row items-center bg-brand/10 px-3 py-2 rounded-xl border border-brand/20"
+                        className="flex-row items-center bg-brand/10 px-4 py-2 rounded-xl border border-brand/20"
                     >
-                        <CheckCheck size={16} color="#CEFF00" className="mr-2" />
-                        <Text className="text-brand text-xs font-bold">Mark all read</Text>
+                        <CheckCheck size={16} color="#D97706" className="mr-2" />
+                        <Text className="text-brand text-xs font-black uppercase tracking-wider">Mark all</Text>
                     </TouchableOpacity>
                 )}
             </View>
@@ -138,11 +138,11 @@ const NotificationsScreen = ({ navigation }) => {
                             animate={{ opacity: 1, scale: 1 }}
                             className="items-center py-20"
                         >
-                            <View className="w-20 h-20 rounded-full bg-card border border-border items-center justify-center mb-6">
-                                <Bell size={40} color="#71717A" />
+                            <View className="w-24 h-24 rounded-full bg-white border border-border items-center justify-center mb-6 shadow-xl shadow-black/5">
+                                <Bell size={40} color="#D97706" />
                             </View>
-                            <Text className="text-white text-lg font-bold mb-2">All caught up!</Text>
-                            <Text className="text-muted text-sm text-center px-10 leading-5">
+                            <Text className="text-primary text-xl font-black mb-2">All caught up!</Text>
+                            <Text className="text-muted text-sm font-medium text-center px-10 leading-5">
                                 No new notifications. We'll let you know when matching issues are found.
                             </Text>
                         </MotiView>
