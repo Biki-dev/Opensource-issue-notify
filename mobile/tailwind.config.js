@@ -4,11 +4,12 @@ module.exports = {
     theme: {
         extend: {
             colors: {
-                primary: '#FFD700', // Gold/Yellow from the screenshot
-                secondary: '#000000', // Black
-                accent: '#F3F4F6', // Light Gray
-                danger: '#EF4444',
-                success: '#10B981',
+                brand: '#CEFF00', // Lime Green
+                accent: '#FF3B72', // Pink
+                background: '#000000',
+                card: '#18181B',
+                border: '#27272A',
+                muted: '#A1A1AA',
             }
         },
     },

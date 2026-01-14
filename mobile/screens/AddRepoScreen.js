@@ -1,5 +1,5 @@
 import React, { useContext, useState } from 'react';
-import { View, Text, Alert, ScrollView } from 'react-native';
+import { View, Text, Alert, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
@@ -62,21 +62,21 @@ const AddRepoScreen = ({ navigation }) => {
     };
 
     return (
-        <SafeAreaView className="flex-1 bg-slate-950">
-            <View className="px-6 py-4 flex-row items-center bg-slate-950 border-b border-slate-800 z-10">
-                <Button
-                    variant="outline"
-                    title={<ArrowLeft size={20} color="#000" />}
-                    className="w-10 h-10 mr-4 border-gray-200 !rounded-xl bg-white/95"
+        <SafeAreaView className="flex-1 bg-background">
+            <View className="px-6 py-4 flex-row items-center bg-background border-b border-border">
+                <TouchableOpacity
+                    className="w-10 h-10 mr-4 items-center justify-center rounded-xl bg-card border border-border"
                     onPress={() => navigation.goBack()}
-                />
+                >
+                    <ArrowLeft size={20} color="#fff" />
+                </TouchableOpacity>
                 <Text className="text-xl font-bold text-white">Add Repository</Text>
             </View>
 
             <ScrollView className="p-6">
                 {step === 1 && (
                     <View>
-                        <Text className="text-gray-500 mb-6 text-base">
+                        <Text className="text-muted mb-6 text-base">
                             Enter the GitHub repository URL you want to track. We'll fetch the available labels for you.
                         </Text>
                         <Input
@@ -86,7 +86,7 @@ const AddRepoScreen = ({ navigation }) => {
                             icon={Search}
                         />
                         <Button
-                            title="Continue"
+                            title="Find Repository"
                             onPress={handlePreview}
                             loading={loading}
                         />
@@ -95,12 +95,12 @@ const AddRepoScreen = ({ navigation }) => {
 
                 {step === 2 && repoData && (
                     <View>
-                        <Card className="mb-6 border-l-4 border-l-primary">
-                            <Text className="text-xl font-bold text-gray-900 mb-1">{repoData.owner}/{repoData.name}</Text>
-                            <Text className="text-gray-500 text-sm" numberOfLines={2}>{repoData.description}</Text>
+                        <Card className="mb-6 bg-brand/5 border-brand/20">
+                            <Text className="text-xl font-bold text-white mb-1">{repoData.owner}/{repoData.name}</Text>
+                            <Text className="text-muted text-sm" numberOfLines={2}>{repoData.description}</Text>
                         </Card>
 
-                        <Text className="text-lg font-bold text-gray-900 mb-4">Select Labels to Track</Text>
+                        <Text className="text-lg font-bold text-white mb-4">Select Labels to Track</Text>
 
                         <View className="flex-row flex-wrap">
                             {repoData.labels.map(label => (
@@ -119,9 +119,9 @@ const AddRepoScreen = ({ navigation }) => {
             </ScrollView>
 
             {step === 2 && (
-                <View className="absolute bottom-6 left-6 right-6">
+                <View className="absolute bottom-10 left-6 right-6">
                     <Button
-                        title={`Subscribe (${selectedLabels.length})`}
+                        title={`Subscribe to ${selectedLabels.length} labels`}
                         onPress={handleSubscribe}
                         loading={loading}
                     />

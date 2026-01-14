@@ -1,13 +1,14 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Switch } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
 import { Card, Button } from '../components/UI';
-import { Switch } from 'react-native';
+import { Mail, ChevronRight, Bell, Shield, HelpCircle, LogOut } from 'lucide-react-native';
+import { MotiView } from 'moti';
 
-const SettingsScreen = () => {
-    const { userToken, BASE_URL, logout } = useContext(AuthContext);
+const SettingsScreen = ({ navigation }) => {
+    const { userToken, BASE_URL, logout, unreadCount, updateUnreadCount } = useContext(AuthContext);
     const [profile, setProfile] = useState(null);
     const [subscriptions, setSubscriptions] = useState([]);
 
@@ -19,6 +20,7 @@ const SettingsScreen = () => {
             ]);
             setProfile(profileRes.data);
             setSubscriptions(subsRes.data || []);
+            updateUnreadCount();
         } catch (e) {
             console.log(e);
         }
@@ -41,24 +43,11 @@ const SettingsScreen = () => {
         }
     };
 
-    const toggleRepoVisibility = async (sub) => {
-        try {
-            const updated = await axios.patch(
-                `${BASE_URL}/repos/${sub._id}`,
-                { visible: !sub.visible },
-                { headers: { Authorization: `Bearer ${userToken}` } }
-            );
-            setSubscriptions((prev) => prev.map((s) => (s._id === sub._id ? updated.data : s)));
-        } catch (e) {
-            console.log(e);
-        }
-    };
-
     const toggleRepoActive = async (sub) => {
         try {
             const updated = await axios.patch(
                 `${BASE_URL}/repos/${sub._id}`,
-                { active: sub.active === false }, // if currently off (false), turn on; else turn off
+                { active: sub.active === false },
                 { headers: { Authorization: `Bearer ${userToken}` } }
             );
             setSubscriptions((prev) => prev.map((s) => (s._id === sub._id ? updated.data : s)));
@@ -78,87 +67,150 @@ const SettingsScreen = () => {
         }
     };
 
-    const handleLogout = async () => {
-        try {
-            // Directly clear auth token and AsyncStorage; AppNav will then show Login screen
-            await logout();
-        } catch (e) {
-            console.log('Logout error', e);
-        }
-    };
-
     const initials = profile?.name
         ? profile.name.split(' ').map((n) => n[0]).join('').toUpperCase()
-        : 'JD';
+        : 'G';
 
     return (
-        <SafeAreaView className="flex-1 bg-slate-950">
-            <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: 40 }}>
-                <Card className="flex-row items-center mb-6">
-                    <View className="w-16 h-16 rounded-2xl bg-yellow-400 items-center justify-center mr-4">
-                        <Text className="text-xl font-extrabold text-gray-900">{initials}</Text>
-                    </View>
-                    <View className="flex-1">
-                        <Text className="text-lg font-bold text-gray-900">{profile?.name || 'John Doe'}</Text>
-                        <Text className="text-gray-500 text-sm">{profile?.email || 'john.doe@example.com'}</Text>
-                    </View>
-                    <Button title="Edit" variant="outline" className="h-10 px-4 rounded-2xl" onPress={() => {}} />
-                </Card>
+        <SafeAreaView className="flex-1 bg-background">
+            <View className="px-6 pt-6 pb-4 flex-row justify-between items-center">
+                <MotiView
+                    from={{ opacity: 0, translateX: -20 }}
+                    animate={{ opacity: 1, translateX: 0 }}
+                >
+                    <Text className="text-3xl font-bold text-white">Settings</Text>
+                    <Text className="text-muted text-sm mt-1">Manage your account and preferences</Text>
+                </MotiView>
+                <TouchableOpacity
+                    onPress={() => navigation.navigate('Notifications')}
+                    className="w-12 h-12 rounded-2xl bg-card border border-border items-center justify-center"
+                >
+                    <Bell size={22} color="#CEFF00" />
+                    {unreadCount > 0 && (
+                        <View className="absolute top-3 right-3 w-2.5 h-2.5 bg-accent rounded-full border-2 border-card" />
+                    )}
+                </TouchableOpacity>
+            </View>
 
-                <Card className="mb-4 flex-row items-center justify-between">
-                    <View>
-                        <Text className="text-base font-semibold text-gray-900">Notifications</Text>
-                        <Text className="text-xs text-gray-500">Manage notification settings</Text>
-                    </View>
-                    <Switch
-                        value={!!profile?.notificationsEnabled}
-                        onValueChange={toggleNotifications}
-                        thumbColor={profile?.notificationsEnabled ? '#111827' : '#F9FAFB'}
-                        trackColor={{ false: '#E5E7EB', true: '#FACC15' }}
-                    />
-                </Card>
-
-            <Card className="mb-4">
-                    <Text className="text-base font-semibold text-gray-900 mb-3">Repository Privacy & Controls</Text>
-                    {subscriptions.map((s) => (
-                        <View key={s._id} className="mb-3">
-                            <View className="flex-row items-center justify-between mb-1">
-                                <Text className="text-sm text-gray-800">
-                                    {s.repository?.owner}/{s.repository?.name}
-                                </Text>
-                                <Switch
-                                    value={s.visible !== false}
-                                    onValueChange={() => toggleRepoVisibility(s)}
-                                    thumbColor={s.visible !== false ? '#111827' : '#F9FAFB'}
-                                    trackColor={{ false: '#E5E7EB', true: '#FACC15' }}
-                                />
-                            </View>
-                            <View className="flex-row justify-between items-center">
-                                <TouchableOpacity onPress={() => toggleRepoActive(s)}>
-                                    <Text className="text-xs font-semibold text-gray-700">
-                                        {s.active === false ? 'Turn ON (resume checks)' : 'Turn OFF (pause checks)'}
-                                    </Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity onPress={() => deleteRepo(s)}>
-                                    <Text className="text-xs font-semibold text-red-600">Delete Subscription</Text>
-                                </TouchableOpacity>
+            <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 120 }}>
+                {/* User Profile Card */}
+                <MotiView from={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 100 }}>
+                    <Card className="flex-row items-center py-5">
+                        <View className="w-20 h-20 rounded-2xl bg-brand items-center justify-center mr-4">
+                            <Text className="text-3xl font-extrabold text-black">{initials}</Text>
+                        </View>
+                        <View className="flex-1">
+                            <Text className="text-xl font-bold text-white">{profile?.name || 'Guest User'}</Text>
+                            <View className="flex-row items-center mt-1">
+                                <Mail size={14} color="#71717A" className="mr-2" />
+                                <Text className="text-muted text-sm truncate" numberOfLines={1}>{profile?.email || 'guest@example.com'}</Text>
                             </View>
                         </View>
-                    ))}
-                </Card>
+                        <View className="w-10 h-10 rounded-full bg-white/5 items-center justify-center">
+                            <ChevronRight size={20} color="#71717A" />
+                        </View>
+                    </Card>
+                </MotiView>
 
-                <Card className="mb-4">
-                    <TouchableOpacity onPress={() => {}} className="py-1">
-                        <Text className="text-base font-semibold text-gray-900 mb-1">Help & Support</Text>
-                        <Text className="text-xs text-gray-500">Get help with the app</Text>
+                {/* Notifications Card */}
+                <MotiView from={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 200 }}>
+                    <Card className="p-0 overflow-hidden">
+                        <View className="p-6 flex-row items-center justify-between border-b border-border/50">
+                            <View className="flex-row items-center">
+                                <View className="w-10 h-10 rounded-full bg-accent/10 items-center justify-center mr-4">
+                                    <Bell size={20} color="#FF3B72" />
+                                </View>
+                                <View>
+                                    <Text className="text-base font-bold text-white">Notifications</Text>
+                                    <Text className="text-xs text-muted">Manage notification settings</Text>
+                                </View>
+                            </View>
+                        </View>
+                        <View className="p-6 pb-2">
+                            <View className="flex-row items-center justify-between mb-4">
+                                <View>
+                                    <Text className="text-sm font-bold text-white">Push Notifications</Text>
+                                    <Text className="text-xs text-muted">Get notified about new issues</Text>
+                                </View>
+                                <Switch
+                                    value={!!profile?.notificationsEnabled}
+                                    onValueChange={toggleNotifications}
+                                    trackColor={{ false: '#27272A', true: '#CEFF00' }}
+                                    thumbColor={profile?.notificationsEnabled ? '#fff' : '#A1A1AA'}
+                                />
+                            </View>
+                        </View>
+                    </Card>
+                </MotiView>
+
+                {/* Repository Privacy & Controls Card */}
+                <MotiView from={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 300 }}>
+                    <Card className="p-0 overflow-hidden">
+                        <View className="p-6 flex-row items-center border-b border-border/50">
+                            <View className="w-10 h-10 rounded-full bg-brand/10 items-center justify-center mr-4">
+                                <Shield size={20} color="#CEFF00" />
+                            </View>
+                            <Text className="text-base font-bold text-white">Repository Privacy & Controls</Text>
+                        </View>
+                        <View className="p-6">
+                            {subscriptions.map((s, index) => (
+                                <View key={s._id} className="mb-6 last:mb-0">
+                                    <View className="flex-row items-center justify-between mb-2">
+                                        <View className="flex-1 mr-4">
+                                            <Text className="text-sm font-bold text-brand" numberOfLines={1}>
+                                                {s.repository?.owner}/{s.repository?.name}
+                                            </Text>
+                                            <Text className="text-[10px] text-muted uppercase mt-0.5">
+                                                {s.active === false ? 'Turn ON (resume checks)' : 'Turn OFF (pause checks)'}
+                                            </Text>
+                                        </View>
+                                        <Switch
+                                            value={s.active !== false}
+                                            onValueChange={() => toggleRepoActive(s)}
+                                            trackColor={{ false: '#27272A', true: '#CEFF00' }}
+                                            thumbColor={s.active !== false ? '#fff' : '#A1A1AA'}
+                                        />
+                                    </View>
+                                    <TouchableOpacity
+                                        onPress={() => deleteRepo(s)}
+                                        className="bg-accent/5 border border-accent/20 rounded-xl py-3 items-center mt-2"
+                                    >
+                                        <Text className="text-accent text-xs font-bold">Delete Subscription</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            ))}
+                        </View>
+                    </Card>
+                </MotiView>
+
+                {/* Help & Support Card */}
+                <MotiView from={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 400 }}>
+                    <Card className="flex-row items-center justify-between py-5">
+                        <View className="flex-row items-center">
+                            <View className="w-10 h-10 rounded-full bg-accent/10 items-center justify-center mr-4">
+                                <HelpCircle size={20} color="#FF3B72" />
+                            </View>
+                            <View>
+                                <Text className="text-base font-bold text-white">Help & Support</Text>
+                                <Text className="text-xs text-muted">Get help with the app</Text>
+                            </View>
+                        </View>
+                        <ChevronRight size={20} color="#71717A" />
+                    </Card>
+                </MotiView>
+
+                {/* Log Out Button */}
+                <MotiView from={{ opacity: 0, translateY: 20 }} animate={{ opacity: 1, translateY: 0 }} transition={{ delay: 500 }}>
+                    <TouchableOpacity
+                        onPress={logout}
+                        className="mt-4 mb-8 bg-accent/5 border border-accent/20 rounded-2xl h-16 flex-row items-center justify-center"
+                    >
+                        <LogOut size={20} color="#FF3B72" className="mr-3" />
+                        <Text className="text-accent text-lg font-bold">Log Out</Text>
                     </TouchableOpacity>
-                </Card>
+                </MotiView>
 
-                <Card className="mb-4 bg-red-50 border-red-100">
-                    <Button title="Log Out" variant="danger" onPress={handleLogout} />
-                </Card>
-
-                <Text className="text-center text-gray-400 text-xs mt-4">Version 1.0.0</Text>
+                <Text className="text-center text-muted text-[10px] uppercase font-bold tracking-widest mt-4">Version 1.0.0</Text>
             </ScrollView>
         </SafeAreaView>
     );

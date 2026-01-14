@@ -3,6 +3,22 @@ const auth = require('../middleware/auth');
 const Notification = require('../models/Notification');
 const router = express.Router();
 
+// Mark all notifications as read
+router.post('/mark-all-read', auth, async (req, res) => {
+    try {
+        console.log(`Marking all read for user: ${req.user.id}`);
+        const result = await Notification.updateMany(
+            { user: req.user.id, isRead: false },
+            { isRead: true }
+        );
+        console.log(`Updated ${result.modifiedCount} notifications`);
+        res.json({ message: 'All notifications marked as read', modifiedCount: result.modifiedCount });
+    } catch (error) {
+        console.error('Mark all read error:', error);
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
+
 // Get all notifications for current user
 router.get('/', auth, async (req, res) => {
     try {

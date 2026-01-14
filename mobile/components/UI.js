@@ -7,32 +7,34 @@ import { twMerge } from 'tailwind-merge';
 const cn = (...inputs) => twMerge(clsx(inputs));
 
 export const Button = ({ title, onPress, variant = 'primary', className, loading }) => {
-    const baseStyle = "h-14 px-5 rounded-3xl items-center justify-center flex-row shadow-lg shadow-yellow-500/25";
+    const baseStyle = "h-14 px-5 rounded-2xl items-center justify-center flex-row";
     const variants = {
-        primary: "bg-primary",
-        secondary: "bg-black",
-        outline: "bg-white border border-gray-200",
-        danger: "bg-red-50 border border-red-200",
+        primary: "bg-brand",
+        secondary: "bg-card border border-border",
+        accent: "bg-accent",
+        outline: "bg-transparent border border-border",
+        danger: "bg-red-500/10 border border-red-500/50",
     };
 
     const textVariants = {
-        primary: "text-black font-semibold text-base",
+        primary: "text-black font-bold text-base",
         secondary: "text-white font-semibold text-base",
-        outline: "text-gray-900 font-semibold text-base",
-        danger: "text-red-600 font-semibold text-base",
+        accent: "text-white font-bold text-base",
+        outline: "text-white font-semibold text-base",
+        danger: "text-red-500 font-semibold text-base",
     };
 
     return (
         <TouchableOpacity
-            activeOpacity={0.85}
+            activeOpacity={0.8}
             onPress={onPress}
             disabled={loading}
             className={cn(baseStyle, variants[variant], className)}
         >
             {loading ? (
-                <ActivityIndicator color={variant === 'secondary' ? '#fff' : '#000'} />
+                <ActivityIndicator color={variant === 'primary' ? '#000' : '#fff'} />
             ) : (
-                <Text className={textVariants[variant]}>{title}</Text>
+                typeof title === 'string' ? <Text className={textVariants[variant]}>{title}</Text> : title
             )}
         </TouchableOpacity>
     );
@@ -40,14 +42,14 @@ export const Button = ({ title, onPress, variant = 'primary', className, loading
 
 export const Input = ({ value, onChangeText, placeholder, secureTextEntry, icon: Icon, className }) => {
     return (
-        <View className={cn("bg-white/95 h-14 rounded-2xl border border-gray-200 px-4 flex-row items-center mb-4 shadow-sm shadow-black/5", className)}>
-            {Icon && <Icon size={20} color="#9CA3AF" className="mr-3" />}
+        <View className={cn("bg-card h-14 rounded-2xl border border-border px-4 flex-row items-center mb-4", className)}>
+            {Icon && <Icon size={20} color="#A1A1AA" className="mr-3" />}
             <TextInput
-                className="flex-1 text-base text-gray-900 font-medium h-full"
+                className="flex-1 text-base text-white font-medium h-full"
                 value={value}
                 onChangeText={onChangeText}
                 placeholder={placeholder}
-                placeholderTextColor="#9CA3AF"
+                placeholderTextColor="#71717A"
                 secureTextEntry={secureTextEntry}
             />
         </View>
@@ -56,7 +58,7 @@ export const Input = ({ value, onChangeText, placeholder, secureTextEntry, icon:
 
 export const Card = ({ children, className }) => {
     return (
-        <View className={cn("bg-white/95 rounded-3xl p-5 shadow-md shadow-black/5 mb-4 border border-gray-100", className)}>
+        <View className={cn("bg-card rounded-[32px] p-6 mb-4 border border-border", className)}>
             {children}
         </View>
     );
@@ -67,11 +69,12 @@ export const LabelChip = ({ label, selected, onPress }) => {
         <TouchableOpacity
             onPress={onPress}
             className={cn(
-                "px-4 py-2 rounded-full mr-2 mb-2 border",
-                selected ? "bg-yellow-50 border-yellow-400" : "bg-gray-50 border-gray-200"
+                "px-3 py-1.5 rounded-full mr-2 mb-2 border flex-row items-center",
+                selected ? "bg-brand/10 border-brand/50" : "bg-accent/10 border-accent/30"
             )}
         >
-            <Text className={cn("font-medium", selected ? "text-gray-900" : "text-gray-600")}>
+            <View className={cn("w-1.5 h-1.5 rounded-full mr-2", selected ? "bg-brand" : "bg-accent")} />
+            <Text className={cn("text-xs font-medium", selected ? "text-brand" : "text-accent")}>
                 {label}
             </Text>
         </TouchableOpacity>

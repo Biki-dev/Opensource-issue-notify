@@ -13,12 +13,27 @@ export const AuthProvider = ({ children }) => {
     const BASE_URL = 'http://10.119.238.78:5000/api';
     // const BASE_URL = 'http://10.0.2.2:5000/api'; // Android Emulator alternative
 
+    const [unreadCount, setUnreadCount] = useState(0);
+
+    const updateUnreadCount = async (token) => {
+        try {
+            const res = await axios.get(`${BASE_URL}/notifications`, {
+                headers: { Authorization: `Bearer ${token || userToken}` }
+            });
+            const unread = (res.data || []).filter(n => !n.isRead).length;
+            setUnreadCount(unread);
+        } catch (e) {
+            console.log("Error updating unread count", e);
+        }
+    };
+
     const login = async (email, password) => {
         try {
             const res = await axios.post(`${BASE_URL}/auth/login`, { email, password });
             console.log("Login Success", res.data);
             setUserToken(res.data.token);
             await AsyncStorage.setItem('userToken', res.data.token);
+            updateUnreadCount(res.data.token);
         } catch (e) {
             console.log("Login Error", e);
             throw e;
@@ -30,6 +45,7 @@ export const AuthProvider = ({ children }) => {
             const res = await axios.post(`${BASE_URL}/auth/signup`, { name, email, password });
             setUserToken(res.data.token);
             await AsyncStorage.setItem('userToken', res.data.token);
+            updateUnreadCount(res.data.token);
         } catch (e) {
             console.log("Signup Error", e);
             throw e;
@@ -38,6 +54,7 @@ export const AuthProvider = ({ children }) => {
 
     const logout = async () => {
         setUserToken(null);
+        setUnreadCount(0);
         await AsyncStorage.removeItem('userToken');
     };
 
@@ -45,6 +62,7 @@ export const AuthProvider = ({ children }) => {
         try {
             let token = await AsyncStorage.getItem('userToken');
             setUserToken(token);
+            if (token) updateUnreadCount(token);
         } catch (e) {
             console.log(`isLoggedIn error ${e}`);
         }
@@ -56,7 +74,7 @@ export const AuthProvider = ({ children }) => {
     }, []);
 
     return (
-        <AuthContext.Provider value={{ login, signup, logout, isLoading, userToken, BASE_URL }}>
+        <AuthContext.Provider value={{ login, signup, logout, isLoading, userToken, BASE_URL, unreadCount, updateUnreadCount }}>
             {children}
         </AuthContext.Provider>
     );

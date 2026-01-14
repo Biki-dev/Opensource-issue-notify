@@ -1,4 +1,5 @@
 import React, { useContext } from 'react';
+import { View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -26,34 +27,37 @@ const AppTabs = () => {
             screenOptions={({ route }) => ({
                 headerShown: false,
                 tabBarShowLabel: true,
-                tabBarActiveTintColor: '#FACC15',
-                tabBarInactiveTintColor: '#6B7280',
+                tabBarActiveTintColor: '#CEFF00',
+                tabBarInactiveTintColor: '#71717A',
                 tabBarLabelStyle: {
-                    fontSize: 11,
-                    fontWeight: '600',
+                    fontSize: 10,
+                    fontWeight: '700',
+                    marginTop: -4,
                 },
                 tabBarStyle: {
                     position: 'absolute',
-                    left: 16,
-                    right: 16,
-                    bottom: 16,
-                    backgroundColor: '#020617',
-                    borderRadius: 28,
-                    height: 70,
-                    paddingBottom: 10,
+                    backgroundColor: '#18181B',
                     borderTopWidth: 0,
-                    shadowColor: '#000',
-                    shadowOpacity: 0.15,
-                    shadowOffset: { width: 0, height: 8 },
-                    shadowRadius: 16,
-                    elevation: 10,
+                    height: 80,
+                    paddingTop: 10,
+                    paddingBottom: 20,
+                    borderTopLeftRadius: 0,
+                    borderTopRightRadius: 0,
+                    elevation: 0,
                 },
-                tabBarIcon: ({ color, size }) => {
-                    if (route.name === 'HomeTab') return <Home color={color} size={size} />;
-                    if (route.name === 'SubscriptionsTab') return <Bell color={color} size={size} />;
-                    if (route.name === 'BillingTab') return <CreditCard color={color} size={size} />;
-                    if (route.name === 'SettingsTab') return <Settings color={color} size={size} />;
-                    return null;
+                tabBarIcon: ({ color, focused, size }) => {
+                    let IconComponent;
+                    if (route.name === 'HomeTab') IconComponent = Home;
+                    else if (route.name === 'SubscriptionsTab') IconComponent = Bell;
+                    else if (route.name === 'BillingTab') IconComponent = CreditCard;
+                    else if (route.name === 'SettingsTab') IconComponent = Settings;
+
+                    return (
+                        <View className="items-center">
+                            {focused && <View className="w-1 h-1 bg-brand rounded-full mb-1" />}
+                            <IconComponent color={color} size={24} />
+                        </View>
+                    );
                 },
             })}
         >
