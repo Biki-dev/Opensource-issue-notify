@@ -16,7 +16,8 @@ const NotificationsScreen = ({ navigation }) => {
                 const res = await axios.get(`${BASE_URL}/notifications`, {
                     headers: { Authorization: `Bearer ${userToken}` }
                 });
-                setNotifs(res.data);
+                // Only show unread notifications in this screen; read ones still stay in DB
+                setNotifs((res.data || []).filter(n => !n.isRead));
             } catch (e) {
                 console.log(e);
             }
@@ -29,8 +30,11 @@ const NotificationsScreen = ({ navigation }) => {
             // Open the GitHub issue
             Linking.openURL(item.issueUrl);
 
-            // Remove the notification after it has been checked
-            await axios.delete(`${BASE_URL}/notifications/${item._id}`, {
+            // Mark notification as read so it disappears from this list,
+            // but stays available for the dashboard recent issues.
+            await axios.patch(`${BASE_URL}/notifications/${item._id}`, {
+                isRead: true,
+            }, {
                 headers: { Authorization: `Bearer ${userToken}` }
             });
 

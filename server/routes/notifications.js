@@ -15,7 +15,32 @@ router.get('/', auth, async (req, res) => {
     }
 });
 
-// Delete a single notification (e.g. after the user has checked it)
+// Mark a notification as read/unread
+router.patch('/:id', auth, async (req, res) => {
+    try {
+        const updates = {};
+        if (typeof req.body.isRead === 'boolean') {
+            updates.isRead = req.body.isRead;
+        }
+
+        const notif = await Notification.findOneAndUpdate(
+            { _id: req.params.id, user: req.user.id },
+            updates,
+            { new: true }
+        );
+
+        if (!notif) {
+            return res.status(404).json({ message: 'Notification not found' });
+        }
+
+        res.json(notif);
+    } catch (error) {
+        console.error('Update notification error:', error);
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
+
+// Optional: keep delete route (not used by mobile now) for admin or cleanup
 router.delete('/:id', auth, async (req, res) => {
     try {
         const deleted = await Notification.findOneAndDelete({

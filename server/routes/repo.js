@@ -161,6 +161,14 @@ router.delete('/:id', auth, async (req, res) => {
     try {
         const deleted = await Subscription.findOneAndDelete({ _id: req.params.id, user: req.user.id });
         if (!deleted) return res.status(404).json({ message: 'Subscription not found' });
+
+        // Also remove all notifications for this user + repository
+        try {
+            await Notification.deleteMany({ user: req.user.id, repository: deleted.repository });
+        } catch (cleanupErr) {
+            console.error('Error deleting related notifications:', cleanupErr.message);
+        }
+
         res.json({ message: 'Subscription deleted' });
     } catch (error) {
         console.error('Delete subscription error:', error);

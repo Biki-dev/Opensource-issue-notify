@@ -19,7 +19,8 @@ const DashboardScreen = ({ navigation }) => {
                     axios.get(`${BASE_URL}/notifications`, { headers: { Authorization: `Bearer ${userToken}` } }),
                 ]);
                 setSubs(subsRes.data || []);
-                setNotifications((notifRes.data || []).slice(0, 5));
+                // Show all issues that matched labels in the recent section
+                setNotifications(notifRes.data || []);
             } catch (e) {
                 console.log(e);
             }
