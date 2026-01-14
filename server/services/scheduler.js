@@ -6,7 +6,14 @@ const Notification = require('../models/Notification');
 const checkIssues = async () => {
     console.log('Running Scheduled Check...');
     try {
-        const repositories = await Repository.find({});
+        // Only check repositories that have at least one ACTIVE subscription.
+        const activeRepoIds = await Subscription.distinct('repository', { active: true });
+        if (!activeRepoIds || activeRepoIds.length === 0) {
+            console.log('No active subscriptions found. Skipping check.');
+            return;
+        }
+
+        const repositories = await Repository.find({ _id: { $in: activeRepoIds } });
         for (const repo of repositories) {
             // Optimization: if no active subscriptions, skip?
             // For now, check all.

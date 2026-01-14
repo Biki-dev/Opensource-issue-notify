@@ -1,6 +1,7 @@
 const express = require('express');
 const axios = require('axios');
 const { Repository, Subscription } = require('../models/Resources');
+const Notification = require('../models/Notification');
 const router = express.Router();
 const auth = require('../middleware/auth'); // Need to create middleware
 
@@ -49,12 +50,12 @@ router.post('/subscribe', auth, async (req, res) => {
 
     try {
         const { owner, repo } = parsed;
+        const headers = process.env.GITHUB_TOKEN ? { Authorization: `token ${process.env.GITHUB_TOKEN}` } : {};
 
         // Find or Create Repository
         let repository = await Repository.findOne({ githubUrl: url });
         if (!repository) {
             // Fetch latest issue number to start tracking from NOW
-            const headers = process.env.GITHUB_TOKEN ? { Authorization: `token ${process.env.GITHUB_TOKEN}` } : {};
             const issuesRes = await axios.get(`https://api.github.com/repos/${owner}/${repo}/issues?per_page=1`, { headers });
             const latestNum = issuesRes.data.length > 0 ? issuesRes.data[0].number : 0;
 
@@ -67,13 +68,46 @@ router.post('/subscribe', auth, async (req, res) => {
             });
         }
 
-        // Create Subscription
-        // start session not needed for simple logic, but good practice. using basic await here.
+        // Check if this is a brand new subscription for this user/repo
+        const existingSub = await Subscription.findOne({ user: req.user.id, repository: repository._id });
+        const isNewSubscription = !existingSub;
+
+        // Create or update Subscription
         const subscription = await Subscription.findOneAndUpdate(
             { user: req.user.id, repository: repository._id },
             { labels: labels, active: true },
-            { upsert: true, new: true }
+            { upsert: true, new: true, setDefaultsOnInsert: true }
         );
+
+        // If this is the first time the user added this repo, seed their dashboard
+        // with all currently available issues that match their selected labels.
+        if (isNewSubscription && Array.isArray(subscription.labels) && subscription.labels.length > 0) {
+            try {
+                // Fetch open issues (limited page size to avoid huge responses)
+                const issuesRes = await axios.get(
+                    `https://api.github.com/repos/${owner}/${repo}/issues?state=open&per_page=100`,
+                    { headers }
+                );
+                const issues = issuesRes.data || [];
+
+                for (const issue of issues) {
+                    const issueLabels = (issue.labels || []).map(l => l.name);
+                    const matched = issueLabels.filter(label => subscription.labels.includes(label));
+                    if (matched.length === 0) continue;
+
+                    await Notification.create({
+                        user: subscription.user,
+                        repository: repository._id,
+                        issueTitle: issue.title,
+                        issueUrl: issue.html_url,
+                        matchedLabels: matched
+                    });
+                }
+            } catch (seedErr) {
+                console.error('Error seeding initial issues for subscription:', seedErr.message);
+                // Do not fail subscription creation if seeding fails
+            }
+        }
 
         res.json(subscription);
 

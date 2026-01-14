@@ -3,6 +3,7 @@ const auth = require('../middleware/auth');
 const Notification = require('../models/Notification');
 const router = express.Router();
 
+// Get all notifications for current user
 router.get('/', auth, async (req, res) => {
     try {
         const notifications = await Notification.find({ user: req.user.id })
@@ -10,6 +11,25 @@ router.get('/', auth, async (req, res) => {
             .populate('repository', 'name owner');
         res.json(notifications);
     } catch (error) {
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
+
+// Delete a single notification (e.g. after the user has checked it)
+router.delete('/:id', auth, async (req, res) => {
+    try {
+        const deleted = await Notification.findOneAndDelete({
+            _id: req.params.id,
+            user: req.user.id,
+        });
+
+        if (!deleted) {
+            return res.status(404).json({ message: 'Notification not found' });
+        }
+
+        res.json({ message: 'Notification removed' });
+    } catch (error) {
+        console.error('Delete notification error:', error);
         res.status(500).json({ message: 'Server Error' });
     }
 });

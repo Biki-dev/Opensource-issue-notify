@@ -24,8 +24,24 @@ const NotificationsScreen = ({ navigation }) => {
         fetchNotifs();
     }, []);
 
+    const handleOpenNotification = async (item) => {
+        try {
+            // Open the GitHub issue
+            Linking.openURL(item.issueUrl);
+
+            // Remove the notification after it has been checked
+            await axios.delete(`${BASE_URL}/notifications/${item._id}`, {
+                headers: { Authorization: `Bearer ${userToken}` }
+            });
+
+            setNotifs((prev) => prev.filter((n) => n._id !== item._id));
+        } catch (e) {
+            console.log(e);
+        }
+    };
+
     const renderItem = ({ item }) => (
-        <TouchableOpacity onPress={() => Linking.openURL(item.issueUrl)}>
+        <TouchableOpacity onPress={() => handleOpenNotification(item)}>
             <Card className="border-l-4 border-l-red-500">
                 <Text className="text-xs font-bold text-gray-400 mb-1 uppercase">{item.repository.owner}/{item.repository.name}</Text>
                 <Text className="text-lg font-bold text-gray-900 mb-2">{item.issueTitle}</Text>

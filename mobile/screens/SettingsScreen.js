@@ -54,6 +54,30 @@ const SettingsScreen = () => {
         }
     };
 
+    const toggleRepoActive = async (sub) => {
+        try {
+            const updated = await axios.patch(
+                `${BASE_URL}/repos/${sub._id}`,
+                { active: sub.active === false }, // if currently off (false), turn on; else turn off
+                { headers: { Authorization: `Bearer ${userToken}` } }
+            );
+            setSubscriptions((prev) => prev.map((s) => (s._id === sub._id ? updated.data : s)));
+        } catch (e) {
+            console.log(e);
+        }
+    };
+
+    const deleteRepo = async (sub) => {
+        try {
+            await axios.delete(`${BASE_URL}/repos/${sub._id}`, {
+                headers: { Authorization: `Bearer ${userToken}` }
+            });
+            setSubscriptions((prev) => prev.filter((s) => s._id !== sub._id));
+        } catch (e) {
+            console.log(e);
+        }
+    };
+
     const handleLogout = () => {
         Alert.alert('Log Out', 'Are you sure you want to log out?', [
             { text: 'Cancel', style: 'cancel' },
@@ -92,19 +116,31 @@ const SettingsScreen = () => {
                     />
                 </Card>
 
-                <Card className="mb-4">
-                    <Text className="text-base font-semibold text-gray-900 mb-3">Repository Privacy</Text>
+            <Card className="mb-4">
+                    <Text className="text-base font-semibold text-gray-900 mb-3">Repository Privacy & Controls</Text>
                     {subscriptions.map((s) => (
-                        <View key={s._id} className="flex-row items-center justify-between mb-3">
-                            <Text className="text-sm text-gray-800">
-                                {s.repository?.owner}/{s.repository?.name}
-                            </Text>
-                            <Switch
-                                value={s.visible !== false}
-                                onValueChange={() => toggleRepoVisibility(s)}
-                                thumbColor={s.visible !== false ? '#111827' : '#F9FAFB'}
-                                trackColor={{ false: '#E5E7EB', true: '#FACC15' }}
-                            />
+                        <View key={s._id} className="mb-3">
+                            <View className="flex-row items-center justify-between mb-1">
+                                <Text className="text-sm text-gray-800">
+                                    {s.repository?.owner}/{s.repository?.name}
+                                </Text>
+                                <Switch
+                                    value={s.visible !== false}
+                                    onValueChange={() => toggleRepoVisibility(s)}
+                                    thumbColor={s.visible !== false ? '#111827' : '#F9FAFB'}
+                                    trackColor={{ false: '#E5E7EB', true: '#FACC15' }}
+                                />
+                            </View>
+                            <View className="flex-row justify-between items-center">
+                                <TouchableOpacity onPress={() => toggleRepoActive(s)}>
+                                    <Text className="text-xs font-semibold text-gray-700">
+                                        {s.active === false ? 'Turn ON (resume checks)' : 'Turn OFF (pause checks)'}
+                                    </Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity onPress={() => deleteRepo(s)}>
+                                    <Text className="text-xs font-semibold text-red-600">Delete Subscription</Text>
+                                </TouchableOpacity>
+                            </View>
                         </View>
                     ))}
                 </Card>
