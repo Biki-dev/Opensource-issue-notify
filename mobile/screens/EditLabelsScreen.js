@@ -67,15 +67,15 @@ const EditLabelsScreen = ({ route, navigation }) => {
     };
 
     return (
-        <SafeAreaView className="flex-1 bg-gray-50">
-            <View className="px-6 py-4 flex-row items-center bg-white shadow-sm z-10">
+        <SafeAreaView className="flex-1 bg-slate-950">
+            <View className="px-6 py-4 flex-row items-center bg-slate-950 border-b border-slate-800 z-10">
                 <Button
                     variant="outline"
                     title={<ArrowLeft size={20} color="#000" />}
-                    className="w-10 h-10 mr-4 border-gray-200 !rounded-xl"
+                    className="w-10 h-10 mr-4 border-gray-200 !rounded-xl bg-white/95"
                     onPress={() => navigation.goBack()}
                 />
-                <Text className="text-xl font-bold text-gray-900">Edit Labels</Text>
+                <Text className="text-xl font-bold text-white">Edit Labels</Text>
             </View>
 
             <ScrollView className="p-6">

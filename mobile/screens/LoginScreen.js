@@ -29,14 +29,14 @@ const LoginScreen = ({ navigation }) => {
     };
 
     return (
-        <SafeAreaView className="flex-1 bg-gray-50 px-6 justify-center">
-            <StatusBar barStyle="dark-content" />
+        <SafeAreaView className="flex-1 bg-slate-950 px-6 justify-center">
+            <StatusBar barStyle="light-content" />
             <View className="items-center mb-10">
-                <View className="w-20 h-20 bg-primary rounded-3xl items-center justify-center mb-4 shadow-lg shadow-yellow-200">
+                <View className="w-20 h-20 bg-yellow-400 rounded-3xl items-center justify-center mb-4 shadow-xl shadow-yellow-500/40">
                     <Zap size={40} color="black" fill="black" />
                 </View>
-                <Text className="text-3xl font-extrabold text-gray-900">IssueNotify</Text>
-                <Text className="text-gray-500 mt-2 text-base">Track GitHub issues like a pro</Text>
+                <Text className="text-3xl font-extrabold text-white">IssueNotify</Text>
+                <Text className="text-gray-400 mt-2 text-base">Track GitHub issues like a pro</Text>
             </View>
 
             <Card className="px-6 py-8">

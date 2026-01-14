@@ -7,24 +7,24 @@ import { twMerge } from 'tailwind-merge';
 const cn = (...inputs) => twMerge(clsx(inputs));
 
 export const Button = ({ title, onPress, variant = 'primary', className, loading }) => {
-    const baseStyle = "h-14 rounded-2xl items-center justify-center flex-row shadow-sm";
+    const baseStyle = "h-14 px-5 rounded-3xl items-center justify-center flex-row shadow-lg shadow-yellow-500/25";
     const variants = {
         primary: "bg-primary",
-        secondary: "bg-secondary",
-        outline: "border-2 border-primary bg-transparent",
-        danger: "bg-red-50",
+        secondary: "bg-black",
+        outline: "bg-white border border-gray-200",
+        danger: "bg-red-50 border border-red-200",
     };
 
     const textVariants = {
-        primary: "text-secondary font-bold text-lg",
-        secondary: "text-white font-bold text-lg",
-        outline: "text-primary font-bold text-lg",
-        danger: "text-red-500 font-bold text-lg",
+        primary: "text-black font-semibold text-base",
+        secondary: "text-white font-semibold text-base",
+        outline: "text-gray-900 font-semibold text-base",
+        danger: "text-red-600 font-semibold text-base",
     };
 
     return (
         <TouchableOpacity
-            activeOpacity={0.8}
+            activeOpacity={0.85}
             onPress={onPress}
             disabled={loading}
             className={cn(baseStyle, variants[variant], className)}
@@ -40,7 +40,7 @@ export const Button = ({ title, onPress, variant = 'primary', className, loading
 
 export const Input = ({ value, onChangeText, placeholder, secureTextEntry, icon: Icon, className }) => {
     return (
-        <View className={cn("bg-white h-14 rounded-2xl border border-gray-100 px-4 flex-row items-center mb-4 shadow-sm", className)}>
+        <View className={cn("bg-white/95 h-14 rounded-2xl border border-gray-200 px-4 flex-row items-center mb-4 shadow-sm shadow-black/5", className)}>
             {Icon && <Icon size={20} color="#9CA3AF" className="mr-3" />}
             <TextInput
                 className="flex-1 text-base text-gray-900 font-medium h-full"
@@ -56,7 +56,7 @@ export const Input = ({ value, onChangeText, placeholder, secureTextEntry, icon:
 
 export const Card = ({ children, className }) => {
     return (
-        <View className={cn("bg-white rounded-3xl p-5 shadow-sm mb-4 border border-gray-50", className)}>
+        <View className={cn("bg-white/95 rounded-3xl p-5 shadow-md shadow-black/5 mb-4 border border-gray-100", className)}>
             {children}
         </View>
     );
@@ -68,10 +68,10 @@ export const LabelChip = ({ label, selected, onPress }) => {
             onPress={onPress}
             className={cn(
                 "px-4 py-2 rounded-full mr-2 mb-2 border",
-                selected ? "bg-primary border-primary" : "bg-gray-50 border-gray-200"
+                selected ? "bg-yellow-50 border-yellow-400" : "bg-gray-50 border-gray-200"
             )}
         >
-            <Text className={cn("font-medium", selected ? "text-black" : "text-gray-600")}>
+            <Text className={cn("font-medium", selected ? "text-gray-900" : "text-gray-600")}>
                 {label}
             </Text>
         </TouchableOpacity>

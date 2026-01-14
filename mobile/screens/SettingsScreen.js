@@ -92,10 +92,10 @@ const SettingsScreen = () => {
         : 'JD';
 
     return (
-        <SafeAreaView className="flex-1 bg-gray-50">
-            <ScrollView contentContainerStyle={{ padding: 24 }}>
+        <SafeAreaView className="flex-1 bg-slate-950">
+            <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: 40 }}>
                 <Card className="flex-row items-center mb-6">
-                    <View className="w-16 h-16 rounded-2xl bg-yellow-300 items-center justify-center mr-4">
+                    <View className="w-16 h-16 rounded-2xl bg-yellow-400 items-center justify-center mr-4">
                         <Text className="text-xl font-extrabold text-gray-900">{initials}</Text>
                     </View>
                     <View className="flex-1">

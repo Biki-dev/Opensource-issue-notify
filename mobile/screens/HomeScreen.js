@@ -64,13 +64,16 @@ const HomeScreen = ({ navigation }) => {
     );
 
     return (
-        <SafeAreaView className="flex-1 bg-gray-50">
-            <View className="px-6 pt-2 pb-6 flex-row justify-between items-center bg-white border-b border-gray-100">
-                <Text className="text-2xl font-bold text-gray-900">Subscriptions</Text>
+        <SafeAreaView className="flex-1 bg-slate-950">
+            <View className="px-6 pt-4 pb-6 flex-row justify-between items-center bg-slate-950 border-b border-slate-800">
+                <View>
+                    <Text className="text-[11px] font-semibold tracking-[3px] text-yellow-400 uppercase">Subscriptions</Text>
+                    <Text className="text-2xl font-extrabold text-white mt-1">Tracked Repositories</Text>
+                </View>
                 <Button
                     variant="outline"
                     title={<Bell size={20} color="#000" />}
-                    className="w-12 h-12 !rounded-full p-0"
+                    className="w-12 h-12 !rounded-full bg-white/95"
                     onPress={() => navigation.navigate('Notifications')}
                 />
             </View>
@@ -84,12 +87,13 @@ const HomeScreen = ({ navigation }) => {
                     data={subs}
                     renderItem={renderItem}
                     keyExtractor={item => item._id}
-                    contentContainerStyle={{ padding: 24, paddingBottom: 100 }}
+                    contentContainerStyle={{ padding: 24, paddingBottom: 120 }}
                     refreshControl={<RefreshControl refreshing={loading} onRefresh={fetchSubs} />}
                     ListEmptyComponent={
                         <View className="items-center py-20">
-                            <Text className="text-gray-400 text-lg text-center mb-4">No subscriptions yet</Text>
-                            <Text className="text-gray-400 text-center px-10">Add a GitHub repository to start tracking issues.</Text>
+                            <Text className="text-gray-300 text-lg text-center mb-2">No subscriptions yet</Text>
+                            <Text className="text-gray-500 text-center px-10 mb-4">Add a GitHub repository to start tracking issues that matter.</Text>
+                            <Button title="Add your first repo" onPress={() => navigation.navigate('AddRepo')} />
                         </View>
                     }
                 />
