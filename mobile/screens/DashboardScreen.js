@@ -148,11 +148,11 @@ const DashboardScreen = ({ navigation }) => {
                                     <ExternalLink size={14} color="#0F172A" />
                                 </View>
                             }
-                            className="bg-card border-border mb-8 h-12"
+                            className="bg-card border-border mb-6 h-12"
                             onPress={() => navigation.navigate('SubscriptionsTab')}
                         />
 
-                        <View className="flex-row justify-between items-center mb-4">
+                        <View className="flex-row justify-between items-center mt-4 mb-6">
                             <Text className="text-xl font-bold text-primary">Recent Issues</Text>
                             <Text className="text-xs text-muted">{notifications.length} total</Text>
                         </View>
