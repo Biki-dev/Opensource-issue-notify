@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
 import { Card } from '../components/UI';
-import { ArrowLeft, ExternalLink, GitBranch, Bell, CheckCheck } from 'lucide-react-native';
+import { ArrowLeft, ExternalLink, GitBranch, Bell, CheckCheck, Trash2 } from 'lucide-react-native';
 import { MotiView } from 'moti';
 
 const NotificationsScreen = ({ navigation }) => {
@@ -62,6 +62,18 @@ const NotificationsScreen = ({ navigation }) => {
         }
     };
 
+    const handleDelete = async (id) => {
+        try {
+            await axios.delete(`${BASE_URL}/notifications/${id}`, {
+                headers: { Authorization: `Bearer ${userToken}` }
+            });
+            setNotifs(prev => prev.filter(n => n._id !== id));
+            updateUnreadCount();
+        } catch (e) {
+            console.log(e);
+        }
+    };
+
     const renderItem = ({ item, index }) => (
         <MotiView
             from={{ opacity: 0, translateX: -20 }}
@@ -77,7 +89,12 @@ const NotificationsScreen = ({ navigation }) => {
                                 {item.repository?.owner}/{item.repository?.name}
                             </Text>
                         </View>
-                        <View className="w-2 h-2 rounded-full bg-brand" />
+                        <TouchableOpacity onPress={(e) => {
+                            e.stopPropagation();
+                            handleDelete(item._id);
+                        }}>
+                            <Trash2 size={18} color="#EF4444" />
+                        </TouchableOpacity>
                     </View>
 
                     <Text className="text-lg font-bold text-primary mb-3">{item.issueTitle}</Text>

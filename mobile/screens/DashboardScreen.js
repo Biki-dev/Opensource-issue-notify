@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
 import { Card, Button, LabelChip } from '../components/UI';
-import { GitBranch, ExternalLink, Bell } from 'lucide-react-native';
+import { GitBranch, ExternalLink, Bell, Trash2 } from 'lucide-react-native';
 import { MotiView } from 'moti';
 
 const DashboardScreen = ({ navigation }) => {
@@ -12,23 +12,36 @@ const DashboardScreen = ({ navigation }) => {
     const [subs, setSubs] = useState([]);
     const [notifications, setNotifications] = useState([]);
 
+    const fetchData = async () => {
+        try {
+            const [subsRes, notifRes] = await Promise.all([
+                axios.get(`${BASE_URL}/repos`, { headers: { Authorization: `Bearer ${userToken}` } }),
+                axios.get(`${BASE_URL}/notifications`, { headers: { Authorization: `Bearer ${userToken}` } }),
+            ]);
+            setSubs(subsRes.data || []);
+            setNotifications(notifRes.data || []);
+            updateUnreadCount();
+        } catch (e) {
+            console.log(e);
+        }
+    };
+
     useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const [subsRes, notifRes] = await Promise.all([
-                    axios.get(`${BASE_URL}/repos`, { headers: { Authorization: `Bearer ${userToken}` } }),
-                    axios.get(`${BASE_URL}/notifications`, { headers: { Authorization: `Bearer ${userToken}` } }),
-                ]);
-                setSubs(subsRes.data || []);
-                setNotifications(notifRes.data || []);
-                updateUnreadCount();
-            } catch (e) {
-                console.log(e);
-            }
-        };
         const unsubscribe = navigation.addListener('focus', fetchData);
         return unsubscribe;
     }, [navigation]);
+
+    const handleDeleteNotification = async (id) => {
+        try {
+            await axios.delete(`${BASE_URL}/notifications/${id}`, {
+                headers: { Authorization: `Bearer ${userToken}` }
+            });
+            setNotifications(prev => prev.filter(n => n._id !== id));
+            updateUnreadCount();
+        } catch (e) {
+            console.log(e);
+        }
+    };
 
     const totalLabels = subs.reduce((sum, s) => sum + (s.labels?.length || 0), 0);
 
@@ -46,7 +59,9 @@ const DashboardScreen = ({ navigation }) => {
                             {item.repository?.owner}/{item.repository?.name}
                         </Text>
                     </View>
-                    <ExternalLink size={18} color="#A1A1AA" />
+                    <TouchableOpacity onPress={() => handleDeleteNotification(item._id)}>
+                        <Trash2 size={18} color="#EF4444" />
+                    </TouchableOpacity>
                 </View>
 
                 <Text className="text-base font-bold text-primary mb-3" numberOfLines={2}>
