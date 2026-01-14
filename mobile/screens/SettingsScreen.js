@@ -1,16 +1,19 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Switch } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Switch, TextInput, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
 import { Card, Button } from '../components/UI';
-import { Mail, ChevronRight, Bell, Shield, HelpCircle, LogOut, Edit3 } from 'lucide-react-native';
-import { MotiView } from 'moti';
+import { Mail, ChevronRight, Bell, Shield, HelpCircle, LogOut, Edit3, Check, X } from 'lucide-react-native';
+import { MotiView, AnimatePresence } from 'moti';
 
 const SettingsScreen = ({ navigation }) => {
     const { userToken, BASE_URL, logout, unreadCount, updateUnreadCount } = useContext(AuthContext);
     const [profile, setProfile] = useState(null);
     const [subscriptions, setSubscriptions] = useState([]);
+    const [isEditing, setIsEditing] = useState(false);
+    const [editName, setEditName] = useState('');
+    const [saveLoading, setSaveLoading] = useState(false);
 
     const fetchData = async () => {
         try {
@@ -19,6 +22,7 @@ const SettingsScreen = ({ navigation }) => {
                 axios.get(`${BASE_URL}/repos`, { headers: { Authorization: `Bearer ${userToken}` } }),
             ]);
             setProfile(profileRes.data);
+            setEditName(profileRes.data.name);
             setSubscriptions(subsRes.data || []);
             updateUnreadCount();
         } catch (e) {
@@ -67,6 +71,29 @@ const SettingsScreen = ({ navigation }) => {
         }
     };
 
+    const handleUpdateName = async () => {
+        const trimmed = editName.trim();
+        if (!trimmed || trimmed.length > 12) {
+            setIsEditing(false);
+            setEditName(profile?.name || '');
+            return;
+        }
+        setSaveLoading(true);
+        try {
+            const updated = await axios.patch(
+                `${BASE_URL}/auth/me`,
+                { name: trimmed },
+                { headers: { Authorization: `Bearer ${userToken}` } }
+            );
+            setProfile(updated.data);
+            setIsEditing(false);
+        } catch (e) {
+            console.log(e);
+        } finally {
+            setSaveLoading(false);
+        }
+    };
+
     const initials = profile?.name
         ? profile.name.split(' ').map((n) => n[0]).join('').toUpperCase()
         : 'G';
@@ -96,18 +123,73 @@ const SettingsScreen = ({ navigation }) => {
                 {/* User Profile Card */}
                 <MotiView from={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 100 }}>
                     <Card className="p-0 overflow-hidden">
-                        <View className="flex-row items-center p-6">
+                        <View className="flex-row items-start p-6">
                             <View className="w-20 h-20 rounded-[28px] bg-brand items-center justify-center shadow-2xl shadow-brand/20">
                                 <Text className="text-3xl font-black text-black">{initials}</Text>
                             </View>
                             <View className="flex-1 ml-6">
-                                <View className="flex-row items-center mb-1">
-                                    <Text className="text-2xl font-black text-primary mr-2" numberOfLines={1}>
-                                        {profile?.name || 'User'}
-                                    </Text>
-                                    <View className="bg-brand/10 px-2 py-0.5 rounded-full border border-brand/20">
-                                        <Text className="text-brand text-[8px] font-bold uppercase">Pro Member</Text>
-                                    </View>
+                                <View className="flex-row items-center mb-2 h-10">
+                                    <AnimatePresence exitBeforeEnter>
+                                        {isEditing ? (
+                                            <MotiView
+                                                key="editing"
+                                                from={{ opacity: 0, scale: 0.9, translateX: -10 }}
+                                                animate={{ opacity: 1, scale: 1, translateX: 0 }}
+                                                exit={{ opacity: 0, scale: 0.9, translateX: -10 }}
+                                                transition={{ type: 'timing', duration: 250 }}
+                                                className="flex-1 flex-row items-center"
+                                            >
+                                                <View className="flex-1 bg-muted/5 rounded-xl px-3 py-2 border border-border/50 flex-row items-center mr-2">
+                                                    <TextInput
+                                                        className="text-lg font-black text-primary flex-1 p-0"
+                                                        value={editName}
+                                                        onChangeText={setEditName}
+                                                        autoFocus
+                                                        maxLength={12}
+                                                        placeholder="Your Name"
+                                                        placeholderTextColor="#55607780"
+                                                    />
+                                                    <Text className="text-[8px] font-bold text-muted/40 ml-1">
+                                                        {editName.length}/12
+                                                    </Text>
+                                                </View>
+                                                <View className="flex-row gap-2">
+                                                    <TouchableOpacity
+                                                        onPress={handleUpdateName}
+                                                        disabled={saveLoading}
+                                                        className="w-10 h-10 rounded-xl bg-brand items-center justify-center shadow-lg shadow-brand/20"
+                                                    >
+                                                        {saveLoading ? <ActivityIndicator size="small" color="#fff" /> : <Check size={20} color="#fff" />}
+                                                    </TouchableOpacity>
+                                                    <TouchableOpacity
+                                                        onPress={() => {
+                                                            setIsEditing(false);
+                                                            setEditName(profile?.name || '');
+                                                        }}
+                                                        className="w-10 h-10 rounded-xl bg-white items-center justify-center border border-border shadow-sm shadow-black/5"
+                                                    >
+                                                        <X size={20} color="#556077" />
+                                                    </TouchableOpacity>
+                                                </View>
+                                            </MotiView>
+                                        ) : (
+                                            <MotiView
+                                                key="viewing"
+                                                from={{ opacity: 0, scale: 0.9, translateX: 10 }}
+                                                animate={{ opacity: 1, scale: 1, translateX: 0 }}
+                                                exit={{ opacity: 0, scale: 0.9, translateX: 10 }}
+                                                transition={{ type: 'timing', duration: 250 }}
+                                                className="flex-row items-center"
+                                            >
+                                                <Text className="text-2xl font-black text-primary mr-2" numberOfLines={1}>
+                                                    {profile?.name || 'User'}
+                                                </Text>
+                                                <View className="bg-brand/10 px-2 py-0.5 rounded-full border border-brand/20">
+                                                    <Text className="text-brand text-[8px] font-bold uppercase">Pro Member</Text>
+                                                </View>
+                                            </MotiView>
+                                        )}
+                                    </AnimatePresence>
                                 </View>
                                 <View className="flex-row items-center">
                                     <Mail size={14} color="#55607780" className="mr-2" />
@@ -116,9 +198,15 @@ const SettingsScreen = ({ navigation }) => {
                                     </Text>
                                 </View>
                             </View>
-                            <TouchableOpacity className="w-12 h-12 rounded-2xl bg-muted/5 items-center justify-center">
-                                <Edit3 size={20} color="#556077" />
-                            </TouchableOpacity>
+
+                            {!isEditing && (
+                                <TouchableOpacity
+                                    onPress={() => setIsEditing(true)}
+                                    className="w-12 h-12 rounded-2xl bg-white items-center justify-center border border-border shadow-sm shadow-black/5"
+                                >
+                                    <Edit3 size={20} color="#556077" />
+                                </TouchableOpacity>
+                            )}
                         </View>
 
                         <View className="flex-row py-4 px-6 bg-brand/5">
