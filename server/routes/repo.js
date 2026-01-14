@@ -142,6 +142,8 @@ router.patch('/:id', auth, async (req, res) => {
             return res.status(400).json({ message: 'labels must be an array of strings' });
         }
 
+        const labelsBeingUpdated = Array.isArray(updates.labels);
+
         const sub = await Subscription.findOneAndUpdate(
             { _id: req.params.id, user: req.user.id },
             updates,
@@ -149,6 +151,42 @@ router.patch('/:id', auth, async (req, res) => {
         ).populate('repository');
 
         if (!sub) return res.status(404).json({ message: 'Subscription not found' });
+
+        // If labels were changed, refresh notifications for this repo & user
+        if (labelsBeingUpdated && sub.repository && Array.isArray(sub.labels) && sub.labels.length > 0) {
+            try {
+                const { owner, name } = sub.repository;
+                const headers = process.env.GITHUB_TOKEN ? { Authorization: `token ${process.env.GITHUB_TOKEN}` } : {};
+
+                // Remove old notifications for this repo + user (old label matches)
+                await Notification.deleteMany({ user: req.user.id, repository: sub.repository._id });
+
+                // Fetch open issues again and create notifications that match new labels
+                const issuesRes = await axios.get(
+                    `https://api.github.com/repos/${owner}/${name}/issues?state=open&per_page=100`,
+                    { headers }
+                );
+                const issues = issuesRes.data || [];
+
+                for (const issue of issues) {
+                    const issueLabels = (issue.labels || []).map(l => l.name);
+                    const matched = issueLabels.filter(label => sub.labels.includes(label));
+                    if (matched.length === 0) continue;
+
+                    await Notification.create({
+                        user: sub.user,
+                        repository: sub.repository._id,
+                        issueTitle: issue.title,
+                        issueUrl: issue.html_url,
+                        matchedLabels: matched
+                    });
+                }
+            } catch (err) {
+                console.error('Error reseeding notifications on labels update:', err.message);
+                // Do not fail the update if reseeding fails
+            }
+        }
+
         res.json(sub);
     } catch (error) {
         console.error('Update subscription error:', error);

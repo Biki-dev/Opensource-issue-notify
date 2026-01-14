@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, Alert, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
@@ -78,22 +78,13 @@ const SettingsScreen = () => {
         }
     };
 
-    const handleLogout = () => {
-        Alert.alert('Log Out', 'Are you sure you want to log out?', [
-            { text: 'Cancel', style: 'cancel' },
-            {
-                text: 'Log Out',
-                style: 'destructive',
-                onPress: async () => {
-                    // Clear auth token and AsyncStorage; AppNav will then show Login screen
-                    try {
-                        await logout();
-                    } catch (e) {
-                        console.log('Logout error', e);
-                    }
-                },
-            },
-        ]);
+    const handleLogout = async () => {
+        try {
+            // Directly clear auth token and AsyncStorage; AppNav will then show Login screen
+            await logout();
+        } catch (e) {
+            console.log('Logout error', e);
+        }
     };
 
     const initials = profile?.name

@@ -22,8 +22,10 @@ const NotificationsScreen = ({ navigation }) => {
                 console.log(e);
             }
         };
-        fetchNotifs();
-    }, []);
+
+        const unsubscribe = navigation.addListener('focus', fetchNotifs);
+        return unsubscribe;
+    }, [navigation, userToken]);
 
     const handleOpenNotification = async (item) => {
         try {

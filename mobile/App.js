@@ -11,6 +11,7 @@ import BillingScreen from './screens/BillingScreen';
 import SettingsScreen from './screens/SettingsScreen';
 import AddRepoScreen from './screens/AddRepoScreen';
 import NotificationsScreen from './screens/NotificationsScreen';
+import EditLabelsScreen from './screens/EditLabelsScreen';
 import { Home, Bell, CreditCard, Settings } from 'lucide-react-native';
 
 // 1. Import global.css for nativewind
@@ -67,6 +68,7 @@ const AppNav = () => {
                     <>
                         <Stack.Screen name="Main" component={AppTabs} />
                         <Stack.Screen name="AddRepo" component={AddRepoScreen} options={{ presentation: 'modal' }} />
+                        <Stack.Screen name="EditLabels" component={EditLabelsScreen} options={{ presentation: 'modal' }} />
                         <Stack.Screen name="Notifications" component={NotificationsScreen} />
                     </>
                 )}

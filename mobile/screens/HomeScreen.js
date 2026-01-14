@@ -52,6 +52,14 @@ const HomeScreen = ({ navigation }) => {
                     </View>
                 ))}
             </View>
+            <View className="mt-3 flex-row justify-end">
+                <Button
+                    variant="outline"
+                    title="Edit Labels"
+                    className="h-9 px-4 rounded-xl"
+                    onPress={() => navigation.navigate('EditLabels', { sub: item })}
+                />
+            </View>
         </Card>
     );
 
