@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
 import { Card, Button } from '../components/UI';
-import { Mail, ChevronRight, Bell, Shield, HelpCircle, LogOut } from 'lucide-react-native';
+import { Mail, ChevronRight, Bell, Shield, HelpCircle, LogOut, Edit3 } from 'lucide-react-native';
 import { MotiView } from 'moti';
 
 const SettingsScreen = ({ navigation }) => {
@@ -95,19 +95,45 @@ const SettingsScreen = ({ navigation }) => {
             <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 120 }}>
                 {/* User Profile Card */}
                 <MotiView from={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 100 }}>
-                    <Card className="flex-row items-center py-5">
-                        <View className="w-20 h-20 rounded-2xl bg-brand items-center justify-center mr-4">
-                            <Text className="text-3xl font-extrabold text-black">{initials}</Text>
-                        </View>
-                        <View className="flex-1">
-                            <Text className="text-xl font-bold text-white">{profile?.name || 'Guest User'}</Text>
-                            <View className="flex-row items-center mt-1">
-                                <Mail size={14} color="#71717A" className="mr-2" />
-                                <Text className="text-muted text-sm truncate" numberOfLines={1}>{profile?.email || 'guest@example.com'}</Text>
+                    <Card className="p-0 overflow-hidden">
+                        <View className="flex-row items-center p-6">
+                            <View className="w-20 h-20 rounded-[28px] bg-brand items-center justify-center shadow-2xl shadow-brand/20">
+                                <Text className="text-3xl font-black text-black">{initials}</Text>
                             </View>
+                            <View className="flex-1 ml-6">
+                                <View className="flex-row items-center mb-1">
+                                    <Text className="text-2xl font-black text-white mr-2" numberOfLines={1}>
+                                        {profile?.name || 'User'}
+                                    </Text>
+                                    <View className="bg-brand/10 px-2 py-0.5 rounded-full border border-brand/20">
+                                        <Text className="text-brand text-[8px] font-bold uppercase">Pro Member</Text>
+                                    </View>
+                                </View>
+                                <View className="flex-row items-center">
+                                    <Mail size={14} color="#71717A" className="mr-2" />
+                                    <Text className="text-muted text-sm font-medium" numberOfLines={1}>
+                                        {profile?.email || 'user@example.com'}
+                                    </Text>
+                                </View>
+                            </View>
+                            <TouchableOpacity className="w-12 h-12 rounded-2xl bg-white/5 items-center justify-center">
+                                <Edit3 size={20} color="#71717A" />
+                            </TouchableOpacity>
                         </View>
-                        <View className="w-10 h-10 rounded-full bg-white/5 items-center justify-center">
-                            <ChevronRight size={20} color="#71717A" />
+
+                        <View className="flex-row py-4 px-6 bg-white/5">
+                            <View className="flex-1 items-center border-r border-border/50">
+                                <Text className="text-white font-black text-lg">{subscriptions.length}</Text>
+                                <Text className="text-muted text-[10px] font-bold uppercase tracking-widest">Repos</Text>
+                            </View>
+                            <View className="flex-1 items-center">
+                                <Text className="text-white font-black text-lg">{unreadCount}</Text>
+                                <Text className="text-muted text-[10px] font-bold uppercase tracking-widest">Unread</Text>
+                            </View>
+                            <View className="flex-1 items-center border-l border-border/50">
+                                <Text className="text-white font-black text-lg">6</Text>
+                                <Text className="text-muted text-[10px] font-bold uppercase tracking-widest">Impact</Text>
+                            </View>
                         </View>
                     </Card>
                 </MotiView>

@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
 import { Card, Button, LabelChip } from '../components/UI';
-import { TrendingUp, GitBranch, ExternalLink, Bell } from 'lucide-react-native';
+import { GitBranch, ExternalLink, Bell } from 'lucide-react-native';
 import { MotiView } from 'moti';
 
 const DashboardScreen = ({ navigation }) => {
@@ -108,34 +108,21 @@ const DashboardScreen = ({ navigation }) => {
                         transition={{ delay: 200, type: 'timing' }}
                         className="mt-2"
                     >
-                        <Card className="bg-[#18181B]">
-                            <View className="flex-row items-center mb-4">
-                                <View className="w-8 h-8 rounded-lg bg-brand/10 items-center justify-center mr-3">
-                                    <TrendingUp size={18} color="#CEFF00" />
-                                </View>
-                                <Text className="text-muted text-xs font-bold tracking-widest uppercase">Impact Score</Text>
-                            </View>
 
-                            <View className="flex-row items-end">
-                                <Text className="text-6xl font-bold text-white mr-4">6</Text>
-                                <View className="pb-1">
-                                    <Text className="text-muted text-xs">{subs.length} active subscription</Text>
-                                    <Text className="text-muted text-xs">{totalLabels} label tracking</Text>
-                                </View>
-                            </View>
-                        </Card>
 
-                        <Card className="flex-row items-center justify-between py-4">
-                            <View className="flex-row items-center">
-                                <View className="w-10 h-10 rounded-2xl bg-accent/10 items-center justify-center mr-4">
-                                    <GitBranch size={20} color="#FF3B72" />
+                        <Card className="py-5">
+                            <View className="flex-row items-center justify-between">
+                                <View className="flex-row items-center flex-1">
+                                    <View className="w-12 h-12 rounded-2xl bg-accent/10 items-center justify-center mr-4">
+                                        <GitBranch size={24} color="#FF3B72" />
+                                    </View>
+                                    <View className="flex-1">
+                                        <Text className="text-lg font-bold text-white">Active Subscriptions</Text>
+                                        <Text className="text-xs text-muted">Monitoring repositories</Text>
+                                    </View>
                                 </View>
-                                <View>
-                                    <Text className="text-base font-bold text-white">Active Subscriptions</Text>
-                                    <Text className="text-xs text-muted">Monitoring repositories</Text>
-                                </View>
+                                <Text className="text-4xl font-black text-white ml-4">{subs.length}</Text>
                             </View>
-                            <Text className="text-3xl font-bold text-white">{subs.length}</Text>
                         </Card>
 
                         <Button

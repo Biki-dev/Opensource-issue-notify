@@ -1,5 +1,5 @@
-import React, { useContext } from 'react';
-import { View } from 'react-native';
+import React, { useContext, useEffect, useState } from 'react';
+import { View, TouchableOpacity, Text, useWindowDimensions } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -14,6 +14,7 @@ import AddRepoScreen from './screens/AddRepoScreen';
 import NotificationsScreen from './screens/NotificationsScreen';
 import EditLabelsScreen from './screens/EditLabelsScreen';
 import { Home, Bell, CreditCard, Settings } from 'lucide-react-native';
+import { MotiView } from 'moti';
 
 // 1. Import global.css for nativewind
 import './global.css';
@@ -21,45 +22,111 @@ import './global.css';
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
+const CustomTabBar = ({ state, descriptors, navigation }) => {
+    const { width } = useWindowDimensions();
+    const tabWidth = width / state.routes.length;
+    const [isMoving, setIsMoving] = useState(false);
+
+    useEffect(() => {
+        setIsMoving(true);
+        const timer = setTimeout(() => setIsMoving(false), 300);
+        return () => clearTimeout(timer);
+    }, [state.index]);
+
+    return (
+        <View style={{
+            flexDirection: 'row',
+            backgroundColor: '#18181B',
+            height: 85,
+            paddingBottom: 25,
+            paddingTop: 12,
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            borderTopWidth: 0,
+        }}>
+            {/* Animated Indicator */}
+            <MotiView
+                animate={{
+                    translateX: (state.index * tabWidth) + (tabWidth / 2) - (isMoving ? 15 : 2.5),
+                    width: isMoving ? 30 : 5,
+                    height: 5,
+                    borderRadius: 2.5,
+                }}
+                transition={{
+                    type: 'spring',
+                    damping: 15,
+                    stiffness: 150,
+                }}
+                style={{
+                    position: 'absolute',
+                    top: 8,
+                    backgroundColor: '#CEFF00',
+                }}
+            />
+
+            {state.routes.map((route, index) => {
+                const { options } = descriptors[route.key];
+                const label = options.title !== undefined ? options.title : route.name;
+                const isFocused = state.index === index;
+
+                const onPress = () => {
+                    const event = navigation.emit({
+                        type: 'tabPress',
+                        target: route.key,
+                        canPreventDefault: true,
+                    });
+
+                    if (!isFocused && !event.defaultPrevented) {
+                        navigation.navigate(route.name);
+                    }
+                };
+
+                let IconComponent;
+                if (route.name === 'HomeTab') IconComponent = Home;
+                else if (route.name === 'SubscriptionsTab') IconComponent = Bell;
+                else if (route.name === 'BillingTab') IconComponent = CreditCard;
+                else if (route.name === 'SettingsTab') IconComponent = Settings;
+
+                return (
+                    <TouchableOpacity
+                        key={route.key}
+                        onPress={onPress}
+                        activeOpacity={0.7}
+                        style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}
+                    >
+                        <MotiView
+                            animate={{
+                                scale: isFocused ? 1.1 : 1,
+                                translateY: isFocused ? -2 : 0,
+                            }}
+                        >
+                            <IconComponent
+                                color={isFocused ? '#CEFF00' : '#71717A'}
+                                size={24}
+                            />
+                        </MotiView>
+                        <Text style={{
+                            color: isFocused ? '#CEFF00' : '#71717A',
+                            fontSize: 10,
+                            fontWeight: '700',
+                            marginTop: 4
+                        }}>
+                            {label}
+                        </Text>
+                    </TouchableOpacity>
+                );
+            })}
+        </View>
+    );
+};
+
 const AppTabs = () => {
     return (
         <Tab.Navigator
-            screenOptions={({ route }) => ({
-                headerShown: false,
-                tabBarShowLabel: true,
-                tabBarActiveTintColor: '#CEFF00',
-                tabBarInactiveTintColor: '#71717A',
-                tabBarLabelStyle: {
-                    fontSize: 10,
-                    fontWeight: '700',
-                    marginTop: -4,
-                },
-                tabBarStyle: {
-                    position: 'absolute',
-                    backgroundColor: '#18181B',
-                    borderTopWidth: 0,
-                    height: 80,
-                    paddingTop: 10,
-                    paddingBottom: 20,
-                    borderTopLeftRadius: 0,
-                    borderTopRightRadius: 0,
-                    elevation: 0,
-                },
-                tabBarIcon: ({ color, focused, size }) => {
-                    let IconComponent;
-                    if (route.name === 'HomeTab') IconComponent = Home;
-                    else if (route.name === 'SubscriptionsTab') IconComponent = Bell;
-                    else if (route.name === 'BillingTab') IconComponent = CreditCard;
-                    else if (route.name === 'SettingsTab') IconComponent = Settings;
-
-                    return (
-                        <View className="items-center">
-                            {focused && <View className="w-1 h-1 bg-brand rounded-full mb-1" />}
-                            <IconComponent color={color} size={24} />
-                        </View>
-                    );
-                },
-            })}
+            tabBar={props => <CustomTabBar {...props} />}
+            screenOptions={{ headerShown: false }}
         >
             <Tab.Screen name="HomeTab" component={DashboardScreen} options={{ title: 'Home' }} />
             <Tab.Screen name="SubscriptionsTab" component={HomeScreen} options={{ title: 'Subscriptions' }} />
