@@ -50,11 +50,11 @@ const CustomTabBar = ({ state, descriptors, navigation }) => {
             left: 0,
             right: 0,
             borderTopWidth: 1,
-            borderTopColor: '#E6E8EB',
-            shadowColor: '#000',
+            borderTopColor: '#E9E3DD',
+            shadowColor: '#111111',
             shadowOffset: { width: 0, height: -4 },
-            shadowOpacity: 0.05,
-            shadowRadius: 8,
+            shadowOpacity: 0.1,
+            shadowRadius: 10,
             elevation: 10,
         }}>
             {/* Animated Indicator */}
@@ -114,14 +114,14 @@ const CustomTabBar = ({ state, descriptors, navigation }) => {
                             }}
                         >
                             <IconComponent
-                                color={isFocused ? '#D97706' : '#556077'}
+                                color={isFocused ? '#D97706' : '#5B6478'}
                                 size={24}
                             />
                         </MotiView>
                         <Text style={{
-                            color: isFocused ? '#D97706' : '#556077',
+                            color: isFocused ? '#D97706' : '#5B6478',
                             fontSize: 10,
-                            fontWeight: '700',
+                            fontFamily: 'Inter_600SemiBold',
                             marginTop: 4
                         }}>
                             {label}

@@ -54,7 +54,7 @@ const DashboardScreen = ({ navigation }) => {
             <Card className="mb-4">
                 <View className="flex-row justify-between items-start mb-2">
                     <View className="flex-row items-center flex-1">
-                        <GitBranch size={16} color="#A1A1AA" className="mr-2" />
+                        <GitBranch size={16} color="#8A93A5" className="mr-2" />
                         <Text className="text-sm text-muted font-inter" numberOfLines={1}>
                             {item.repository?.owner}/{item.repository?.name}
                         </Text>

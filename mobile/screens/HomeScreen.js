@@ -63,7 +63,7 @@ const HomeScreen = ({ navigation }) => {
                                 </View>
                             </View>
                             <View className="flex-row items-center mb-3">
-                                <Clock size={14} color="#71717A" className="mr-1.5" />
+                                <Clock size={14} color="#8A93A5" className="mr-1.5" />
                                 <Text className="text-muted text-[10px] font-inter-medium">
                                     Checked {new Date(item.repository.lastChecked).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}
                                 </Text>

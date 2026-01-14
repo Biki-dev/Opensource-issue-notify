@@ -8,9 +8,9 @@ const cn = (...inputs) => twMerge(clsx(inputs));
 export const Button = ({ title, onPress, variant = 'primary', className, loading }) => {
     const baseStyle = "h-14 px-5 rounded-2xl items-center justify-center flex-row";
     const variants = {
-        primary: "bg-brand shadow-lg shadow-brand/30",
-        secondary: "bg-surface border border-border",
-        accent: "bg-accent shadow-lg shadow-accent/30",
+        primary: "bg-brand shadow-lg shadow-brand/22",
+        secondary: "bg-card border border-border",
+        accent: "bg-accent shadow-lg shadow-brand/22",
         outline: "bg-transparent border border-border",
         danger: "bg-danger shadow-lg shadow-danger/20",
     };
@@ -31,7 +31,7 @@ export const Button = ({ title, onPress, variant = 'primary', className, loading
             className={cn(baseStyle, variants[variant], className)}
         >
             {loading ? (
-                <ActivityIndicator color={variant === 'primary' || variant === 'danger' ? '#fff' : '#0F172A'} />
+                <ActivityIndicator color={variant === 'primary' || variant === 'danger' ? '#fff' : '#0B1220'} />
             ) : (
                 typeof title === 'string' ? <Text className={textVariants[variant]}>{title}</Text> : title
             )}
@@ -41,14 +41,14 @@ export const Button = ({ title, onPress, variant = 'primary', className, loading
 
 export const Input = ({ value, onChangeText, placeholder, secureTextEntry, icon: Icon, className }) => {
     return (
-        <View className={cn("bg-card h-14 rounded-2xl border border-border px-4 flex-row items-center mb-4 shadow-sm shadow-black/5", className)}>
-            {Icon && <Icon size={20} color="#556077" className="mr-3" />}
+        <View className={cn("bg-card h-14 rounded-2xl border border-border px-4 flex-row items-center mb-4 shadow-sm shadow-dark/10", className)}>
+            {Icon && <Icon size={20} color="#8A93A5" className="mr-3" />}
             <TextInput
                 className="flex-1 text-base text-primary font-inter-medium h-full"
                 value={value}
                 onChangeText={onChangeText}
                 placeholder={placeholder}
-                placeholderTextColor="#55607780"
+                placeholderTextColor="#5B647880"
                 secureTextEntry={secureTextEntry}
             />
         </View>
@@ -57,7 +57,7 @@ export const Input = ({ value, onChangeText, placeholder, secureTextEntry, icon:
 
 export const Card = ({ children, className }) => {
     return (
-        <View className={cn("bg-card rounded-[32px] p-6 mb-4 border border-border shadow-md shadow-black/5", className)}>
+        <View className={cn("bg-card rounded-[32px] p-6 mb-4 border border-border shadow-md shadow-dark/10", className)}>
             {children}
         </View>
     );
