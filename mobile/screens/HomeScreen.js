@@ -47,7 +47,7 @@ const HomeScreen = ({ navigation }) => {
                         </View>
                         <View className="flex-1">
                             <View className="flex-row justify-between items-center mb-1">
-                                <Text className="text-base font-bold text-primary mr-2 flex-1" numberOfLines={1}>
+                                <Text className="text-base font-poppins-bold text-primary mr-2 flex-1" numberOfLines={1}>
                                     {item.repository.owner}/{item.repository.name}
                                 </Text>
                                 <View className="flex-row items-center">
@@ -58,13 +58,13 @@ const HomeScreen = ({ navigation }) => {
                                         <Edit2 size={14} color="#556077" />
                                     </TouchableOpacity>
                                     <View className="bg-brand/10 px-2 py-0.5 rounded-full border border-brand/20">
-                                        <Text className="text-brand text-[10px] font-bold uppercase">Active</Text>
+                                        <Text className="text-brand text-[8px] font-poppins-bold uppercase">Active</Text>
                                     </View>
                                 </View>
                             </View>
                             <View className="flex-row items-center mb-3">
                                 <Clock size={14} color="#71717A" className="mr-1.5" />
-                                <Text className="text-muted text-xs font-medium">
+                                <Text className="text-muted text-[10px] font-inter-medium">
                                     Checked {new Date(item.repository.lastChecked).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}
                                 </Text>
                             </View>
@@ -73,7 +73,7 @@ const HomeScreen = ({ navigation }) => {
                                 {item.labels.map((label, index) => (
                                     <View key={index} className="bg-brand/5 px-3 py-1.5 rounded-full mr-2 mb-2 border border-brand/10 flex-row items-center">
                                         <Tag size={12} color="#D97706" className="mr-1.5" />
-                                        <Text className="text-xs font-bold text-brand">#{label}</Text>
+                                        <Text className="text-xs font-inter-semibold text-brand">#{label}</Text>
                                     </View>
                                 ))}
                             </View>
@@ -91,8 +91,8 @@ const HomeScreen = ({ navigation }) => {
                     from={{ opacity: 0, translateX: -20 }}
                     animate={{ opacity: 1, translateX: 0 }}
                 >
-                    <Text className="text-3xl font-black text-primary">Subscriptions</Text>
-                    <Text className="text-muted text-sm mt-1 font-medium">Manage your repository subscriptions</Text>
+                    <Text className="text-3xl font-poppins-bold text-primary">Subscriptions</Text>
+                    <Text className="text-muted text-sm mt-1 font-inter-medium">Manage your repository subscriptions</Text>
                 </MotiView>
                 <TouchableOpacity
                     onPress={() => navigation.navigate('Notifications')}
@@ -117,7 +117,7 @@ const HomeScreen = ({ navigation }) => {
                             title={
                                 <View className="flex-row items-center">
                                     <PlusCircle size={22} color="#fff" className="mr-3" />
-                                    <Text className="text-white font-bold text-lg">Add Repository</Text>
+                                    <Text className="text-white font-inter-semibold text-lg">Add Repository</Text>
                                 </View>
                             }
                             onPress={() => navigation.navigate('AddRepo')}
@@ -129,16 +129,16 @@ const HomeScreen = ({ navigation }) => {
                                 <Info size={20} color="#D97706" />
                             </View>
                             <View className="flex-1">
-                                <Text className="text-base font-bold text-primary mb-0.5">Stay Updated</Text>
-                                <Text className="text-xs text-muted font-medium leading-4">Add repositories to track specific labels and get notified when new issues are created.</Text>
+                                <Text className="text-base font-poppins-bold text-primary mb-0.5">Stay Updated</Text>
+                                <Text className="text-xs text-muted font-inter-medium leading-4">Add repositories to track specific labels and get notified when new issues are created.</Text>
                             </View>
                         </Card>
                     </View>
                 }
                 ListEmptyComponent={!loading && (
                     <View className="items-center py-20">
-                        <Text className="text-primary text-lg font-bold text-center mb-2">No subscriptions yet</Text>
-                        <Text className="text-muted font-medium text-center px-10 mb-8">Add a GitHub repository to start tracking issues that matter.</Text>
+                        <Text className="text-primary text-lg font-poppins-bold text-center mb-2">No subscriptions yet</Text>
+                        <Text className="text-muted font-inter-medium text-center px-10 mb-8">Add a GitHub repository to start tracking issues that matter.</Text>
                     </View>
                 )}
             />

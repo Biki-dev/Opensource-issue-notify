@@ -15,6 +15,11 @@ import NotificationsScreen from './screens/NotificationsScreen';
 import EditLabelsScreen from './screens/EditLabelsScreen';
 import { Home, Bell, CreditCard, Settings } from 'lucide-react-native';
 import { MotiView } from 'moti';
+import { useFonts, Poppins_600SemiBold, Poppins_700Bold } from '@expo-google-fonts/poppins';
+import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold } from '@expo-google-fonts/inter';
+import { Montserrat_700Bold } from '@expo-google-fonts/montserrat';
+import { JetBrainsMono_400Regular } from '@expo-google-fonts/jetbrains-mono';
+import { PlayfairDisplay_500Medium } from '@expo-google-fonts/playfair-display';
 
 // 1. Import global.css for nativewind
 import './global.css';
@@ -169,6 +174,21 @@ const AppNav = () => {
 };
 
 export default function App() {
+    const [fontsLoaded] = useFonts({
+        Poppins_600SemiBold,
+        Poppins_700Bold,
+        Inter_400Regular,
+        Inter_500Medium,
+        Inter_600SemiBold,
+        Montserrat_700Bold,
+        JetBrainsMono_400Regular,
+        PlayfairDisplay_500Medium,
+    });
+
+    if (!fontsLoaded) {
+        return null;
+    }
+
     return (
         <AuthProvider>
             <AppNav />

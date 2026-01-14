@@ -1,14 +1,17 @@
 {
-    "expo": {
-        "name": "IssueNotify",
-        "slug": "issue-notify",
-        "version": "1.0.0",
-        "orientation": "portrait",
-        "assetBundlePatterns": [
-            "**/*"
-        ],
-        "ios": {
-            "supportsTablet": true
-        }
-    }
+  "expo": {
+    "name": "IssueNotify",
+    "slug": "issue-notify",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true
+    },
+    "plugins": [
+      "expo-font"
+    ]
+  }
 }

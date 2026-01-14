@@ -105,8 +105,8 @@ const SettingsScreen = ({ navigation }) => {
                     from={{ opacity: 0, translateX: -20 }}
                     animate={{ opacity: 1, translateX: 0 }}
                 >
-                    <Text className="text-3xl font-black text-primary">Settings</Text>
-                    <Text className="text-muted text-sm mt-1 font-medium">Manage your account and preferences</Text>
+                    <Text className="text-3xl font-poppins-bold text-primary">Settings</Text>
+                    <Text className="text-muted text-sm mt-1 font-inter-medium">Manage your account and preferences</Text>
                 </MotiView>
                 <TouchableOpacity
                     onPress={() => navigation.navigate('Notifications')}
@@ -125,7 +125,7 @@ const SettingsScreen = ({ navigation }) => {
                     <Card className="p-0 overflow-hidden">
                         <View className="flex-row items-start p-6">
                             <View className="w-20 h-20 rounded-[28px] bg-brand items-center justify-center shadow-2xl shadow-brand/20">
-                                <Text className="text-3xl font-black text-black">{initials}</Text>
+                                <Text className="text-3xl font-montserrat text-black">{initials}</Text>
                             </View>
                             <View className="flex-1 ml-6">
                                 <View className="flex-row items-center mb-2 h-10">
@@ -141,7 +141,7 @@ const SettingsScreen = ({ navigation }) => {
                                             >
                                                 <View className="flex-1 bg-muted/5 rounded-xl px-3 py-2 border border-border/50 flex-row items-center mr-2">
                                                     <TextInput
-                                                        className="text-lg font-black text-primary flex-1 p-0"
+                                                        className="text-lg font-poppins-bold text-primary flex-1 p-0"
                                                         value={editName}
                                                         onChangeText={setEditName}
                                                         autoFocus
@@ -149,7 +149,7 @@ const SettingsScreen = ({ navigation }) => {
                                                         placeholder="Your Name"
                                                         placeholderTextColor="#55607780"
                                                     />
-                                                    <Text className="text-[8px] font-bold text-muted/40 ml-1">
+                                                    <Text className="text-[8px] font-inter-semibold text-muted/40 ml-1">
                                                         {editName.length}/12
                                                     </Text>
                                                 </View>
@@ -181,11 +181,11 @@ const SettingsScreen = ({ navigation }) => {
                                                 transition={{ type: 'timing', duration: 250 }}
                                                 className="flex-row items-center"
                                             >
-                                                <Text className="text-2xl font-black text-primary mr-2" numberOfLines={1}>
+                                                <Text className="text-2xl font-poppins-bold text-primary mr-2" numberOfLines={1}>
                                                     {profile?.name || 'User'}
                                                 </Text>
                                                 <View className="bg-brand/10 px-2 py-0.5 rounded-full border border-brand/20">
-                                                    <Text className="text-brand text-[8px] font-bold uppercase">Pro Member</Text>
+                                                    <Text className="text-brand text-[8px] font-poppins-bold uppercase">Pro Member</Text>
                                                 </View>
                                             </MotiView>
                                         )}
@@ -193,7 +193,7 @@ const SettingsScreen = ({ navigation }) => {
                                 </View>
                                 <View className="flex-row items-center">
                                     <Mail size={14} color="#55607780" className="mr-2" />
-                                    <Text className="text-muted text-sm font-semibold" numberOfLines={1}>
+                                    <Text className="text-muted text-sm font-inter-semibold" numberOfLines={1}>
                                         {profile?.email || 'user@example.com'}
                                     </Text>
                                 </View>
@@ -211,16 +211,16 @@ const SettingsScreen = ({ navigation }) => {
 
                         <View className="flex-row py-4 px-6 bg-brand/5">
                             <View className="flex-1 items-center border-r border-border">
-                                <Text className="text-primary font-black text-lg">{subscriptions.length}</Text>
-                                <Text className="text-muted text-[10px] font-bold uppercase tracking-widest">Repos</Text>
+                                <Text className="text-primary font-montserrat text-lg">{subscriptions.length}</Text>
+                                <Text className="text-muted text-[10px] font-inter-bold uppercase tracking-widest">Repos</Text>
                             </View>
                             <View className="flex-1 items-center">
-                                <Text className="text-primary font-black text-lg">{unreadCount}</Text>
-                                <Text className="text-muted text-[10px] font-bold uppercase tracking-widest">Unread</Text>
+                                <Text className="text-primary font-montserrat text-lg">{unreadCount}</Text>
+                                <Text className="text-muted text-[10px] font-inter-bold uppercase tracking-widest">Unread</Text>
                             </View>
                             <View className="flex-1 items-center border-l border-border">
-                                <Text className="text-primary font-black text-lg">6</Text>
-                                <Text className="text-muted text-[10px] font-bold uppercase tracking-widest">Impact</Text>
+                                <Text className="text-primary font-montserrat text-lg">6</Text>
+                                <Text className="text-muted text-[10px] font-inter-bold uppercase tracking-widest">Impact</Text>
                             </View>
                         </View>
                     </Card>
@@ -235,16 +235,16 @@ const SettingsScreen = ({ navigation }) => {
                                     <Bell size={20} color="#D97706" />
                                 </View>
                                 <View>
-                                    <Text className="text-base font-bold text-primary">Notifications</Text>
-                                    <Text className="text-xs text-muted font-medium">Manage notification settings</Text>
+                                    <Text className="text-base font-poppins-bold text-primary">Notifications</Text>
+                                    <Text className="text-xs text-muted font-inter-medium">Manage notification settings</Text>
                                 </View>
                             </View>
                         </View>
                         <View className="p-6 pb-2">
                             <View className="flex-row items-center justify-between mb-4">
                                 <View>
-                                    <Text className="text-sm font-bold text-primary">Push Notifications</Text>
-                                    <Text className="text-xs text-muted font-medium">Get notified about new issues</Text>
+                                    <Text className="text-sm font-inter-bold text-primary">Push Notifications</Text>
+                                    <Text className="text-xs text-muted font-inter-medium">Get notified about new issues</Text>
                                 </View>
                                 <Switch
                                     value={!!profile?.notificationsEnabled}
@@ -264,14 +264,14 @@ const SettingsScreen = ({ navigation }) => {
                             <View className="w-10 h-10 rounded-full bg-brand/10 items-center justify-center mr-4">
                                 <Shield size={20} color="#D97706" />
                             </View>
-                            <Text className="text-base font-bold text-primary">Repository Privacy & Controls</Text>
+                            <Text className="text-base font-poppins-bold text-primary">Repository Privacy & Controls</Text>
                         </View>
                         <View className="p-6">
                             {subscriptions.map((s, index) => (
                                 <View key={s._id} className="mb-6 last:mb-0">
                                     <View className="flex-row items-center justify-between mb-2">
                                         <View className="flex-1 mr-4">
-                                            <Text className="text-sm font-bold text-brand" numberOfLines={1}>
+                                            <Text className="text-sm font-inter-bold text-brand" numberOfLines={1}>
                                                 {s.repository?.owner}/{s.repository?.name}
                                             </Text>
                                             <Text className="text-[10px] text-muted uppercase mt-0.5">
@@ -289,7 +289,7 @@ const SettingsScreen = ({ navigation }) => {
                                         onPress={() => deleteRepo(s)}
                                         className="bg-danger/5 border border-danger/20 rounded-xl py-3 items-center mt-2"
                                     >
-                                        <Text className="text-danger text-xs font-bold">Delete Subscription</Text>
+                                        <Text className="text-danger text-xs font-inter-bold">Delete Subscription</Text>
                                     </TouchableOpacity>
                                 </View>
                             ))}
@@ -305,8 +305,8 @@ const SettingsScreen = ({ navigation }) => {
                                 <HelpCircle size={20} color="#D97706" />
                             </View>
                             <View>
-                                <Text className="text-base font-bold text-primary">Help & Support</Text>
-                                <Text className="text-xs text-muted font-medium">Get help with the app</Text>
+                                <Text className="text-base font-poppins-bold text-primary">Help & Support</Text>
+                                <Text className="text-xs text-muted font-inter-medium">Get help with the app</Text>
                             </View>
                         </View>
 
@@ -320,11 +320,11 @@ const SettingsScreen = ({ navigation }) => {
                         className="mt-4 mb-8 bg-danger/5 border border-danger/20 rounded-2xl h-16 flex-row items-center justify-center"
                     >
                         <LogOut size={20} color="#EF4444" className="mr-3" />
-                        <Text className="text-danger text-lg font-bold">Log Out</Text>
+                        <Text className="text-danger text-lg font-inter-bold">Log Out</Text>
                     </TouchableOpacity>
                 </MotiView>
 
-                <Text className="text-center text-muted text-[10px] uppercase font-bold tracking-widest mt-4">Version 1.0.0</Text>
+                <Text className="text-center text-muted text-[10px] uppercase font-inter-bold tracking-widest mt-4">Version 1.0.0</Text>
             </ScrollView>
         </SafeAreaView>
     );

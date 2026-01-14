@@ -55,7 +55,7 @@ const DashboardScreen = ({ navigation }) => {
                 <View className="flex-row justify-between items-start mb-2">
                     <View className="flex-row items-center flex-1">
                         <GitBranch size={16} color="#A1A1AA" className="mr-2" />
-                        <Text className="text-sm text-muted" numberOfLines={1}>
+                        <Text className="text-sm text-muted font-inter" numberOfLines={1}>
                             {item.repository?.owner}/{item.repository?.name}
                         </Text>
                     </View>
@@ -64,7 +64,7 @@ const DashboardScreen = ({ navigation }) => {
                     </TouchableOpacity>
                 </View>
 
-                <Text className="text-base font-bold text-primary mb-3" numberOfLines={2}>
+                <Text className="text-base font-inter-semibold text-primary mb-3" numberOfLines={2}>
                     {item.issueTitle}
                 </Text>
 
@@ -92,8 +92,8 @@ const DashboardScreen = ({ navigation }) => {
                     animate={{ opacity: 1, translateX: 0 }}
                     transition={{ type: 'timing', duration: 500 }}
                 >
-                    <Text className="text-3xl font-black text-primary">Issue Notifier</Text>
-                    <Text className="text-muted text-sm mt-1 font-medium">Stay updated with your repositories</Text>
+                    <Text className="text-3xl font-poppins-bold text-primary">Issue Notifier</Text>
+                    <Text className="text-muted text-sm mt-1 font-inter-medium">Stay updated with your repositories</Text>
                 </MotiView>
                 <MotiView
                     from={{ opacity: 0, scale: 0.5 }}
@@ -132,11 +132,11 @@ const DashboardScreen = ({ navigation }) => {
                                         <GitBranch size={24} color="#D97706" />
                                     </View>
                                     <View className="flex-1">
-                                        <Text className="text-lg font-bold text-primary">Active Subscriptions</Text>
-                                        <Text className="text-xs text-muted">Monitoring repositories</Text>
+                                        <Text className="text-lg font-poppins-bold text-primary">Active Subscriptions</Text>
+                                        <Text className="text-xs text-muted font-inter">Monitoring repositories</Text>
                                     </View>
                                 </View>
-                                <Text className="text-4xl font-black text-primary ml-4">{subs.length}</Text>
+                                <Text className="text-4xl font-montserrat text-primary ml-4">{subs.length}</Text>
                             </View>
                         </Card>
 
@@ -144,7 +144,7 @@ const DashboardScreen = ({ navigation }) => {
                             variant="secondary"
                             title={
                                 <View className="flex-row items-center">
-                                    <Text className="text-primary font-semibold mr-2">View All</Text>
+                                    <Text className="text-primary font-inter-semibold mr-2">View All</Text>
                                     <ExternalLink size={14} color="#0F172A" />
                                 </View>
                             }
@@ -153,8 +153,8 @@ const DashboardScreen = ({ navigation }) => {
                         />
 
                         <View className="flex-row justify-between items-center mt-4 mb-6">
-                            <Text className="text-xl font-bold text-primary">Recent Issues</Text>
-                            <Text className="text-xs text-muted">{notifications.length} total</Text>
+                            <Text className="text-xl font-poppins-bold text-primary">Recent Issues</Text>
+                            <Text className="text-xs text-muted font-inter-medium">{notifications.length} total</Text>
                         </View>
                     </MotiView>
                 }
