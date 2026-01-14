@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { View, Text, FlatList, ScrollView, RefreshControl, TouchableOpacity } from 'react-native';
+import { View, Text, FlatList, ScrollView, RefreshControl, TouchableOpacity, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
@@ -136,10 +136,21 @@ const HomeScreen = ({ navigation }) => {
                     </View>
                 }
                 ListEmptyComponent={!loading && (
-                    <View className="items-center py-20">
-                        <Text className="text-primary text-lg font-poppins-bold text-center mb-2">No subscriptions yet</Text>
-                        <Text className="text-muted font-inter-medium text-center px-10 mb-8">Add a GitHub repository to start tracking issues that matter.</Text>
-                    </View>
+                    <MotiView
+                        from={{ opacity: 0, scale: 0.9, translateY: 30 }}
+                        animate={{ opacity: 1, scale: 1, translateY: 0 }}
+                        transition={{ type: 'spring', damping: 0, stiffness: 150 }}
+                        className="items-center py-2"
+                    >
+                        <Image
+                            source={require('../maskot/subadd.png')}
+                            style={{ width: 320, height: 320, resizeMode: 'contain', marginBottom: 10 }}
+                        />
+                        <Text className="text-primary text-3xl font-poppins-bold text-center mb-2">No subscriptions yet</Text>
+                        <Text className="text-muted font-inter-medium text-center px-12 leading-6">
+                            Add a GitHub repository to start tracking issues that matter.
+                        </Text>
+                    </MotiView>
                 )}
             />
         </SafeAreaView>
