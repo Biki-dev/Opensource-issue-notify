@@ -1,6 +1,7 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const auth = require('../middleware/auth');
 const router = express.Router();
 
 const generateToken = (id) => {
@@ -36,6 +37,8 @@ router.post('/login', async (req, res) => {
                 _id: user._id,
                 name: user.name,
                 email: user.email,
+                notificationsEnabled: user.notificationsEnabled,
+                plan: user.plan,
                 token: generateToken(user._id),
             });
         } else {
@@ -43,6 +46,42 @@ router.post('/login', async (req, res) => {
         }
     } catch (error) {
         console.error('Login Error:', error);
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+});
+
+// Get current user's profile & preferences
+router.get('/me', auth, async (req, res) => {
+    try {
+        const user = await User.findById(req.user._id).select('-password');
+        if (!user) return res.status(404).json({ message: 'User not found' });
+        res.json(user);
+    } catch (error) {
+        console.error('Get profile error:', error);
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+});
+
+// Update current user's profile & preferences
+router.patch('/me', auth, async (req, res) => {
+    try {
+        const allowed = ['name', 'email', 'notificationsEnabled', 'plan'];
+        const updates = {};
+        for (const key of allowed) {
+            if (Object.prototype.hasOwnProperty.call(req.body, key)) {
+                updates[key] = req.body[key];
+            }
+        }
+
+        const user = await User.findByIdAndUpdate(req.user._id, updates, {
+            new: true,
+            runValidators: true,
+            select: '-password',
+        });
+
+        res.json(user);
+    } catch (error) {
+        console.error('Update profile error:', error);
         res.status(500).json({ message: 'Server error', error: error.message });
     }
 });

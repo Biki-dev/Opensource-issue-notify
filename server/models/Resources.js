@@ -16,6 +16,8 @@ const SubscriptionSchema = new mongoose.Schema({
     repository: { type: mongoose.Schema.Types.ObjectId, ref: 'Repository', required: true },
     labels: [{ type: String }], // e.g. ['bug', 'enhancement']
     active: { type: Boolean, default: true },
+    // Controls whether this subscription appears in UI lists like Repository Privacy
+    visible: { type: Boolean, default: true },
     createdAt: { type: Date, default: Date.now }
 });
 

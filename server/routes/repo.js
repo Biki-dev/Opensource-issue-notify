@@ -93,4 +93,45 @@ router.get('/', auth, async (req, res) => {
     }
 });
 
+// UPDATE SUBSCRIPTION (labels / active / visibility)
+router.patch('/:id', auth, async (req, res) => {
+    try {
+        const allowed = ['labels', 'active', 'visible'];
+        const updates = {};
+        for (const key of allowed) {
+            if (Object.prototype.hasOwnProperty.call(req.body, key)) {
+                updates[key] = req.body[key];
+            }
+        }
+
+        if (updates.labels && !Array.isArray(updates.labels)) {
+            return res.status(400).json({ message: 'labels must be an array of strings' });
+        }
+
+        const sub = await Subscription.findOneAndUpdate(
+            { _id: req.params.id, user: req.user.id },
+            updates,
+            { new: true }
+        ).populate('repository');
+
+        if (!sub) return res.status(404).json({ message: 'Subscription not found' });
+        res.json(sub);
+    } catch (error) {
+        console.error('Update subscription error:', error);
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
+
+// DELETE SUBSCRIPTION
+router.delete('/:id', auth, async (req, res) => {
+    try {
+        const deleted = await Subscription.findOneAndDelete({ _id: req.params.id, user: req.user.id });
+        if (!deleted) return res.status(404).json({ message: 'Subscription not found' });
+        res.json({ message: 'Subscription deleted' });
+    } catch (error) {
+        console.error('Delete subscription error:', error);
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
+
 module.exports = router;

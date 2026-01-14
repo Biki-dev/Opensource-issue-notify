@@ -10,7 +10,7 @@ export const AuthProvider = ({ children }) => {
 
     // Use your computer's local IP for Expo Go on physical devices
     // localhost only works on web, use your local IP for mobile devices
-    const BASE_URL = 'http://10.36.220.78:5000/api';
+    const BASE_URL = 'http://10.119.238.78:5000/api';
     // const BASE_URL = 'http://10.0.2.2:5000/api'; // Android Emulator alternative
 
     const login = async (email, password) => {

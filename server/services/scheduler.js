@@ -19,7 +19,7 @@ const checkIssues = async () => {
             // Let's use `since` timestamp if available, else just check recent.
 
             const sinceQuery = repo.lastChecked ? `&since=${repo.lastChecked.toISOString()}` : '';
-            const url = `https://api.github.com/repos/${repo.owner}/${repo.name}/issues?state=all${sinceQuery}`;
+            const url = `https://api.github.com/repos/${repo.owner}/${repo.name}/issues?state=all&per_page=50${sinceQuery}`;
 
             try {
                 const response = await axios.get(url, { headers });
