@@ -81,7 +81,18 @@ const SettingsScreen = () => {
     const handleLogout = () => {
         Alert.alert('Log Out', 'Are you sure you want to log out?', [
             { text: 'Cancel', style: 'cancel' },
-            { text: 'Log Out', style: 'destructive', onPress: logout },
+            {
+                text: 'Log Out',
+                style: 'destructive',
+                onPress: async () => {
+                    // Clear auth token and AsyncStorage; AppNav will then show Login screen
+                    try {
+                        await logout();
+                    } catch (e) {
+                        console.log('Logout error', e);
+                    }
+                },
+            },
         ]);
     };
 
