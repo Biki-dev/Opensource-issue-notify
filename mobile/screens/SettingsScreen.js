@@ -209,7 +209,7 @@ const SettingsScreen = ({ navigation }) => {
                             )}
                         </View>
 
-                        <View className="flex-row py-4 px-6 bg-brand/5">
+                        <View className="flex-row py-4 px-6 bg-brand/5 rounded-b-[32px]">
                             <View className="flex-1 items-center border-r border-border">
                                 <Text className="text-primary font-montserrat text-lg">{subscriptions.length}</Text>
                                 <Text className="text-muted text-[10px] font-inter-bold uppercase tracking-widest">Repos</Text>
@@ -249,8 +249,9 @@ const SettingsScreen = ({ navigation }) => {
                                 <Switch
                                     value={!!profile?.notificationsEnabled}
                                     onValueChange={toggleNotifications}
-                                    trackColor={{ false: '#E6E8EB', true: '#D97706' }}
-                                    thumbColor={profile?.notificationsEnabled ? '#fff' : '#fff'}
+                                    trackColor={{ false: '#E9E3DD', true: '#D97706' }}
+                                    thumbColor="#FFFFFF"
+                                    ios_backgroundColor="#E9E3DD"
                                 />
                             </View>
                         </View>
@@ -281,8 +282,9 @@ const SettingsScreen = ({ navigation }) => {
                                         <Switch
                                             value={s.active !== false}
                                             onValueChange={() => toggleRepoActive(s)}
-                                            trackColor={{ false: '#E6E8EB', true: '#D97706' }}
-                                            thumbColor={s.active !== false ? '#fff' : '#fff'}
+                                            trackColor={{ false: '#E9E3DD', true: '#D97706' }}
+                                            thumbColor="#FFFFFF"
+                                            ios_backgroundColor="#E9E3DD"
                                         />
                                     </View>
                                     <TouchableOpacity

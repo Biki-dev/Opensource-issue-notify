@@ -12,7 +12,7 @@ module.exports = {
                 border: "#E9E3DD",
                 primary: "#0B1220",
                 muted: "#5B6478",
-                success: "#16A34A",
+                success: "#14B8A6",
                 danger: "#EF4444",
             },
             fontFamily: {
