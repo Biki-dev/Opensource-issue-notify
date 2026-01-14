@@ -67,7 +67,7 @@ const CustomTabBar = ({ state, descriptors, navigation }) => {
                 }}
                 style={{
                     position: 'absolute',
-                    top: 8,
+                    top: 4,
                     backgroundColor: '#D97706',
                 }}
             />

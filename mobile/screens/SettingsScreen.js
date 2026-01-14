@@ -221,7 +221,7 @@ const SettingsScreen = ({ navigation }) => {
                                 <Text className="text-xs text-muted font-medium">Get help with the app</Text>
                             </View>
                         </View>
-                        <ChevronRight size={20} color="#556077" />
+
                     </Card>
                 </MotiView>
 
