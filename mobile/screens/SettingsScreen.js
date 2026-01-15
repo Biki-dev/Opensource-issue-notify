@@ -177,15 +177,7 @@ const SettingsScreen = ({ navigation }) => {
 
                 <SectionHeader title="Privacy" icon={Shield} />
                 <Card className="px-6 py-2 mb-8">
-                    <TouchableOpacity className="flex-row items-center justify-between py-4 border-b border-border/50">
-                        <View className="flex-row items-center">
-                            <View className="w-10 h-10 rounded-full bg-brand/10 items-center justify-center mr-4">
-                                <Lock size={20} color="#6366F1" />
-                            </View>
-                            <Text className="text-base font-inter-medium text-primary">Change Password</Text>
-                        </View>
-                        <ChevronRight size={20} color="#94A3B8" />
-                    </TouchableOpacity>
+
                     <TouchableOpacity className="flex-row items-center justify-between py-4">
                         <View className="flex-row items-center">
                             <View className="w-10 h-10 rounded-full bg-brand/10 items-center justify-center mr-4">
