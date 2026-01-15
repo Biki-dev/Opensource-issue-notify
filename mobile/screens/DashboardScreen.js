@@ -7,7 +7,7 @@ import { Card, Button, LabelChip, AnimatedMascot, Badge, shadowStyles, SectionHe
 import { GitBranch, ExternalLink, Bell, Trash2, Hash, Layers, ChevronRight, Github } from 'lucide-react-native';
 import { MotiView } from 'moti';
 import { StatusBar } from 'expo-status-bar';
-
+import { LinearGradient } from 'expo-linear-gradient';
 const DashboardScreen = ({ navigation }) => {
     const { userToken, BASE_URL, unreadCount, updateUnreadCount } = useContext(AuthContext);
     const [subs, setSubs] = useState([]);
@@ -169,28 +169,44 @@ const DashboardScreen = ({ navigation }) => {
                             animate={{ opacity: 1, scale: 1 }}
                             transition={{ type: 'spring', damping: 15, delay: 200 }}
                         >
-                            <Card className="p-0 overflow-hidden mb-8" containerStyle={{ backgroundColor: '#6366F1' }}>
-                                <View className="p-6 flex-row justify-between items-center">
-                                    <View className="flex-1 items-center border-r border-white/20">
-                                        <Text className="text-3xl font-poppins-bold text-white">{subs.length}</Text>
-                                        <Text className="text-[10px] uppercase font-poppins-bold text-white/70">Repos</Text>
-                                    </View>
-                                    <View className="flex-1 items-center border-r border-white/20">
-                                        <Text className="text-3xl font-poppins-bold text-white">{notifications.length}</Text>
-                                        <Text className="text-[10px] uppercase font-poppins-bold text-white/70">Issues</Text>
-                                    </View>
-                                    <View className="flex-1 items-center">
-                                        <Text className="text-3xl font-poppins-bold text-white">{totalLabels}</Text>
-                                        <Text className="text-[10px] uppercase font-poppins-bold text-white/70">Labels</Text>
-                                    </View>
-                                </View>
-                                <TouchableOpacity
-                                    onPress={() => navigation.navigate('SubscriptionsTab')}
-                                    className="bg-white/10 py-3 flex-row items-center justify-center"
+
+                            <Card className="p-0 overflow-hidden mb-8" containerStyle={{
+                                backgroundColor: "transparent",
+                                borderWidth: 0,
+                                shadowColor: "transparent",   // iOS shadow
+                                shadowOpacity: 0,
+                                shadowRadius: 0,
+                                shadowOffset: { width: 0, height: 0 },
+                                elevation: 0,                 // Android shadow
+                            }}>
+                                <LinearGradient
+                                    colors={['#6366F1', '#8B5CF6']}
+                                    start={{ x: 0, y: 0 }}
+                                    end={{ x: 1, y: 1 }}
+                                    style={{ borderRadius: 24 }}
                                 >
-                                    <Text className="text-white font-inter-semibold text-xs">Manage Subscriptions</Text>
-                                    <ChevronRight size={14} color="white" className="ml-1" />
-                                </TouchableOpacity>
+                                    <View className="p-6 flex-row justify-between items-center">
+                                        <View className="flex-1 items-center border-r border-white/20">
+                                            <Text className="text-3xl font-poppins-bold text-white">{subs.length}</Text>
+                                            <Text className="text-[10px] uppercase font-poppins-bold text-white/70">Repos</Text>
+                                        </View>
+                                        <View className="flex-1 items-center border-r border-white/20">
+                                            <Text className="text-3xl font-poppins-bold text-white">{notifications.length}</Text>
+                                            <Text className="text-[10px] uppercase font-poppins-bold text-white/70">Issues</Text>
+                                        </View>
+                                        <View className="flex-1 items-center">
+                                            <Text className="text-3xl font-poppins-bold text-white">{totalLabels}</Text>
+                                            <Text className="text-[10px] uppercase font-poppins-bold text-white/70">Labels</Text>
+                                        </View>
+                                    </View>
+                                    <TouchableOpacity
+                                        onPress={() => navigation.navigate('SubscriptionsTab')}
+                                        className="bg-white/10 py-3 flex-row items-center justify-center"
+                                    >
+                                        <Text className="text-white font-inter-semibold text-xs">Manage Subscriptions</Text>
+                                        <ChevronRight size={14} color="white" className="ml-1" />
+                                    </TouchableOpacity>
+                                </LinearGradient>
                             </Card>
                         </MotiView>
 

@@ -7,7 +7,7 @@ import { Card, Button, SwitchRow, SectionHeader, shadowStyles } from '../compone
 import { Mail, ChevronRight, Bell, Shield, HelpCircle, LogOut, Edit3, Check, X, User, Lock, Globe, Smartphone, Clock } from 'lucide-react-native';
 import { MotiView, AnimatePresence } from 'moti';
 import { StatusBar } from 'expo-status-bar';
-
+import { LinearGradient } from 'expo-linear-gradient';
 const SettingsScreen = ({ navigation }) => {
     const { userToken, BASE_URL, logout, unreadCount, updateUnreadCount } = useContext(AuthContext);
     const [profile, setProfile] = useState(null);
@@ -99,9 +99,15 @@ const SettingsScreen = ({ navigation }) => {
                     <Card className="p-0 overflow-hidden mb-8 shadow-sm">
                         <View className="p-8 items-center">
                             <View className="relative">
-                                <View className="w-24 h-24 rounded-[32px] bg-brand items-center justify-center shadow-xl" style={shadowStyles.medium}>
+                                <LinearGradient
+                                    colors={['#6366F1', '#8B5CF6']}
+                                    start={{ x: 0, y: 0 }}
+                                    end={{ x: 1, y: 1 }}
+                                    className="w-24 h-24 rounded-[32px] items-center justify-center shadow-xl"
+                                    style={shadowStyles.medium}
+                                >
                                     <Text className="text-4xl font-poppins-bold text-white">{initials}</Text>
-                                </View>
+                                </LinearGradient>
                                 <TouchableOpacity
                                     onPress={() => setIsEditing(true)}
                                     className="absolute -bottom-2 -right-2 w-10 h-10 bg-white border border-border rounded-xl items-center justify-center shadow-sm"
