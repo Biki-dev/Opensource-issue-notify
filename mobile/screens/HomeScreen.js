@@ -348,7 +348,7 @@ const HomeScreen = ({ navigation }) => {
                         <Text className="text-primary text-3xl font-poppins-bold text-center mt-4">
                             {searchQuery ? "No matches found" : "Ready to track?"}
                         </Text>
-                        <Text className="text-muted text-base font-inter-medium text-center px-12 mt-2 leading-6">
+                        <Text className="text-muted text-base font-inter-medium text-center px-12 mb-2 mt-2 leading-6">
                             {searchQuery ? `We couldn't find any repositories matching "${searchQuery}"` : "Add a GitHub repository to start tracking issues that matter to you."}
                         </Text>
                         {!searchQuery && (

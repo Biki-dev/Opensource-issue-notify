@@ -258,7 +258,7 @@ const NotificationsScreen = ({ navigation }) => {
                                 style={{ width: 300, height: 300 }}
                             />
                             <Text className="text-primary text-3xl font-poppins-bold text-center mt-6">All Caught Up!</Text>
-                            <Text className="text-muted text-base font-inter-medium text-center px-10 mt-2 leading-6">
+                            <Text className="text-muted text-base font-inter-medium text-center px-10 mt-2 mb-2 leading-6">
                                 No new notifications. We'll alert you when issues matching your filters appear.
                             </Text>
                             <Button
