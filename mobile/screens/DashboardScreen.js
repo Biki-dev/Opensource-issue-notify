@@ -145,11 +145,11 @@ const DashboardScreen = ({ navigation }) => {
 
                 <TouchableOpacity
                     onPress={() => navigation.navigate('Notifications')}
-                    className="w-14 h-14 rounded-2xl bg-white border border-border items-center justify-center"
+                    className="w-12 h-12 rounded-2xl bg-white border border-border items-center justify-center shadow-sm"
                     style={shadowStyles.light}
                 >
-                    <Bell size={26} color="#0F172A" />
-                    {unreadCount > 0 && <Badge count={unreadCount} className="-top-1 -right-1" />}
+                    <Bell size={22} color="#0F172A" />
+                    {unreadCount > 0 && <View className="absolute top-2.5 right-2.5 w-3 h-3 bg-danger rounded-full border-2 border-white" />}
                 </TouchableOpacity>
             </View>
 
