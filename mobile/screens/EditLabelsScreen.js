@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { View, Text, Alert, ScrollView, TouchableOpacity, TextInput } from 'react-native';
+import { View, Text, Alert, ScrollView, Image, TouchableOpacity, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
@@ -102,8 +102,16 @@ const EditLabelsScreen = ({ route, navigation }) => {
                 >
                     <Card className="p-6 mb-8 border border-brand/20 bg-slate-50">
                         <View className="flex-row items-center mb-4">
-                            <View className="w-14 h-14 rounded-2xl bg-brand items-center justify-center mr-4">
-                                <Github size={28} color="white" />
+                            <View className="w-14 h-14 rounded-2xl bg-brand/10 items-center justify-center mr-4 overflow-hidden">
+                                {sub.repository?.ownerAvatarUrl ? (
+                                    <Image
+                                        source={{ uri: sub.repository.ownerAvatarUrl }}
+                                        className="w-full h-full"
+                                        resizeMode="cover"
+                                    />
+                                ) : (
+                                    <GitFork size={28} color="#6366F1" />
+                                )}
                             </View>
                             <View className="flex-1">
                                 <Text className="text-xl font-poppins-bold text-primary">{sub.repository?.owner}/{sub.repository?.name}</Text>
