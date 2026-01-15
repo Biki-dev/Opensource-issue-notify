@@ -24,7 +24,7 @@ router.get('/', auth, async (req, res) => {
     try {
         const notifications = await Notification.find({ user: req.user.id })
             .sort({ createdAt: -1 })
-            .populate('repository', 'name owner');
+            .populate('repository', 'name owner ownerAvatarUrl');
         res.json(notifications);
     } catch (error) {
         res.status(500).json({ message: 'Server Error' });

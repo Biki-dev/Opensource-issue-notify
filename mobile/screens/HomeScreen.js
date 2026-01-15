@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState, useCallback } from 'react';
-import { View, Text, FlatList, RefreshControl, TouchableOpacity, TextInput, Alert, Platform } from 'react-native';
+import { View, Text, FlatList, RefreshControl, TouchableOpacity, TextInput, Alert, Platform, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
@@ -66,8 +66,16 @@ const HomeScreen = ({ navigation }) => {
             <Card className="mb-6 p-6">
                 <View className="flex-row items-start justify-between mb-4">
                     <View className="flex-row flex-1">
-                        <View className="w-14 h-14 rounded-2xl bg-brand/10 items-center justify-center mr-4">
-                            <GitFork size={28} color="#6366F1" />
+                        <View className="w-14 h-14 rounded-2xl bg-brand/10 items-center justify-center mr-4 overflow-hidden">
+                            {item.repository?.ownerAvatarUrl ? (
+                                <Image
+                                    source={{ uri: item.repository.ownerAvatarUrl }}
+                                    className="w-full h-full"
+                                    resizeMode="cover"
+                                />
+                            ) : (
+                                <GitFork size={28} color="#6366F1" />
+                            )}
                         </View>
                         <View className="flex-1">
                             <Text className="text-xs text-muted font-mono mb-0.5">{item.repository.owner}</Text>

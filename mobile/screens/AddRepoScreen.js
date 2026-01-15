@@ -1,5 +1,5 @@
 import React, { useContext, useState } from 'react';
-import { View, Text, Alert, ScrollView, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, Alert, ScrollView, TouchableOpacity, KeyboardAvoidingView, Platform, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
@@ -141,8 +141,16 @@ const AddRepoScreen = ({ navigation }) => {
                                     <>
                                         <Card className="p-6 mb-8 border border-brand/20 bg-slate-50">
                                             <View className="flex-row items-center mb-4">
-                                                <View className="w-14 h-14 rounded-2xl bg-brand items-center justify-center mr-4">
-                                                    <Github size={28} color="white" />
+                                                <View className="w-14 h-14 rounded-2xl bg-brand items-center justify-center mr-4 overflow-hidden">
+                                                    {repoData.avatar ? (
+                                                        <Image
+                                                            source={{ uri: repoData.avatar }}
+                                                            className="w-full h-full"
+                                                            resizeMode="cover"
+                                                        />
+                                                    ) : (
+                                                        <Github size={28} color="white" />
+                                                    )}
                                                 </View>
                                                 <View className="flex-1">
                                                     <Text className="text-xl font-poppins-bold text-primary">{repoData.owner}/{repoData.name}</Text>

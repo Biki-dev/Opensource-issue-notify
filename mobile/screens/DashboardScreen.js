@@ -65,8 +65,16 @@ const DashboardScreen = ({ navigation }) => {
             <Card className="mb-6 p-6">
                 <View className="flex-row justify-between items-start mb-4">
                     <View className="flex-row items-center flex-1">
-                        <View className="w-10 h-10 rounded-full bg-slate-100 items-center justify-center mr-3">
-                            <Github size={20} color="#6366F1" />
+                        <View className="w-10 h-10 rounded-full bg-slate-100 items-center justify-center mr-3 overflow-hidden">
+                            {item.repository?.ownerAvatarUrl ? (
+                                <Image
+                                    source={{ uri: item.repository.ownerAvatarUrl }}
+                                    className="w-full h-full"
+                                    resizeMode="cover"
+                                />
+                            ) : (
+                                <Github size={20} color="#6366F1" />
+                            )}
                         </View>
                         <View className="flex-1">
                             <Text className="text-xs text-muted font-mono" numberOfLines={1}>

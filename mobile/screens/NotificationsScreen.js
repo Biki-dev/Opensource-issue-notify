@@ -1,10 +1,10 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { View, Text, FlatList, Linking, TouchableOpacity, RefreshControl, Alert, Platform } from 'react-native';
+import { View, Text, FlatList, Linking, TouchableOpacity, RefreshControl, Alert, Platform, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
 import { Card, AnimatedMascot, LabelChip, Button, shadowStyles } from '../components/UI';
-import { ArrowLeft, ExternalLink, GitBranch, Bell, CheckCheck, Trash2, Calendar, Circle } from 'lucide-react-native';
+import { ArrowLeft, ExternalLink, GitBranch, Bell, CheckCheck, Trash2, Calendar, Circle, Github, Clock, Tag } from 'lucide-react-native';
 import { MotiView, AnimatePresence } from 'moti';
 import { StatusBar } from 'expo-status-bar';
 
@@ -65,7 +65,6 @@ const NotificationsScreen = ({ navigation }) => {
 
     const handleDelete = async (id) => {
         try {
-            // Logic Change: Mark as read to remove from Inbox while keeping on Dashboard
             await axios.patch(`${BASE_URL}/notifications/${id}`, { isRead: true }, {
                 headers: { Authorization: `Bearer ${userToken}` }
             });
@@ -81,117 +80,161 @@ const NotificationsScreen = ({ navigation }) => {
         fetchNotifs();
     };
 
-    const renderItem = ({ item, index }) => (
-        <MotiView
-            from={{ opacity: 0, translateY: 20, scale: 0.95 }}
-            animate={{ opacity: 1, translateY: 0, scale: 1 }}
-            transition={{ type: 'spring', damping: 20, delay: index * 50 }}
-        >
-            <View style={shadowStyles.light} className="mb-6">
-                <Card className="p-0 overflow-hidden mb-0">
-                    <TouchableOpacity
-                        onPress={() => handleOpenNotification(item)}
-                        activeOpacity={0.7}
-                        className="p-6"
-                    >
-                        <View className="flex-row items-center justify-between mb-4">
-                            <View className="flex-row items-center flex-1">
-                                <View className="bg-brand/10 p-2 rounded-lg mr-3">
-                                    <GitBranch size={16} color="#6366F1" />
+    const renderItem = ({ item, index }) => {
+        const timeAgo = (date) => {
+            const seconds = Math.floor((new Date() - new Date(date)) / 1000);
+            if (seconds < 60) return 'now';
+            if (seconds < 3600) return `${Math.floor(seconds / 60)}m`;
+            if (seconds < 86400) return `${Math.floor(seconds / 3600)}h`;
+            return `${Math.floor(seconds / 86400)}d`;
+        };
+
+        return (
+            <MotiView
+                from={{ opacity: 0, translateX: -20 }}
+                animate={{ opacity: 1, translateX: 0 }}
+                transition={{ type: 'timing', duration: 200, delay: index * 40 }}
+            >
+                <TouchableOpacity
+                    onPress={() => handleOpenNotification(item)}
+                    activeOpacity={0.7}
+                    className="mb-3"
+                >
+                    <View className="bg-white rounded-2xl border-l-4 border-brand overflow-hidden" style={shadowStyles.light}>
+                        <View className="p-4 flex-row items-start">
+                            {/* Left: Icon + Unread */}
+                            <View className="mr-3">
+                                <View className="relative">
+                                    <View className="w-10 h-10 rounded-xl bg-brand/10 items-center justify-center overflow-hidden">
+                                        {item.repository?.ownerAvatarUrl ? (
+                                            <Image
+                                                source={{ uri: item.repository.ownerAvatarUrl }}
+                                                className="w-full h-full"
+                                                resizeMode="cover"
+                                            />
+                                        ) : (
+                                            <Github size={18} color="#6366F1" />
+                                        )}
+                                    </View>
+                                    <View className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 rounded-full bg-brand border-2 border-white z-20" />
                                 </View>
-                                <Text className="text-xs text-muted font-mono" numberOfLines={1}>
-                                    {item.repository?.owner}/{item.repository?.name}
+                            </View>
+
+                            {/* Middle: Content */}
+                            <View className="flex-1">
+                                <View className="flex-row items-center mb-1">
+                                    <Text className="text-xs font-mono text-muted mr-1" numberOfLines={1}>
+                                        {item.repository?.owner}/
+                                    </Text>
+                                    <Text className="text-xs font-mono text-primary font-semibold" numberOfLines={1}>
+                                        {item.repository?.name}
+                                    </Text>
+                                    <View className="bg-slate-100 rounded px-1.5 py-0.5 ml-2">
+                                        <Text className="text-muted text-[10px] font-inter-semibold">{timeAgo(item.createdAt)}</Text>
+                                    </View>
+                                </View>
+
+                                <Text className="text-sm font-inter-semibold text-primary mb-2 leading-5" numberOfLines={2}>
+                                    {item.issueTitle}
                                 </Text>
+
+                                <View className="flex-row flex-wrap">
+                                    {item.matchedLabels.slice(0, 2).map((label, i) => (
+                                        <View key={i} className="bg-brand/10 rounded px-2 py-0.5 mr-1.5 mb-1">
+                                            <Text className="text-brand text-[10px] font-inter-bold">{label}</Text>
+                                        </View>
+                                    ))}
+                                    {item.matchedLabels.length > 2 && (
+                                        <View className="bg-slate-100 rounded px-2 py-0.5 mb-1">
+                                            <Text className="text-muted text-[10px] font-inter-bold">+{item.matchedLabels.length - 2}</Text>
+                                        </View>
+                                    )}
+                                </View>
                             </View>
-                            <View className="flex-row items-center">
-                                <MotiView
-                                    from={{ scale: 0 }}
-                                    animate={{ scale: 1 }}
-                                    className="bg-brand p-1.5 rounded-full mr-12"
-                                />
-                            </View>
+
+                            {/* Right: Actions */}
+                            <TouchableOpacity
+                                onPress={(e) => {
+                                    e.stopPropagation();
+                                    if (Platform.OS === 'web') {
+                                        if (window.confirm('Dismiss notification?')) {
+                                            handleDelete(item._id);
+                                        }
+                                    } else {
+                                        Alert.alert(
+                                            'Dismiss',
+                                            'Remove from Inbox?',
+                                            [
+                                                { text: 'Cancel', style: 'cancel' },
+                                                { text: 'Yes', onPress: () => handleDelete(item._id) }
+                                            ]
+                                        );
+                                    }
+                                }}
+                                className="w-7 h-7 rounded-lg bg-slate-50 items-center justify-center ml-2"
+                            >
+                                <Trash2 size={14} color="#94A3B8" />
+                            </TouchableOpacity>
                         </View>
-
-                        <Text className="text-xl font-poppins-bold text-primary mb-4 leading-7 pr-10">
-                            {item.issueTitle}
-                        </Text>
-
-                        <View className="flex-row flex-wrap mb-4">
-                            {item.matchedLabels.map((l, i) => (
-                                <LabelChip key={i} label={l} selected />
-                            ))}
-                        </View>
-
-                        <View className="flex-row items-center pt-4 border-t border-border/50 justify-between">
-                            <View className="flex-row items-center">
-                                <Calendar size={14} color="#94A3B8" className="mr-2" />
-                                <Text className="text-muted text-xs font-inter-medium">
-                                    {new Date(item.createdAt).toLocaleDateString()}
-                                </Text>
-                            </View>
-                            <View className="flex-row items-center">
-                                <Text className="text-brand font-inter-bold text-sm mr-2">Open Issue</Text>
-                                <ExternalLink size={14} color="#6366F1" />
-                            </View>
-                        </View>
-                    </TouchableOpacity>
-
-                    {/* Separate Delete Button (Not Nested) */}
-                    <TouchableOpacity
-                        onPress={() => {
-                            if (Platform.OS === 'web') {
-                                if (window.confirm('Remove this from your Inbox? It will still be visible on your Dashboard.')) {
-                                    handleDelete(item._id);
-                                }
-                            } else {
-                                Alert.alert(
-                                    'Dismiss Notification',
-                                    'Remove this from your Inbox? It will still be visible on your Dashboard.',
-                                    [
-                                        { text: 'Cancel', style: 'cancel' },
-                                        { text: 'Dismiss', style: 'default', onPress: () => handleDelete(item._id) }
-                                    ]
-                                );
-                            }
-                        }}
-                        className="absolute top-6 right-6 w-10 h-10 items-center justify-center rounded-xl bg-slate-100"
-                    >
-                        <Trash2 size={18} color="#64748B" />
-                    </TouchableOpacity>
-                </Card>
-            </View>
-        </MotiView>
-    );
+                    </View>
+                </TouchableOpacity>
+            </MotiView>
+        );
+    };
 
     return (
         <SafeAreaView className="flex-1 bg-background">
             <StatusBar style="dark" />
 
-            {/* Header */}
-            <View className="px-6 py-4 flex-row items-center justify-between">
-                <View className="flex-row items-center flex-1">
-                    <TouchableOpacity
-                        onPress={() => navigation.goBack()}
-                        className="w-12 h-12 items-center justify-center rounded-2xl bg-white border border-border shadow-sm"
-                        style={shadowStyles.light}
-                    >
-                        <ArrowLeft size={22} color="#0F172A" />
-                    </TouchableOpacity>
-                    <View className="ml-4">
-                        <Text className="text-2xl font-poppins-bold text-primary">Inbox</Text>
-                        <Text className="text-muted text-xs font-inter-semibold uppercase tracking-wider">
-                            {notifs.length} New Updates
-                        </Text>
+            {/* Modern Header */}
+            <View className="px-6 py-4">
+                <View className="flex-row items-center justify-between mb-2">
+                    <View className="flex-row items-center flex-1">
+                        <TouchableOpacity
+                            onPress={() => navigation.goBack()}
+                            className="w-12 h-12 items-center justify-center rounded-2xl bg-white border border-border shadow-sm mr-4"
+                            style={shadowStyles.light}
+                        >
+                            <ArrowLeft size={22} color="#0F172A" />
+                        </TouchableOpacity>
+                        <View className="flex-1">
+                            <Text className="text-3xl font-poppins-bold text-primary">Inbox</Text>
+                            <View className="flex-row items-center mt-1">
+                                <View className="w-2 h-2 rounded-full bg-brand mr-2" />
+                                <Text className="text-muted text-xs font-inter-semibold uppercase tracking-wider">
+                                    {notifs.length} Unread
+                                </Text>
+                            </View>
+                        </View>
                     </View>
+
+                    {notifs.length > 0 && (
+                        <TouchableOpacity
+                            onPress={handleMarkAllRead}
+                            className="w-12 h-12 bg-success/10 items-center justify-center rounded-2xl border border-success/20"
+                            style={shadowStyles.light}
+                        >
+                            <CheckCheck size={22} color="#10B981" />
+                        </TouchableOpacity>
+                    )}
                 </View>
 
+                {/* Stats Bar */}
                 {notifs.length > 0 && (
-                    <TouchableOpacity
-                        onPress={handleMarkAllRead}
-                        className="w-12 h-12 bg-success/10 items-center justify-center rounded-2xl border border-success/20"
+                    <MotiView
+                        from={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 60 }}
+                        className="bg-gradient-to-r from-brand/10 to-accent/10 rounded-2xl p-4 mt-3 border border-brand/20"
                     >
-                        <CheckCheck size={22} color="#10B981" />
-                    </TouchableOpacity>
+                        <View className="flex-row items-center justify-between">
+                            <View className="flex-row items-center">
+                                <Bell size={16} color="#6366F1" className="mr-2" />
+                                <Text className="text-primary font-inter-semibold text-sm">
+                                    New updates from {new Set(notifs.map(n => n.repository?.name)).size} repositories
+                                </Text>
+                            </View>
+                        </View>
+                    </MotiView>
                 )}
             </View>
 
@@ -214,9 +257,9 @@ const NotificationsScreen = ({ navigation }) => {
                                 source={require('../maskot/confused.png')}
                                 style={{ width: 300, height: 300 }}
                             />
-                            <Text className="text-primary text-3xl font-poppins-bold text-center mt-6">All clear!</Text>
+                            <Text className="text-primary text-3xl font-poppins-bold text-center mt-6">All Caught Up!</Text>
                             <Text className="text-muted text-base font-inter-medium text-center px-10 mt-2 leading-6">
-                                You're completely caught up. We'll notify you as soon as new issues match your filters.
+                                No new notifications. We'll alert you when issues matching your filters appear.
                             </Text>
                             <Button
                                 title="Back to Dashboard"

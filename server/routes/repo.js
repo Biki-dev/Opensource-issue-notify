@@ -55,17 +55,28 @@ router.post('/subscribe', auth, async (req, res) => {
         // Find or Create Repository
         let repository = await Repository.findOne({ githubUrl: url });
         if (!repository) {
-            // Fetch latest issue number to start tracking from NOW
-            const issuesRes = await axios.get(`https://api.github.com/repos/${owner}/${repo}/issues?per_page=1`, { headers });
+            // Parallel fetch for repository details and latest issue
+            const [repoInfoRes, issuesRes] = await Promise.all([
+                axios.get(`https://api.github.com/repos/${owner}/${repo}`, { headers }),
+                axios.get(`https://api.github.com/repos/${owner}/${repo}/issues?per_page=1`, { headers })
+            ]);
+
             const latestNum = issuesRes.data.length > 0 ? issuesRes.data[0].number : 0;
+            const ownerAvatarUrl = repoInfoRes.data.owner.avatar_url;
 
             repository = await Repository.create({
                 githubUrl: url,
                 owner,
                 name: repo,
+                ownerAvatarUrl,
                 latestIssueNumber: latestNum,
                 lastChecked: new Date()
             });
+        } else if (!repository.ownerAvatarUrl) {
+            // Update existing repo if avatar is missing
+            const repoInfoRes = await axios.get(`https://api.github.com/repos/${owner}/${repo}`, { headers });
+            repository.ownerAvatarUrl = repoInfoRes.data.owner.avatar_url;
+            await repository.save();
         }
 
         // Check if this is a brand new subscription for this user/repo

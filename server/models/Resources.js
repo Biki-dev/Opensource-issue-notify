@@ -5,6 +5,7 @@ const RepositorySchema = new mongoose.Schema({
     githubUrl: { type: String, required: true, unique: true },
     owner: { type: String, required: true },
     name: { type: String, required: true },
+    ownerAvatarUrl: { type: String },
     lastChecked: { type: Date, default: null },
     latestIssueNumber: { type: Number, default: 0 }, // Track the latest issue number we've seen
     createdAt: { type: Date, default: Date.now }
