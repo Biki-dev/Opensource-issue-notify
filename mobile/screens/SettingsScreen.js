@@ -172,18 +172,7 @@ const SettingsScreen = ({ navigation }) => {
                         onValueChange={toggleNotifications}
                         icon={Bell}
                     />
-                    <SwitchRow
-                        label="Check Frequency (1h)"
-                        value={true}
-                        onValueChange={() => { }}
-                        icon={Clock}
-                    />
-                    <SwitchRow
-                        label="Developer Mode"
-                        value={false}
-                        onValueChange={() => { }}
-                        icon={Globe}
-                    />
+
                 </Card>
 
                 <SectionHeader title="Privacy" icon={Shield} />
