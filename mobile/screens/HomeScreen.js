@@ -299,11 +299,11 @@ const HomeScreen = ({ navigation }) => {
                     {showSearch && (
                         <MotiView
                             from={{ opacity: 0, height: 0, scaleY: 0.5 }}
-                            animate={{ opacity: 1, height: 70, scaleY: 1 }}
+                            animate={{ opacity: 1, height: 76, scaleY: 1 }}
                             exit={{ opacity: 0, height: 0, scaleY: 0.5 }}
                             className="overflow-hidden"
                         >
-                            <View className="bg-white h-14 rounded-2xl border border-border px-4 flex-row items-center mb-4 shadow-sm" style={shadowStyles.light}>
+                            <View className="bg-white h-14 rounded-2xl border border-border px-4 flex-row items-center mt-2 mb-4 shadow-sm" style={shadowStyles.light}>
                                 <Search size={20} color="#94A3B8" className="mr-3" />
                                 <TextInput
                                     className="flex-1 text-base text-primary font-inter-medium h-full"
