@@ -1,19 +1,20 @@
 import React, { createContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
+import * as WebBrowser from 'expo-web-browser';
+import * as Linking from 'expo-linking';
 
 export const AuthContext = createContext();
+
+// Required for GitHub OAuth flow
+WebBrowser.maybeCompleteAuthSession();
 
 export const AuthProvider = ({ children }) => {
     const [userToken, setUserToken] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
-
-    // Use your computer's local IP for Expo Go on physical devices
-    // localhost only works on web, use your local IP for mobile devices
-    const BASE_URL = 'http://10.119.238.78:5000/api';
-    // const BASE_URL = 'http://10.0.2.2:5000/api'; // Android Emulator alternative
-
     const [unreadCount, setUnreadCount] = useState(0);
+
+    const BASE_URL = 'http://10.119.238.78:5000/api';
 
     const updateUnreadCount = async (token) => {
         try {
@@ -52,6 +53,40 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    const loginWithGitHub = async () => {
+        try {
+            // Step 1: Open GitHub OAuth page
+            const redirectUri = Linking.createURL('auth/callback');
+            const clientId = 'Ov23liRMnBFgrzjvLxvG'; // Replace with actual client ID
+
+            const authUrl = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=user:email`;
+
+            const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUri);
+
+            if (result.type === 'success' && result.url) {
+                // Extract the code from the callback URL
+                const url = new URL(result.url);
+                const code = url.searchParams.get('code');
+
+                if (!code) {
+                    throw new Error('No authorization code received');
+                }
+
+                // Step 2: Exchange code for token via backend
+                const res = await axios.post(`${BASE_URL}/auth/github`, { code, redirectUri });
+
+                setUserToken(res.data.token);
+                await AsyncStorage.setItem('userToken', res.data.token);
+                updateUnreadCount(res.data.token);
+            } else {
+                throw new Error('Authentication cancelled or failed');
+            }
+        } catch (e) {
+            console.log("GitHub Login Error", e);
+            throw e;
+        }
+    };
+
     const logout = async () => {
         setUserToken(null);
         setUnreadCount(0);
@@ -74,7 +109,17 @@ export const AuthProvider = ({ children }) => {
     }, []);
 
     return (
-        <AuthContext.Provider value={{ login, signup, logout, isLoading, userToken, BASE_URL, unreadCount, updateUnreadCount }}>
+        <AuthContext.Provider value={{
+            login,
+            signup,
+            loginWithGitHub,
+            logout,
+            isLoading,
+            userToken,
+            BASE_URL,
+            unreadCount,
+            updateUnreadCount
+        }}>
             {children}
         </AuthContext.Provider>
     );

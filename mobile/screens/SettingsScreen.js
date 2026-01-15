@@ -1,13 +1,14 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, TextInput, ActivityIndicator, Alert, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, TextInput, ActivityIndicator, Alert, Platform, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
 import { Card, Button, SwitchRow, SectionHeader, shadowStyles } from '../components/UI';
-import { Mail, ChevronRight, Bell, Shield, HelpCircle, LogOut, Edit3, Check, X, User, Lock, Globe, Smartphone, Clock } from 'lucide-react-native';
+import { Mail, ChevronRight, Bell, Shield, HelpCircle, LogOut, Edit3, Check, X, User, Lock, Globe, Smartphone, Clock, Github } from 'lucide-react-native';
 import { MotiView, AnimatePresence } from 'moti';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
+
 const SettingsScreen = ({ navigation }) => {
     const { userToken, BASE_URL, logout, unreadCount, updateUnreadCount } = useContext(AuthContext);
     const [profile, setProfile] = useState(null);
@@ -99,15 +100,32 @@ const SettingsScreen = ({ navigation }) => {
                     <Card className="p-0 overflow-hidden mb-8 shadow-sm">
                         <View className="p-8 items-center">
                             <View className="relative">
-                                <LinearGradient
-                                    colors={['#6366F1', '#8B5CF6']}
-                                    start={{ x: 0, y: 0 }}
-                                    end={{ x: 1, y: 1 }}
-                                    className="w-24 h-24 rounded-[32px] items-center justify-center shadow-xl"
-                                    style={shadowStyles.medium}
-                                >
-                                    <Text className="text-4xl font-poppins-bold text-white">{initials}</Text>
-                                </LinearGradient>
+                                {profile?.profilePicture ? (
+                                    // Show GitHub/uploaded profile picture
+                                    <MotiView
+                                        from={{ scale: 0.8, opacity: 0 }}
+                                        animate={{ scale: 1, opacity: 1 }}
+                                        className="relative"
+                                    >
+                                        <Image
+                                            source={{ uri: profile.profilePicture }}
+                                            className="w-24 h-24 rounded-[32px]"
+                                            style={shadowStyles.medium}
+                                        />
+                                    </MotiView>
+                                ) : (
+                                    // Show initials gradient as fallback
+                                    <LinearGradient
+                                        colors={['#6366F1', '#8B5CF6']}
+                                        start={{ x: 0, y: 0 }}
+                                        end={{ x: 1, y: 1 }}
+                                        className="w-24 h-24 rounded-[32px] items-center justify-center shadow-xl"
+                                        style={shadowStyles.medium}
+                                    >
+                                        <Text className="text-4xl font-poppins-bold text-white">{initials}</Text>
+                                    </LinearGradient>
+                                )}
+
                                 <TouchableOpacity
                                     onPress={() => setIsEditing(true)}
                                     className="absolute -bottom-2 -right-2 w-10 h-10 bg-white border border-border rounded-xl items-center justify-center shadow-sm"
@@ -134,7 +152,10 @@ const SettingsScreen = ({ navigation }) => {
                                             {saveLoading ? <ActivityIndicator color="white" /> : <Check size={24} color="white" />}
                                         </TouchableOpacity>
                                         <TouchableOpacity
-                                            onPress={() => setIsEditing(false)}
+                                            onPress={() => {
+                                                setIsEditing(false);
+                                                setEditName(profile?.name || '');
+                                            }}
                                             className="ml-2 w-14 h-14 bg-slate-200 rounded-xl items-center justify-center"
                                         >
                                             <X size={24} color="#64748B" />
@@ -144,8 +165,29 @@ const SettingsScreen = ({ navigation }) => {
                                     <>
                                         <Text className="text-2xl font-poppins-bold text-primary">{profile?.name || 'Maintainer'}</Text>
                                         <Text className="text-muted font-inter-medium text-base mt-1">{profile?.email}</Text>
-                                        <View className="bg-success/10 px-4 py-1.5 rounded-full mt-4 border border-success/20">
-                                            <Text className="text-success text-[10px] font-poppins-bold uppercase tracking-wider">Professional Maintainer</Text>
+
+                                        {/* Auth Method Badge */}
+                                        <View className="flex-row items-center mt-3">
+                                            {profile?.authMethod === 'github' ? (
+                                                <View className="bg-[#0F172A] px-4 py-1.5 rounded-full flex-row items-center border border-slate-700">
+                                                    <Github size={12} color="white" className="mr-2" />
+                                                    <Text className="text-white text-[10px] font-poppins-bold uppercase tracking-wider">
+                                                        GitHub Account
+                                                    </Text>
+                                                </View>
+                                            ) : (
+                                                <View className="bg-brand/10 px-4 py-1.5 rounded-full border border-brand/20">
+                                                    <Text className="text-brand text-[10px] font-poppins-bold uppercase tracking-wider">
+                                                        Email Account
+                                                    </Text>
+                                                </View>
+                                            )}
+                                        </View>
+
+                                        <View className="bg-success/10 px-4 py-1.5 rounded-full mt-3 border border-success/20">
+                                            <Text className="text-success text-[10px] font-poppins-bold uppercase tracking-wider">
+                                                {profile?.plan === 'pro' ? 'Professional' : 'Free'} Plan
+                                            </Text>
                                         </View>
                                     </>
                                 )}
@@ -157,16 +199,15 @@ const SettingsScreen = ({ navigation }) => {
                                 <Text className="text-xl font-poppins-bold text-primary">{subscriptions.length}</Text>
                                 <Text className="text-[10px] text-muted font-inter-bold uppercase">Repos</Text>
                             </View>
-                            <View className="flex-1 items-center border-r border-border/50">
+                            <View className="flex-1 items-center">
                                 <Text className="text-xl font-poppins-bold text-primary">{unreadCount}</Text>
                                 <Text className="text-[10px] text-muted font-inter-bold uppercase">Unread</Text>
                             </View>
-
                         </View>
                     </Card>
                 </MotiView>
 
-                {/* Account Settings */}
+                {/* Application Settings */}
                 <SectionHeader title="Application" icon={Smartphone} />
                 <Card className="px-6 py-2 mb-8">
                     <SwitchRow
@@ -175,12 +216,11 @@ const SettingsScreen = ({ navigation }) => {
                         onValueChange={toggleNotifications}
                         icon={Bell}
                     />
-
                 </Card>
 
+                {/* Privacy Section */}
                 <SectionHeader title="Privacy" icon={Shield} />
                 <Card className="px-6 py-2 mb-8">
-
                     <TouchableOpacity className="flex-row items-center justify-between py-4">
                         <View className="flex-row items-center">
                             <View className="w-10 h-10 rounded-full bg-brand/10 items-center justify-center mr-4">
@@ -192,7 +232,7 @@ const SettingsScreen = ({ navigation }) => {
                     </TouchableOpacity>
                 </Card>
 
-                {/* Logout */}
+                {/* Logout Button */}
                 <MotiView
                     from={{ opacity: 0 }}
                     animate={{ opacity: 1 }}

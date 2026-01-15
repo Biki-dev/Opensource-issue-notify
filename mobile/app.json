@@ -1,5 +1,6 @@
 {
   "expo": {
+    "scheme": "issuenotify",
     "name": "IssueNotify",
     "slug": "issue-notify",
     "version": "1.0.0",
