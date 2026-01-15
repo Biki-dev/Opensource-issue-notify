@@ -4,15 +4,16 @@ module.exports = {
     theme: {
         extend: {
             colors: {
-                brand: "#D97706",
-                accent: "#FACC15",
-                dark: "#111111",
-                background: "#FFF7F1",
+                brand: "#6366F1",
+                brandDark: "#4F46E5",
+                accent: "#8B5CF6",
+                background: "#F8FAFC",
+                backgroundLight: "#F1F5F9",
                 card: "#FFFFFF",
-                border: "#E9E3DD",
-                primary: "#0B1220",
-                muted: "#5B6478",
-                success: "#14B8A6",
+                border: "#E2E8F0",
+                primary: "#0F172A",
+                muted: "#64748B",
+                success: "#10B981",
                 danger: "#EF4444",
             },
             fontFamily: {

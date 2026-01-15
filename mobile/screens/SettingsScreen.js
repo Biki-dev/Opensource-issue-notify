@@ -1,11 +1,12 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Switch, TextInput, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, TextInput, ActivityIndicator, Alert, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
-import { Card, Button } from '../components/UI';
-import { Mail, ChevronRight, Bell, Shield, HelpCircle, LogOut, Edit3, Check, X } from 'lucide-react-native';
+import { Card, Button, SwitchRow, SectionHeader, shadowStyles } from '../components/UI';
+import { Mail, ChevronRight, Bell, Shield, HelpCircle, LogOut, Edit3, Check, X, User, Lock, Globe, Smartphone, Clock } from 'lucide-react-native';
 import { MotiView, AnimatePresence } from 'moti';
+import { StatusBar } from 'expo-status-bar';
 
 const SettingsScreen = ({ navigation }) => {
     const { userToken, BASE_URL, logout, unreadCount, updateUnreadCount } = useContext(AuthContext);
@@ -47,33 +48,9 @@ const SettingsScreen = ({ navigation }) => {
         }
     };
 
-    const toggleRepoActive = async (sub) => {
-        try {
-            const updated = await axios.patch(
-                `${BASE_URL}/repos/${sub._id}`,
-                { active: sub.active === false },
-                { headers: { Authorization: `Bearer ${userToken}` } }
-            );
-            setSubscriptions((prev) => prev.map((s) => (s._id === sub._id ? updated.data : s)));
-        } catch (e) {
-            console.log(e);
-        }
-    };
-
-    const deleteRepo = async (sub) => {
-        try {
-            await axios.delete(`${BASE_URL}/repos/${sub._id}`, {
-                headers: { Authorization: `Bearer ${userToken}` }
-            });
-            setSubscriptions((prev) => prev.filter((s) => s._id !== sub._id));
-        } catch (e) {
-            console.log(e);
-        }
-    };
-
     const handleUpdateName = async () => {
         const trimmed = editName.trim();
-        if (!trimmed || trimmed.length > 12) {
+        if (!trimmed || trimmed.length > 20) {
             setIsEditing(false);
             setEditName(profile?.name || '');
             return;
@@ -96,237 +73,171 @@ const SettingsScreen = ({ navigation }) => {
 
     const initials = profile?.name
         ? profile.name.split(' ').map((n) => n[0]).join('').toUpperCase()
-        : 'G';
+        : 'U';
 
     return (
         <SafeAreaView className="flex-1 bg-background">
-            <View className="px-6 pt-6 pb-4 flex-row justify-between items-center">
+            <StatusBar style="dark" />
+
+            {/* Header */}
+            <View className="px-6 pt-4 pb-4">
                 <MotiView
                     from={{ opacity: 0, translateX: -20 }}
                     animate={{ opacity: 1, translateX: 0 }}
                 >
-                    <Text className="text-3xl font-poppins-bold text-primary">Settings</Text>
-                    <Text className="text-muted text-sm mt-1 font-inter-medium">Manage your account and preferences</Text>
+                    <Text className="text-4xl font-poppins-bold text-primary">Settings</Text>
                 </MotiView>
-                <TouchableOpacity
-                    onPress={() => navigation.navigate('Notifications')}
-                    className="w-12 h-12 rounded-2xl bg-card border border-border items-center justify-center"
-                >
-                    <Bell size={22} color="#D97706" />
-                    {unreadCount > 0 && (
-                        <View className="absolute top-3 right-3 w-2.5 h-2.5 bg-danger rounded-full border-2 border-card" />
-                    )}
-                </TouchableOpacity>
             </View>
 
-            <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 120 }}>
-                {/* User Profile Card */}
-                <MotiView from={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 100 }}>
-                    <Card className="p-0 overflow-hidden">
-                        <View className="flex-row items-start p-6">
-                            <View className="w-20 h-20 rounded-[28px] bg-brand items-center justify-center shadow-2xl shadow-brand/20">
-                                <Text className="text-3xl font-montserrat text-black">{initials}</Text>
-                            </View>
-                            <View className="flex-1 ml-6">
-                                <View className="flex-row items-center mb-2 h-10">
-                                    <AnimatePresence exitBeforeEnter>
-                                        {isEditing ? (
-                                            <MotiView
-                                                key="editing"
-                                                from={{ opacity: 0, scale: 0.9, translateX: -10 }}
-                                                animate={{ opacity: 1, scale: 1, translateX: 0 }}
-                                                exit={{ opacity: 0, scale: 0.9, translateX: -10 }}
-                                                transition={{ type: 'timing', duration: 250 }}
-                                                className="flex-1 flex-row items-center"
-                                            >
-                                                <View className="flex-1 bg-muted/5 rounded-xl px-3 py-2 border border-border/50 flex-row items-center mr-2">
-                                                    <TextInput
-                                                        className="text-lg font-poppins-bold text-primary flex-1 p-0"
-                                                        value={editName}
-                                                        onChangeText={setEditName}
-                                                        autoFocus
-                                                        maxLength={12}
-                                                        placeholder="Your Name"
-                                                        placeholderTextColor="#55607780"
-                                                    />
-                                                    <Text className="text-[8px] font-inter-semibold text-muted/40 ml-1">
-                                                        {editName.length}/12
-                                                    </Text>
-                                                </View>
-                                                <View className="flex-row gap-2">
-                                                    <TouchableOpacity
-                                                        onPress={handleUpdateName}
-                                                        disabled={saveLoading}
-                                                        className="w-10 h-10 rounded-xl bg-brand items-center justify-center shadow-lg shadow-brand/20"
-                                                    >
-                                                        {saveLoading ? <ActivityIndicator size="small" color="#fff" /> : <Check size={20} color="#fff" />}
-                                                    </TouchableOpacity>
-                                                    <TouchableOpacity
-                                                        onPress={() => {
-                                                            setIsEditing(false);
-                                                            setEditName(profile?.name || '');
-                                                        }}
-                                                        className="w-10 h-10 rounded-xl bg-white items-center justify-center border border-border shadow-sm shadow-black/5"
-                                                    >
-                                                        <X size={20} color="#556077" />
-                                                    </TouchableOpacity>
-                                                </View>
-                                            </MotiView>
-                                        ) : (
-                                            <MotiView
-                                                key="viewing"
-                                                from={{ opacity: 0, scale: 0.9, translateX: 10 }}
-                                                animate={{ opacity: 1, scale: 1, translateX: 0 }}
-                                                exit={{ opacity: 0, scale: 0.9, translateX: 10 }}
-                                                transition={{ type: 'timing', duration: 250 }}
-                                                className="flex-row items-center"
-                                            >
-                                                <Text className="text-2xl font-poppins-bold text-primary mr-2" numberOfLines={1}>
-                                                    {profile?.name || 'User'}
-                                                </Text>
-                                                <View className="bg-brand/10 px-2 py-0.5 rounded-full border border-brand/20">
-                                                    <Text className="text-brand text-[8px] font-poppins-bold uppercase">Pro Member</Text>
-                                                </View>
-                                            </MotiView>
-                                        )}
-                                    </AnimatePresence>
+            <ScrollView contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 120 }}>
+                {/* Profile Section */}
+                <MotiView
+                    from={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ type: 'spring', damping: 20 }}
+                >
+                    <Card className="p-0 overflow-hidden mb-8 shadow-sm">
+                        <View className="p-8 items-center">
+                            <View className="relative">
+                                <View className="w-24 h-24 rounded-[32px] bg-brand items-center justify-center shadow-xl" style={shadowStyles.medium}>
+                                    <Text className="text-4xl font-poppins-bold text-white">{initials}</Text>
                                 </View>
-                                <View className="flex-row items-center">
-                                    <Mail size={14} color="#55607780" className="mr-2" />
-                                    <Text className="text-muted text-sm font-inter-semibold" numberOfLines={1}>
-                                        {profile?.email || 'user@example.com'}
-                                    </Text>
-                                </View>
-                            </View>
-
-                            {!isEditing && (
                                 <TouchableOpacity
                                     onPress={() => setIsEditing(true)}
-                                    className="w-12 h-12 rounded-2xl bg-white items-center justify-center border border-border shadow-sm shadow-black/5"
+                                    className="absolute -bottom-2 -right-2 w-10 h-10 bg-white border border-border rounded-xl items-center justify-center shadow-sm"
                                 >
-                                    <Edit3 size={20} color="#556077" />
+                                    <Edit3 size={18} color="#6366F1" />
                                 </TouchableOpacity>
-                            )}
+                            </View>
+
+                            <View className="mt-6 items-center w-full">
+                                {isEditing ? (
+                                    <MotiView from={{ opacity: 0, translateY: 10 }} animate={{ opacity: 1, translateY: 0 }} className="w-full flex-row items-center">
+                                        <TextInput
+                                            className="flex-1 bg-slate-50 border border-brand h-14 rounded-xl px-4 text-primary font-poppins-semibold text-lg"
+                                            value={editName}
+                                            onChangeText={setEditName}
+                                            autoFocus
+                                            placeholder="Your Name"
+                                            placeholderTextColor="#94A3B8"
+                                        />
+                                        <TouchableOpacity
+                                            onPress={handleUpdateName}
+                                            className="ml-2 w-14 h-14 bg-brand rounded-xl items-center justify-center shadow-sm"
+                                        >
+                                            {saveLoading ? <ActivityIndicator color="white" /> : <Check size={24} color="white" />}
+                                        </TouchableOpacity>
+                                        <TouchableOpacity
+                                            onPress={() => setIsEditing(false)}
+                                            className="ml-2 w-14 h-14 bg-slate-200 rounded-xl items-center justify-center"
+                                        >
+                                            <X size={24} color="#64748B" />
+                                        </TouchableOpacity>
+                                    </MotiView>
+                                ) : (
+                                    <>
+                                        <Text className="text-2xl font-poppins-bold text-primary">{profile?.name || 'Maintainer'}</Text>
+                                        <Text className="text-muted font-inter-medium text-base mt-1">{profile?.email}</Text>
+                                        <View className="bg-success/10 px-4 py-1.5 rounded-full mt-4 border border-success/20">
+                                            <Text className="text-success text-[10px] font-poppins-bold uppercase tracking-wider">Professional Maintainer</Text>
+                                        </View>
+                                    </>
+                                )}
+                            </View>
                         </View>
 
-                        <View className="flex-row py-4 px-6 bg-brand/5 rounded-b-[32px]">
-                            <View className="flex-1 items-center border-r border-border">
-                                <Text className="text-primary font-montserrat text-lg">{subscriptions.length}</Text>
-                                <Text className="text-muted text-[10px] font-inter-bold uppercase tracking-widest">Repos</Text>
+                        <View className="flex-row border-t border-border/50 bg-slate-50 py-6">
+                            <View className="flex-1 items-center border-r border-border/50">
+                                <Text className="text-xl font-poppins-bold text-primary">{subscriptions.length}</Text>
+                                <Text className="text-[10px] text-muted font-inter-bold uppercase">Repos</Text>
+                            </View>
+                            <View className="flex-1 items-center border-r border-border/50">
+                                <Text className="text-xl font-poppins-bold text-primary">{unreadCount}</Text>
+                                <Text className="text-[10px] text-muted font-inter-bold uppercase">Unread</Text>
                             </View>
                             <View className="flex-1 items-center">
-                                <Text className="text-primary font-montserrat text-lg">{unreadCount}</Text>
-                                <Text className="text-muted text-[10px] font-inter-bold uppercase tracking-widest">Unread</Text>
-                            </View>
-                            <View className="flex-1 items-center border-l border-border">
-                                <Text className="text-primary font-montserrat text-lg">6</Text>
-                                <Text className="text-muted text-[10px] font-inter-bold uppercase tracking-widest">Impact</Text>
+                                <Text className="text-xl font-poppins-bold text-primary">High</Text>
+                                <Text className="text-[10px] text-muted font-inter-bold uppercase">Impact</Text>
                             </View>
                         </View>
                     </Card>
                 </MotiView>
 
-                {/* Notifications Card */}
-                <MotiView from={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 200 }}>
-                    <Card className="p-0 overflow-hidden">
-                        <View className="p-6 flex-row items-center justify-between border-b border-border/50">
-                            <View className="flex-row items-center">
-                                <View className="w-10 h-10 rounded-full bg-brand/10 items-center justify-center mr-4">
-                                    <Bell size={20} color="#D97706" />
-                                </View>
-                                <View>
-                                    <Text className="text-base font-poppins-bold text-primary">Notifications</Text>
-                                    <Text className="text-xs text-muted font-inter-medium">Manage notification settings</Text>
-                                </View>
-                            </View>
-                        </View>
-                        <View className="p-6 pb-2">
-                            <View className="flex-row items-center justify-between mb-4">
-                                <View>
-                                    <Text className="text-sm font-inter-bold text-primary">Push Notifications</Text>
-                                    <Text className="text-xs text-muted font-inter-medium">Get notified about new issues</Text>
-                                </View>
-                                <Switch
-                                    value={!!profile?.notificationsEnabled}
-                                    onValueChange={toggleNotifications}
-                                    trackColor={{ false: '#E9E3DD', true: '#D97706' }}
-                                    thumbColor="#FFFFFF"
-                                    ios_backgroundColor="#E9E3DD"
-                                />
-                            </View>
-                        </View>
-                    </Card>
-                </MotiView>
+                {/* Account Settings */}
+                <SectionHeader title="Application" icon={Smartphone} />
+                <Card className="px-6 py-2 mb-8">
+                    <SwitchRow
+                        label="Push Notifications"
+                        value={!!profile?.notificationsEnabled}
+                        onValueChange={toggleNotifications}
+                        icon={Bell}
+                    />
+                    <SwitchRow
+                        label="Check Frequency (1h)"
+                        value={true}
+                        onValueChange={() => { }}
+                        icon={Clock}
+                    />
+                    <SwitchRow
+                        label="Developer Mode"
+                        value={false}
+                        onValueChange={() => { }}
+                        icon={Globe}
+                    />
+                </Card>
 
-                {/* Repository Privacy & Controls Card */}
-                <MotiView from={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 300 }}>
-                    <Card className="p-0 overflow-hidden">
-                        <View className="p-6 flex-row items-center border-b border-border/50">
-                            <View className="w-10 h-10 rounded-full bg-brand/10 items-center justify-center mr-4">
-                                <Shield size={20} color="#D97706" />
-                            </View>
-                            <Text className="text-base font-poppins-bold text-primary">Repository Privacy & Controls</Text>
-                        </View>
-                        <View className="p-6">
-                            {subscriptions.map((s, index) => (
-                                <View key={s._id} className="mb-6 last:mb-0">
-                                    <View className="flex-row items-center justify-between mb-2">
-                                        <View className="flex-1 mr-4">
-                                            <Text className="text-sm font-inter-bold text-brand" numberOfLines={1}>
-                                                {s.repository?.owner}/{s.repository?.name}
-                                            </Text>
-                                            <Text className="text-[10px] text-muted uppercase mt-0.5">
-                                                {s.active === false ? 'Turn ON (resume checks)' : 'Turn OFF (pause checks)'}
-                                            </Text>
-                                        </View>
-                                        <Switch
-                                            value={s.active !== false}
-                                            onValueChange={() => toggleRepoActive(s)}
-                                            trackColor={{ false: '#E9E3DD', true: '#D97706' }}
-                                            thumbColor="#FFFFFF"
-                                            ios_backgroundColor="#E9E3DD"
-                                        />
-                                    </View>
-                                    <TouchableOpacity
-                                        onPress={() => deleteRepo(s)}
-                                        className="bg-danger/5 border border-danger/20 rounded-xl py-3 items-center mt-2"
-                                    >
-                                        <Text className="text-danger text-xs font-inter-bold">Delete Subscription</Text>
-                                    </TouchableOpacity>
-                                </View>
-                            ))}
-                        </View>
-                    </Card>
-                </MotiView>
-
-                {/* Help & Support Card */}
-                <MotiView from={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 400 }}>
-                    <Card className="flex-row items-center justify-between py-5">
+                <SectionHeader title="Privacy" icon={Shield} />
+                <Card className="px-6 py-2 mb-8">
+                    <TouchableOpacity className="flex-row items-center justify-between py-4 border-b border-border/50">
                         <View className="flex-row items-center">
                             <View className="w-10 h-10 rounded-full bg-brand/10 items-center justify-center mr-4">
-                                <HelpCircle size={20} color="#D97706" />
+                                <Lock size={20} color="#6366F1" />
                             </View>
-                            <View>
-                                <Text className="text-base font-poppins-bold text-primary">Help & Support</Text>
-                                <Text className="text-xs text-muted font-inter-medium">Get help with the app</Text>
-                            </View>
+                            <Text className="text-base font-inter-medium text-primary">Change Password</Text>
                         </View>
-
-                    </Card>
-                </MotiView>
-
-                {/* Log Out Button */}
-                <MotiView from={{ opacity: 0, translateY: 20 }} animate={{ opacity: 1, translateY: 0 }} transition={{ delay: 500 }}>
-                    <TouchableOpacity
-                        onPress={logout}
-                        className="mt-4 mb-8 bg-danger/5 border border-danger/20 rounded-2xl h-16 flex-row items-center justify-center"
-                    >
-                        <LogOut size={20} color="#EF4444" className="mr-3" />
-                        <Text className="text-danger text-lg font-inter-bold">Log Out</Text>
+                        <ChevronRight size={20} color="#94A3B8" />
                     </TouchableOpacity>
-                </MotiView>
+                    <TouchableOpacity className="flex-row items-center justify-between py-4">
+                        <View className="flex-row items-center">
+                            <View className="w-10 h-10 rounded-full bg-brand/10 items-center justify-center mr-4">
+                                <HelpCircle size={20} color="#6366F1" />
+                            </View>
+                            <Text className="text-base font-inter-medium text-primary">Privacy Policy</Text>
+                        </View>
+                        <ChevronRight size={20} color="#94A3B8" />
+                    </TouchableOpacity>
+                </Card>
 
-                <Text className="text-center text-muted text-[10px] uppercase font-inter-bold tracking-widest mt-4">Version 1.0.0</Text>
+                {/* Logout */}
+                <MotiView
+                    from={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 400 }}
+                >
+                    <Button
+                        title="Sign Out"
+                        variant="danger"
+                        icon={LogOut}
+                        onPress={() => {
+                            if (Platform.OS === 'web') {
+                                if (window.confirm('Are you sure you want to sign out?')) {
+                                    logout();
+                                }
+                            } else {
+                                Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
+                                    { text: 'Cancel', style: 'cancel' },
+                                    { text: 'Sign Out', style: 'destructive', onPress: logout }
+                                ]);
+                            }
+                        }}
+                        className="mb-8"
+                    />
+
+                    <View className="items-center pb-8">
+                        <Text className="text-muted font-inter-bold text-[10px] uppercase tracking-[4px]">Issue Notify v1.2.0</Text>
+                        <Text className="text-muted/40 font-inter-medium text-[10px] mt-2 italic">Crafted for maintainers</Text>
+                    </View>
+                </MotiView>
             </ScrollView>
         </SafeAreaView>
     );

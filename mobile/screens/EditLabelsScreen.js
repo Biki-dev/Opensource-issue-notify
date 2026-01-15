@@ -1,11 +1,12 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { View, Text, Alert, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, Alert, ScrollView, TouchableOpacity, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
-import { Button, Card, LabelChip } from '../components/UI';
-import { ArrowLeft, GitFork, Tag } from 'lucide-react-native';
-import { MotiView } from 'moti';
+import { Button, Card, LabelChip, shadowStyles } from '../components/UI';
+import { ArrowLeft, GitFork, Tag, Github, Search, Filter } from 'lucide-react-native';
+import { MotiView, AnimatePresence } from 'moti';
+import { StatusBar } from 'expo-status-bar';
 
 const EditLabelsScreen = ({ route, navigation }) => {
     const { userToken, BASE_URL, updateUnreadCount } = useContext(AuthContext);
@@ -14,6 +15,7 @@ const EditLabelsScreen = ({ route, navigation }) => {
     const [loading, setLoading] = useState(false);
     const [repoData, setRepoData] = useState(null);
     const [selectedLabels, setSelectedLabels] = useState(sub.labels || []);
+    const [searchQuery, setSearchQuery] = useState('');
 
     useEffect(() => {
         const fetchLabels = async () => {
@@ -67,64 +69,122 @@ const EditLabelsScreen = ({ route, navigation }) => {
         }
     };
 
+    const filteredLabels = repoData?.labels?.filter(l =>
+        l.name.toLowerCase().includes(searchQuery.toLowerCase())
+    ) || [];
+
     return (
         <SafeAreaView className="flex-1 bg-background">
-            <View className="px-6 py-4 flex-row items-center bg-background border-b border-border">
-                <TouchableOpacity
-                    onPress={() => navigation.goBack()}
-                    className="w-10 h-10 mr-4 items-center justify-center rounded-xl bg-card border border-border shadow-sm shadow-black/5"
-                >
-                    <ArrowLeft size={20} color="#0F172A" />
-                </TouchableOpacity>
-                <Text className="text-xl font-black text-primary">Edit Labels</Text>
+            <StatusBar style="dark" />
+
+            {/* Header */}
+            <View className="px-6 py-4 flex-row items-center justify-between">
+                <View className="flex-row items-center">
+                    <TouchableOpacity
+                        onPress={() => navigation.goBack()}
+                        className="w-12 h-12 items-center justify-center rounded-2xl bg-white border border-border shadow-sm"
+                        style={shadowStyles.light}
+                    >
+                        <ArrowLeft size={22} color="#0F172A" />
+                    </TouchableOpacity>
+                    <View className="ml-4">
+                        <Text className="text-2xl font-poppins-bold text-primary">Edit Labels</Text>
+                        <Text className="text-muted text-xs font-inter-semibold uppercase tracking-wider">Management</Text>
+                    </View>
+                </View>
             </View>
 
-            <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 120 }}>
-                <MotiView from={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}>
-                    <Card className="mb-6 border border-border">
-                        <View className="flex-row items-center">
-                            <View className="w-12 h-12 rounded-2xl bg-brand/10 items-center justify-center mr-4">
-                                <GitFork size={24} color="#D97706" />
+            <ScrollView contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 140 }}>
+                <MotiView
+                    from={{ opacity: 0, translateY: 10 }}
+                    animate={{ opacity: 1, translateY: 0 }}
+                    transition={{ type: 'spring', damping: 20 }}
+                >
+                    <Card className="p-6 mb-8 border border-brand/20 bg-slate-50">
+                        <View className="flex-row items-center mb-4">
+                            <View className="w-14 h-14 rounded-2xl bg-brand items-center justify-center mr-4">
+                                <Github size={28} color="white" />
                             </View>
                             <View className="flex-1">
-                                <Text className="text-lg font-bold text-primary">
-                                    {sub.repository.owner}/{sub.repository.name}
-                                </Text>
-                                <Text className="text-muted text-xs font-medium">Manage tracked labels</Text>
+                                <Text className="text-xl font-poppins-bold text-primary">{sub.repository?.owner}/{sub.repository?.name}</Text>
+                                <View className="flex-row items-center mt-1">
+                                    <Tag size={12} color="#6366F1" className="mr-1" />
+                                    <Text className="text-muted text-[10px] font-inter-bold uppercase">Active Subscription</Text>
+                                </View>
                             </View>
                         </View>
                     </Card>
                 </MotiView>
 
-                {repoData && (
-                    <MotiView from={{ opacity: 0, translateY: 20 }} animate={{ opacity: 1, translateY: 0 }} transition={{ delay: 200 }}>
-                        <Text className="text-xl font-black text-primary mb-4">Select Labels to Track</Text>
-                        <View className="flex-row flex-wrap mb-10">
-                            {repoData.labels.map((label, index) => (
-                                <LabelChip
-                                    key={index}
-                                    label={label.name}
-                                    selected={selectedLabels.includes(label.name)}
-                                    onPress={() => toggleLabel(label.name)}
-                                />
+                {repoData ? (
+                    <MotiView
+                        from={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 200 }}
+                    >
+                        <View className="flex-row items-center justify-between mb-4">
+                            <Text className="text-xl font-poppins-bold text-primary">Available Labels</Text>
+                            <View className="bg-brand/10 px-3 py-1 rounded-full border border-brand/10">
+                                <Text className="text-brand text-xs font-poppins-bold">{selectedLabels.length} Active</Text>
+                            </View>
+                        </View>
+
+                        {/* Search Bar */}
+                        <View className="bg-slate-50 h-12 rounded-xl border border-border px-4 flex-row items-center mb-6 shadow-sm">
+                            <Search size={18} color="#94A3B8" className="mr-2" />
+                            <TextInput
+                                className="flex-1 text-primary font-inter-medium"
+                                placeholder="Filter labels..."
+                                placeholderTextColor="#94A3B8"
+                                value={searchQuery}
+                                onChangeText={setSearchQuery}
+                            />
+                        </View>
+
+                        <View className="flex-row flex-wrap">
+                            {filteredLabels.map((label, index) => (
+                                <MotiView
+                                    key={label.name}
+                                    from={{ opacity: 0, scale: 0.8 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    transition={{ delay: index * 20 }}
+                                >
+                                    <LabelChip
+                                        label={label.name}
+                                        selected={selectedLabels.includes(label.name)}
+                                        onPress={() => toggleLabel(label.name)}
+                                    />
+                                </MotiView>
                             ))}
                         </View>
-                    </MotiView>
-                )}
 
-                {loading && !repoData && (
+                        {filteredLabels.length === 0 && (
+                            <View className="items-center py-10">
+                                <Filter size={32} color="#334155" className="mb-2" />
+                                <Text className="text-muted font-inter-medium">No labels matching your filter</Text>
+                            </View>
+                        )}
+                    </MotiView>
+                ) : (
                     <View className="items-center py-20">
-                        <Text className="text-muted">Loading available labels...</Text>
+                        <MotiView
+                            from={{ rotate: '0deg' }}
+                            animate={{ rotate: '360deg' }}
+                            transition={{ loop: true, duration: 2000, type: 'timing' }}
+                        >
+                            <Github size={48} color="#334155" />
+                        </MotiView>
+                        <Text className="text-muted font-inter-semibold mt-4">Fetching available updates...</Text>
                     </View>
                 )}
             </ScrollView>
 
-            <View className="absolute bottom-10 left-6 right-6">
+            <View className="absolute bottom-10 left-6 right-6" style={shadowStyles.strong}>
                 <Button
-                    title={`Update Subscriptions (${selectedLabels.length})`}
+                    title={`Save Changes (${selectedLabels.length})`}
                     onPress={handleSave}
                     loading={loading}
-                    className="h-16 rounded-[24px]"
+                    className="h-16"
                 />
             </View>
         </SafeAreaView>

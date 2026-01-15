@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { View, TouchableOpacity, Text, useWindowDimensions } from 'react-native';
+import { View, TouchableOpacity, Text, useWindowDimensions, Platform } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -30,49 +30,47 @@ const Tab = createBottomTabNavigator();
 const CustomTabBar = ({ state, descriptors, navigation }) => {
     const { width } = useWindowDimensions();
     const tabWidth = width / state.routes.length;
-    const [isMoving, setIsMoving] = useState(false);
-
-    useEffect(() => {
-        setIsMoving(true);
-        const timer = setTimeout(() => setIsMoving(false), 300);
-        return () => clearTimeout(timer);
-    }, [state.index]);
 
     return (
         <View style={{
             flexDirection: 'row',
             backgroundColor: '#FFFFFF',
-            height: 85,
-            paddingBottom: 25,
+            height: 90,
+            paddingBottom: Platform.OS === 'ios' ? 30 : 20,
             paddingTop: 12,
             position: 'absolute',
             bottom: 0,
             left: 0,
             right: 0,
             borderTopWidth: 1,
-            borderTopColor: '#E9E3DD',
-            shadowColor: '#111111',
+            borderTopColor: '#E2E8F0',
+            shadowColor: '#000',
             shadowOffset: { width: 0, height: -4 },
-            shadowOpacity: 0.1,
+            shadowOpacity: 0.05,
             shadowRadius: 10,
-            elevation: 10,
+            elevation: 20,
         }}>
-            {/* Animated Indicator */}
+            {/* Animated Glow Indicator */}
             <MotiView
                 animate={{
-                    translateX: (state.index * tabWidth) + (tabWidth / 2) - (isMoving ? 10 : 3),
-                    width: isMoving ? 20 : 6,
-                    height: 6,
-                    borderRadius: 3,
+                    translateX: (state.index * tabWidth) + (tabWidth / 2) - 20,
                 }}
                 transition={{
-                    type: 'timing',
-                    duration: 250,
+                    type: 'spring',
+                    damping: 20,
+                    stiffness: 200,
                 }}
                 style={{
                     position: 'absolute',
-                    top: 6,
-                    backgroundColor: '#D97706',
+                    top: 0,
+                    width: 40,
+                    height: 3,
+                    backgroundColor: '#6366F1', // brand
+                    borderRadius: 3,
+                    shadowColor: '#6366F1',
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.8,
+                    shadowRadius: 10,
                 }}
             />
 
@@ -108,20 +106,26 @@ const CustomTabBar = ({ state, descriptors, navigation }) => {
                     >
                         <MotiView
                             animate={{
-                                scale: isFocused ? 1.1 : 1,
+                                scale: isFocused ? 1.15 : 1,
                                 translateY: isFocused ? -2 : 0,
+                            }}
+                            transition={{
+                                type: 'spring',
+                                damping: 15,
+                                stiffness: 200,
                             }}
                         >
                             <IconComponent
-                                color={isFocused ? '#D97706' : '#5B6478'}
-                                size={24}
+                                color={isFocused ? '#6366F1' : '#94A3B8'}
+                                size={28}
+                                strokeWidth={isFocused ? 2.5 : 2}
                             />
                         </MotiView>
                         <Text style={{
-                            color: isFocused ? '#D97706' : '#5B6478',
-                            fontSize: 10,
-                            fontFamily: 'Inter_600SemiBold',
-                            marginTop: 4
+                            color: isFocused ? '#0F172A' : '#64748B',
+                            fontSize: 11,
+                            fontFamily: isFocused ? 'Poppins_600SemiBold' : 'Inter_500Medium',
+                            marginTop: 6
                         }}>
                             {label}
                         </Text>

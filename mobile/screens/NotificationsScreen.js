@@ -1,24 +1,24 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { View, Text, FlatList, Linking, TouchableOpacity, Image } from 'react-native';
+import { View, Text, FlatList, Linking, TouchableOpacity, RefreshControl, Alert, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
-import { Card, AnimatedMascot } from '../components/UI';
-import { ArrowLeft, ExternalLink, GitBranch, Bell, CheckCheck, Trash2 } from 'lucide-react-native';
-import { MotiView } from 'moti';
+import { Card, AnimatedMascot, LabelChip, Button, shadowStyles } from '../components/UI';
+import { ArrowLeft, ExternalLink, GitBranch, Bell, CheckCheck, Trash2, Calendar, Circle } from 'lucide-react-native';
+import { MotiView, AnimatePresence } from 'moti';
+import { StatusBar } from 'expo-status-bar';
 
 const NotificationsScreen = ({ navigation }) => {
     const { userToken, BASE_URL, updateUnreadCount } = useContext(AuthContext);
     const [notifs, setNotifs] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
 
     const fetchNotifs = async () => {
         try {
             const res = await axios.get(`${BASE_URL}/notifications`, {
                 headers: { Authorization: `Bearer ${userToken}` }
             });
-            // Show all but sorted by date? Or just unread as before.
-            // Keeping the filtering to unread for this specific "Inbox" screen
             const unread = (res.data || []).filter(n => !n.isRead);
             setNotifs(unread);
             updateUnreadCount();
@@ -26,6 +26,7 @@ const NotificationsScreen = ({ navigation }) => {
             console.log(e);
         } finally {
             setLoading(false);
+            setRefreshing(false);
         }
     };
 
@@ -64,7 +65,8 @@ const NotificationsScreen = ({ navigation }) => {
 
     const handleDelete = async (id) => {
         try {
-            await axios.delete(`${BASE_URL}/notifications/${id}`, {
+            // Logic Change: Mark as read to remove from Inbox while keeping on Dashboard
+            await axios.patch(`${BASE_URL}/notifications/${id}`, { isRead: true }, {
                 headers: { Authorization: `Bearer ${userToken}` }
             });
             setNotifs(prev => prev.filter(n => n._id !== id));
@@ -74,71 +76,121 @@ const NotificationsScreen = ({ navigation }) => {
         }
     };
 
+    const onRefresh = () => {
+        setRefreshing(true);
+        fetchNotifs();
+    };
+
     const renderItem = ({ item, index }) => (
         <MotiView
-            from={{ opacity: 0, translateX: -20 }}
-            animate={{ opacity: 1, translateX: 0 }}
-            transition={{ delay: 100 * (index % 10) }}
+            from={{ opacity: 0, translateY: 20, scale: 0.95 }}
+            animate={{ opacity: 1, translateY: 0, scale: 1 }}
+            transition={{ type: 'spring', damping: 20, delay: index * 50 }}
         >
-            <TouchableOpacity onPress={() => handleOpenNotification(item)} activeOpacity={0.7}>
-                <Card className="mb-4">
-                    <View className="flex-row justify-between items-start mb-2">
-                        <View className="flex-row items-center flex-1">
-                            <GitBranch size={16} color="#55607780" className="mr-2" />
-                            <Text className="text-sm text-muted font-inter-medium" numberOfLines={1}>
-                                {item.repository?.owner}/{item.repository?.name}
-                            </Text>
-                        </View>
-                        <TouchableOpacity onPress={(e) => {
-                            e.stopPropagation();
-                            handleDelete(item._id);
-                        }}>
-                            <Trash2 size={18} color="#EF4444" />
-                        </TouchableOpacity>
-                    </View>
-
-                    <Text className="text-lg font-poppins-bold text-primary mb-3">{item.issueTitle}</Text>
-
-                    <View className="flex-row flex-wrap mb-4">
-                        {item.matchedLabels.map((l, i) => (
-                            <View key={i} className="bg-brand/5 px-3 py-1.5 rounded-full mr-2 mb-2 border border-brand/10">
-                                <Text className="text-xs text-brand font-inter-bold">#{l}</Text>
+            <View style={shadowStyles.light} className="mb-6">
+                <Card className="p-0 overflow-hidden mb-0">
+                    <TouchableOpacity
+                        onPress={() => handleOpenNotification(item)}
+                        activeOpacity={0.7}
+                        className="p-6"
+                    >
+                        <View className="flex-row items-center justify-between mb-4">
+                            <View className="flex-row items-center flex-1">
+                                <View className="bg-brand/10 p-2 rounded-lg mr-3">
+                                    <GitBranch size={16} color="#6366F1" />
+                                </View>
+                                <Text className="text-xs text-muted font-mono" numberOfLines={1}>
+                                    {item.repository?.owner}/{item.repository?.name}
+                                </Text>
                             </View>
-                        ))}
-                    </View>
+                            <View className="flex-row items-center">
+                                <MotiView
+                                    from={{ scale: 0 }}
+                                    animate={{ scale: 1 }}
+                                    className="bg-brand p-1.5 rounded-full mr-12"
+                                />
+                            </View>
+                        </View>
 
-                    <View className="flex-row items-center pt-2 border-t border-border/50">
-                        <Text className="text-brand font-inter-bold text-sm mr-2">View Issue</Text>
-                        <ExternalLink size={14} color="#D97706" />
-                    </View>
+                        <Text className="text-xl font-poppins-bold text-primary mb-4 leading-7 pr-10">
+                            {item.issueTitle}
+                        </Text>
+
+                        <View className="flex-row flex-wrap mb-4">
+                            {item.matchedLabels.map((l, i) => (
+                                <LabelChip key={i} label={l} selected />
+                            ))}
+                        </View>
+
+                        <View className="flex-row items-center pt-4 border-t border-border/50 justify-between">
+                            <View className="flex-row items-center">
+                                <Calendar size={14} color="#94A3B8" className="mr-2" />
+                                <Text className="text-muted text-xs font-inter-medium">
+                                    {new Date(item.createdAt).toLocaleDateString()}
+                                </Text>
+                            </View>
+                            <View className="flex-row items-center">
+                                <Text className="text-brand font-inter-bold text-sm mr-2">Open Issue</Text>
+                                <ExternalLink size={14} color="#6366F1" />
+                            </View>
+                        </View>
+                    </TouchableOpacity>
+
+                    {/* Separate Delete Button (Not Nested) */}
+                    <TouchableOpacity
+                        onPress={() => {
+                            if (Platform.OS === 'web') {
+                                if (window.confirm('Remove this from your Inbox? It will still be visible on your Dashboard.')) {
+                                    handleDelete(item._id);
+                                }
+                            } else {
+                                Alert.alert(
+                                    'Dismiss Notification',
+                                    'Remove this from your Inbox? It will still be visible on your Dashboard.',
+                                    [
+                                        { text: 'Cancel', style: 'cancel' },
+                                        { text: 'Dismiss', style: 'default', onPress: () => handleDelete(item._id) }
+                                    ]
+                                );
+                            }
+                        }}
+                        className="absolute top-6 right-6 w-10 h-10 items-center justify-center rounded-xl bg-slate-100"
+                    >
+                        <Trash2 size={18} color="#64748B" />
+                    </TouchableOpacity>
                 </Card>
-            </TouchableOpacity>
+            </View>
         </MotiView>
     );
 
     return (
         <SafeAreaView className="flex-1 bg-background">
-            <View className="px-6 py-4 flex-row items-center justify-between bg-background border-b border-border">
+            <StatusBar style="dark" />
+
+            {/* Header */}
+            <View className="px-6 py-4 flex-row items-center justify-between">
                 <View className="flex-row items-center flex-1">
                     <TouchableOpacity
                         onPress={() => navigation.goBack()}
-                        className="w-10 h-10 mr-4 items-center justify-center rounded-xl bg-card border border-border shadow-sm shadow-black/5"
+                        className="w-12 h-12 items-center justify-center rounded-2xl bg-white border border-border shadow-sm"
+                        style={shadowStyles.light}
                     >
-                        <ArrowLeft size={20} color="#0F172A" />
+                        <ArrowLeft size={22} color="#0F172A" />
                     </TouchableOpacity>
-                    <Text className="text-xl font-poppins-bold text-primary">Notifications</Text>
-                    <View className="bg-brand/10 px-2.5 py-1 rounded-full ml-3 border border-brand/20">
-                        <Text className="text-brand text-xs font-montserrat">{notifs.length}</Text>
+                    <View className="ml-4">
+                        <Text className="text-2xl font-poppins-bold text-primary">Inbox</Text>
+                        <Text className="text-muted text-xs font-inter-semibold uppercase tracking-wider">
+                            {notifs.length} New Updates
+                        </Text>
                     </View>
                 </View>
 
                 {notifs.length > 0 && (
                     <TouchableOpacity
                         onPress={handleMarkAllRead}
-                        className="flex-row items-center bg-brand/10 px-4 py-2 rounded-xl border border-brand/20"
+                        className="w-12 h-12 bg-success/10 items-center justify-center rounded-2xl border border-success/20"
                     >
-                        <CheckCheck size={16} color="#D97706" className="mr-2" />
-                        <Text className="text-brand text-xs font-inter-bold uppercase tracking-wider">Mark all</Text>
+                        <CheckCheck size={22} color="#10B981" />
                     </TouchableOpacity>
                 )}
             </View>
@@ -147,25 +199,32 @@ const NotificationsScreen = ({ navigation }) => {
                 data={notifs}
                 renderItem={renderItem}
                 keyExtractor={item => item._id}
-                contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
+                contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 10, paddingBottom: 40 }}
+                refreshControl={
+                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#6366F1" />
+                }
                 ListEmptyComponent={
                     !loading && (
-                        <View className="items-center py-20">
+                        <MotiView
+                            from={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            className="items-center py-20"
+                        >
                             <AnimatedMascot
                                 source={require('../maskot/confused.png')}
-                                style={{ width: 300, height: 300, resizeMode: 'contain', marginBottom: 20 }}
+                                style={{ width: 300, height: 300 }}
                             />
-                            <MotiView
-                                from={{ opacity: 0, translateY: 10 }}
-                                animate={{ opacity: 1, translateY: 0 }}
-                                transition={{ delay: 300 }}
-                            >
-                                <Text className="text-primary text-2xl font-poppins-bold text-center mb-2">All caught up!</Text>
-                                <Text className="text-muted text-sm font-inter-medium text-center px-12 leading-6">
-                                    No new notifications. We'll let you know as soon as matching issues are found.
-                                </Text>
-                            </MotiView>
-                        </View>
+                            <Text className="text-primary text-3xl font-poppins-bold text-center mt-6">All clear!</Text>
+                            <Text className="text-muted text-base font-inter-medium text-center px-10 mt-2 leading-6">
+                                You're completely caught up. We'll notify you as soon as new issues match your filters.
+                            </Text>
+                            <Button
+                                title="Back to Dashboard"
+                                onPress={() => navigation.goBack()}
+                                className="mt-10 px-8"
+                                variant="outline"
+                            />
+                        </MotiView>
                     )
                 }
             />
