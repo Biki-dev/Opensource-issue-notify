@@ -238,8 +238,10 @@ const HomeScreen = ({ navigation }) => {
                     </MotiView>
                 )}
             />
+            <View className="absolute bottom-24 right-6" style={shadowStyles.fab}>
 
-            <FAB icon={Plus} onPress={() => navigation.navigate('AddRepo')} />
+                <FAB icon={Plus} onPress={() => navigation.navigate('AddRepo')} />
+            </View>
         </SafeAreaView>
     );
 };
