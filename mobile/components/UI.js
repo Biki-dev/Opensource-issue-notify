@@ -1,9 +1,27 @@
-import { View, Text, TouchableOpacity, TextInput, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, TextInput, ActivityIndicator, Image } from 'react-native';
 import clsx from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { MotiView } from 'moti';
 
 // Helper for merging classes
 const cn = (...inputs) => twMerge(clsx(inputs));
+
+export const AnimatedMascot = ({ source, style, className }) => {
+    return (
+        <MotiView
+            from={{ opacity: 0, scale: 0.85, translateY: 20 }}
+            animate={{ opacity: 1, scale: 1, translateY: 0 }}
+            transition={{
+                type: 'spring',
+                damping: 15, // Soft bounce
+                stiffness: 120,
+            }}
+            className={className}
+        >
+            <Image source={source} style={style} />
+        </MotiView>
+    );
+};
 
 export const Button = ({ title, onPress, variant = 'primary', className, loading }) => {
     const baseStyle = "h-14 px-5 rounded-2xl items-center justify-center flex-row";

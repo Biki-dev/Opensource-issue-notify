@@ -3,7 +3,7 @@ import { View, Text, FlatList, ScrollView, RefreshControl, TouchableOpacity, Ima
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
-import { Button, Card } from '../components/UI';
+import { Button, Card, AnimatedMascot } from '../components/UI';
 import { Clock, Tag, Info, GitFork, PlusCircle, Bell, Edit2 } from 'lucide-react-native';
 import { MotiView } from 'moti';
 
@@ -136,21 +136,22 @@ const HomeScreen = ({ navigation }) => {
                     </View>
                 }
                 ListEmptyComponent={!loading && (
-                    <MotiView
-                        from={{ opacity: 0, scale: 0.9, translateY: 30 }}
-                        animate={{ opacity: 1, scale: 1, translateY: 0 }}
-                        transition={{ type: 'spring', damping: 0, stiffness: 150 }}
-                        className="items-center py-2"
-                    >
-                        <Image
+                    <View className="items-center py-2">
+                        <AnimatedMascot
                             source={require('../maskot/subadd.png')}
                             style={{ width: 320, height: 320, resizeMode: 'contain', marginBottom: 10 }}
                         />
-                        <Text className="text-primary text-3xl font-poppins-bold text-center mb-2">No subscriptions yet</Text>
-                        <Text className="text-muted font-inter-medium text-center px-12 leading-6">
-                            Add a GitHub repository to start tracking issues that matter.
-                        </Text>
-                    </MotiView>
+                        <MotiView
+                            from={{ opacity: 0, translateY: 10 }}
+                            animate={{ opacity: 1, translateY: 0 }}
+                            transition={{ delay: 300 }}
+                        >
+                            <Text className="text-primary text-3xl font-poppins-bold text-center mb-2">No subscriptions yet</Text>
+                            <Text className="text-muted font-inter-medium text-center px-12 leading-6">
+                                Add a GitHub repository to start tracking issues that matter.
+                            </Text>
+                        </MotiView>
+                    </View>
                 )}
             />
         </SafeAreaView>

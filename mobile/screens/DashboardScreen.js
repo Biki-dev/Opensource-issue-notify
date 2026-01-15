@@ -3,7 +3,7 @@ import { View, Text, FlatList, TouchableOpacity, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
-import { Card, Button, LabelChip } from '../components/UI';
+import { Card, Button, LabelChip, AnimatedMascot } from '../components/UI';
 import { GitBranch, ExternalLink, Bell, Trash2 } from 'lucide-react-native';
 import { MotiView } from 'moti';
 
@@ -160,21 +160,22 @@ const DashboardScreen = ({ navigation }) => {
                     </MotiView>
                 }
                 ListEmptyComponent={!loading && (
-                    <MotiView
-                        from={{ opacity: 0, scale: 0.9, translateY: 20 }}
-                        animate={{ opacity: 1, scale: 1, translateY: 0 }}
-                        transition={{ type: 'spring', damping: 0, stiffness: 150 }}
-                        className="items-center"
-                    >
-                        <Image
+                    <View className="items-center">
+                        <AnimatedMascot
                             source={require('../maskot/add.png')}
                             style={{ width: 320, height: 320, resizeMode: 'contain', marginTop: -20 }}
                         />
-                        <Text className="text-primary text-2xl font-poppins-bold text-center mb-1">Stay updated!</Text>
-                        <Text className="text-muted text-sm font-inter-medium text-center px-10 leading-5">
-                            New matching issues will appear here. Tap View All to manage your tracking.
-                        </Text>
-                    </MotiView>
+                        <MotiView
+                            from={{ opacity: 0, translateY: 10 }}
+                            animate={{ opacity: 1, translateY: 0 }}
+                            transition={{ delay: 300 }}
+                        >
+                            <Text className="text-primary text-2xl font-poppins-bold text-center mb-1">Stay updated!</Text>
+                            <Text className="text-muted text-sm font-inter-medium text-center px-10 leading-5">
+                                New matching issues will appear here. Tap View All to manage your tracking.
+                            </Text>
+                        </MotiView>
+                    </View>
                 )}
             />
         </SafeAreaView>
