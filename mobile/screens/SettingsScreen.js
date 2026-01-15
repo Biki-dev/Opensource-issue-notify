@@ -222,7 +222,7 @@ const SettingsScreen = ({ navigation }) => {
                         className="mb-8"
                     />
 
-                    <View className="items-center pb-8">
+                    <View className="items-center pb-8 pt-8">
                         <Text className="text-muted font-inter-bold text-[10px] uppercase tracking-[4px]">Issue Notify v1.2.0</Text>
                         <Text className="text-muted/40 font-inter-medium text-[10px] mt-2 italic">Crafted for maintainers</Text>
                     </View>
