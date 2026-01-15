@@ -1,14 +1,11 @@
 import React, { useContext, useState } from 'react';
-import { View, Text, Alert, TouchableOpacity, Dimensions, Platform, Linking } from 'react-native';
+import { View, Text, Alert, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuthContext } from '../context/AuthContext';
 import { Button, Input, shadowStyles } from '../components/UI';
-import { Mail, Lock, Zap, User, Github, Sparkles } from 'lucide-react-native';
+import { Mail, Lock, User, Github, Eye, EyeOff } from 'lucide-react-native';
 import { MotiView } from 'moti';
 import { StatusBar } from 'expo-status-bar';
-import { LinearGradient } from 'expo-linear-gradient';
-
-const { width } = Dimensions.get('window');
 
 const LoginScreen = ({ navigation }) => {
     const { login, signup, loginWithGitHub } = useContext(AuthContext);
@@ -18,6 +15,7 @@ const LoginScreen = ({ navigation }) => {
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
     const [emailError, setEmailError] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
 
     const validateEmail = (text) => {
         setEmail(text);
@@ -60,112 +58,74 @@ const LoginScreen = ({ navigation }) => {
     };
 
     return (
-        <LinearGradient
-            colors={['#0F172A', '#1E293B', '#334155']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            className="flex-1"
-        >
-            <SafeAreaView className="flex-1 px-6">
-                <StatusBar style="light" />
+        <SafeAreaView className="flex-1 bg-white">
+            <StatusBar style="dark" />
 
-                {/* Animated Background Elements */}
-                <MotiView
-                    from={{ opacity: 0.1, scale: 0.8 }}
-                    animate={{ opacity: 0.3, scale: 1.2 }}
-                    transition={{ loop: true, type: 'timing', duration: 4000, repeatReverse: true }}
-                    style={{
-                        position: 'absolute',
-                        top: -100,
-                        right: -100,
-                        width: 300,
-                        height: 300,
-                        borderRadius: 150,
-                        backgroundColor: '#6366F1',
-                    }}
-                />
-                <MotiView
-                    from={{ opacity: 0.1, scale: 1.2 }}
-                    animate={{ opacity: 0.2, scale: 0.8 }}
-                    transition={{ loop: true, type: 'timing', duration: 5000, repeatReverse: true }}
-                    style={{
-                        position: 'absolute',
-                        bottom: -50,
-                        left: -50,
-                        width: 200,
-                        height: 200,
-                        borderRadius: 100,
-                        backgroundColor: '#8B5CF6',
-                    }}
-                />
-
-                <View className="flex-1 justify-center">
-                    {/* Logo & Header */}
-                    <View className="items-center mb-12">
+            <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                className="flex-1"
+            >
+                <ScrollView
+                    contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24 }}
+                    showsVerticalScrollIndicator={false}
+                    bounces={false}
+                >
+                    {/* Header Section */}
+                    <View className="pt-12 pb-8">
+                        {/* App Logo/Icon */}
                         <MotiView
-                            from={{ opacity: 0, scale: 0.5, rotate: '-10deg' }}
-                            animate={{ opacity: 1, scale: 1, rotate: '0deg' }}
-                            transition={{ type: 'spring', damping: 12, stiffness: 100 }}
-                            className="relative"
+                            from={{ opacity: 0, scale: 0.8, translateY: -20 }}
+                            animate={{ opacity: 1, scale: 1, translateY: 0 }}
+                            transition={{ type: 'spring', damping: 15 }}
+                            className="items-center mb-8"
                         >
-                            <LinearGradient
-                                colors={['#6366F1', '#8B5CF6']}
-                                start={{ x: 0, y: 0 }}
-                                end={{ x: 1, y: 1 }}
-                                className="w-28 h-28 rounded-[40px] items-center justify-center mb-6 shadow-2xl"
-                                style={shadowStyles.fab}
-                            >
-                                <Zap size={56} color="white" fill="white" />
-                            </LinearGradient>
-                            <MotiView
-                                from={{ opacity: 0, scale: 0 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                transition={{ delay: 300, type: 'spring' }}
-                                className="absolute -top-2 -right-2 w-8 h-8 bg-success rounded-full items-center justify-center border-4 border-[#0F172A]"
-                            >
-                                <Sparkles size={14} color="white" />
-                            </MotiView>
+                            <View className="w-20 h-20 rounded-[28px] bg-brand items-center justify-center shadow-lg" style={shadowStyles.medium}>
+                                <Github size={40} color="white" />
+                            </View>
                         </MotiView>
 
+                        {/* Title */}
                         <MotiView
                             from={{ opacity: 0, translateY: 20 }}
                             animate={{ opacity: 1, translateY: 0 }}
-                            transition={{ delay: 200 }}
+                            transition={{ delay: 100 }}
                         >
-                            <Text className="text-5xl font-poppins-bold text-white text-center tracking-tight">
-                                Issue Notify
+                            <Text className="text-[32px] font-poppins-bold text-primary mb-2 text-center">
+                                {isLogin ? 'Welcome Back!' : 'Create Account'}
                             </Text>
-                            <Text className="text-slate-300 mt-3 text-lg font-inter-medium text-center px-4">
-                                {isLogin ? 'Welcome back!' : 'Join thousands of developers'}
+                            <Text className="text-muted text-base font-inter-medium text-center px-8">
+                                {isLogin
+                                    ? 'Sign in to continue tracking issues'
+                                    : 'Start tracking GitHub issues today'}
                             </Text>
                         </MotiView>
                     </View>
 
-                    {/* Form Container */}
-                    <MotiView
-                        from={{ opacity: 0, translateY: 30 }}
-                        animate={{ opacity: 1, translateY: 0 }}
-                        transition={{ delay: 400, type: 'spring', damping: 20 }}
-                    >
-                        <View className="bg-white/10 backdrop-blur-xl rounded-[32px] p-8 border border-white/20" style={shadowStyles.strong}>
+                    {/* Form Section */}
+                    <View className="flex-1">
+                        <MotiView
+                            from={{ opacity: 0, translateY: 30 }}
+                            animate={{ opacity: 1, translateY: 0 }}
+                            transition={{ delay: 200 }}
+                        >
                             {/* GitHub Button */}
                             <TouchableOpacity
                                 onPress={handleGitHubLogin}
                                 disabled={loading}
-                                className="bg-white h-16 rounded-2xl flex-row items-center justify-center mb-6"
+                                className="bg-[#24292F] h-14 rounded-2xl flex-row items-center justify-center mb-6"
                                 style={shadowStyles.light}
                             >
-                                <Github size={24} color="#0F172A" className="mr-3" />
-                                <Text className="text-primary font-poppins-semibold text-lg">
+                                <Github size={20} color="white" />
+                                <Text className="text-white font-poppins-semibold text-base ml-3">
                                     Continue with GitHub
                                 </Text>
                             </TouchableOpacity>
 
                             {/* Divider */}
                             <View className="flex-row items-center mb-6">
-                                <View className="flex-1 h-[1px] bg-white/20" />
-                                <Text className="text-slate-300 text-sm font-inter-medium px-4">or</Text>
-                                <View className="flex-1 h-[1px] bg-white/20" />
+                                <View className="flex-1 h-[1px] bg-border" />
+                                <Text className="text-muted text-sm font-inter-medium px-4">or</Text>
+                                <View className="flex-1 h-[1px] bg-border" />
                             </View>
 
                             {/* Name Field (Signup Only) */}
@@ -173,6 +133,7 @@ const LoginScreen = ({ navigation }) => {
                                 <MotiView
                                     from={{ opacity: 0, height: 0 }}
                                     animate={{ opacity: 1, height: 90 }}
+                                    exit={{ opacity: 0, height: 0 }}
                                     transition={{ type: 'timing', duration: 300 }}
                                 >
                                     <Input
@@ -180,9 +141,6 @@ const LoginScreen = ({ navigation }) => {
                                         value={name}
                                         onChangeText={setName}
                                         icon={User}
-                                        className="bg-white/20 border-white/30"
-                                        style={{ color: 'white' }}
-                                        placeholderTextColor="rgba(255,255,255,0.5)"
                                     />
                                 </MotiView>
                             )}
@@ -194,58 +152,86 @@ const LoginScreen = ({ navigation }) => {
                                 onChangeText={validateEmail}
                                 icon={Mail}
                                 error={emailError}
-                                className="bg-white/20 border-white/30"
-                                style={{ color: 'white' }}
-                                placeholderTextColor="rgba(255,255,255,0.5)"
+                                keyboardType="email-address"
+                                autoCapitalize="none"
                             />
 
-                            {/* Password Field */}
-                            <Input
-                                placeholder="Password"
-                                value={password}
-                                onChangeText={setPassword}
-                                secureTextEntry
-                                icon={Lock}
-                                className="bg-white/20 border-white/30"
-                                style={{ color: 'white' }}
-                                placeholderTextColor="rgba(255,255,255,0.5)"
-                            />
+                            {/* Password Field with Toggle */}
+                            <View className="mb-6">
+                                <View className={`bg-white h-16 rounded-2xl border ${emailError ? 'border-danger' : 'border-border'} px-5 flex-row items-center shadow-sm`} style={shadowStyles.light}>
+                                    <Lock size={24} color="#94A3B8" className="mr-4" />
+                                    <TextInput
+                                        className="flex-1 text-base text-primary font-inter-medium"
+                                        value={password}
+                                        onChangeText={setPassword}
+                                        placeholder="Password"
+                                        placeholderTextColor="#94A3B8"
+                                        secureTextEntry={!showPassword}
+                                        autoCapitalize="none"
+                                    />
+                                    <TouchableOpacity
+                                        onPress={() => setShowPassword(!showPassword)}
+                                        className="ml-2 p-2"
+                                    >
+                                        {showPassword ? (
+                                            <EyeOff size={20} color="#94A3B8" />
+                                        ) : (
+                                            <Eye size={20} color="#94A3B8" />
+                                        )}
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
 
                             {/* Submit Button */}
                             <Button
-                                title={isLogin ? "Sign In" : "Create Account"}
+                                title={isLogin ? 'Sign In' : 'Create Account'}
                                 onPress={handleSubmit}
                                 loading={loading}
-                                className="mt-4"
+                                className="mb-6"
                             />
-                        </View>
-                    </MotiView>
 
-                    {/* Toggle Auth Mode */}
-                    <MotiView
-                        from={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: 600 }}
-                        className="flex-row justify-center mt-8 items-center"
-                    >
-                        <Text className="text-slate-300 font-inter-medium text-base">
-                            {isLogin ? "New here? " : "Already a member? "}
-                        </Text>
-                        <TouchableOpacity
-                            onPress={() => {
-                                setIsLogin(!isLogin);
-                                setEmailError('');
-                            }}
-                            className="py-2"
-                        >
-                            <Text className="text-brand font-poppins-semibold text-base ml-1">
-                                {isLogin ? 'Create Account' : 'Sign In'}
+                            {/* Agreement Text (Signup Only) */}
+                            {!isLogin && (
+                                <MotiView
+                                    from={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    className="mb-6"
+                                >
+                                    <Text className="text-muted text-xs text-center font-inter-medium leading-5">
+                                        I agree to the{' '}
+                                        <Text className="text-brand font-inter-semibold">
+                                            Terms & Privacy
+                                        </Text>
+                                    </Text>
+                                </MotiView>
+                            )}
+                        </MotiView>
+                    </View>
+
+                    {/* Footer */}
+                    <View className="pb-8 pt-4">
+                        <View className="flex-row justify-center items-center">
+                            <Text className="text-muted font-inter-medium text-sm">
+                                {isLogin ? "Don't have an account? " : "Already have an account? "}
                             </Text>
-                        </TouchableOpacity>
-                    </MotiView>
-                </View>
-            </SafeAreaView>
-        </LinearGradient>
+                            <TouchableOpacity
+                                onPress={() => {
+                                    setIsLogin(!isLogin);
+                                    setEmailError('');
+                                    setName('');
+                                    setEmail('');
+                                    setPassword('');
+                                }}
+                            >
+                                <Text className="text-brand font-poppins-semibold text-sm">
+                                    {isLogin ? 'Sign up' : 'Sign in'}
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </ScrollView>
+            </KeyboardAvoidingView>
+        </SafeAreaView>
     );
 };
 
