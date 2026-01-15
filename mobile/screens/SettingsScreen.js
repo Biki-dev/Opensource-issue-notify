@@ -155,10 +155,7 @@ const SettingsScreen = ({ navigation }) => {
                                 <Text className="text-xl font-poppins-bold text-primary">{unreadCount}</Text>
                                 <Text className="text-[10px] text-muted font-inter-bold uppercase">Unread</Text>
                             </View>
-                            <View className="flex-1 items-center">
-                                <Text className="text-xl font-poppins-bold text-primary">High</Text>
-                                <Text className="text-[10px] text-muted font-inter-bold uppercase">Impact</Text>
-                            </View>
+
                         </View>
                     </Card>
                 </MotiView>
