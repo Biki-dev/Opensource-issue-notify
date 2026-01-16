@@ -1,5 +1,5 @@
 import React, { useContext, useState } from 'react';
-import { View, Text, Alert, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, TextInput } from 'react-native';
+import { View, Text, Alert, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, TextInput, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuthContext } from '../context/AuthContext';
 import { Button, Input, shadowStyles } from '../components/UI';
@@ -87,8 +87,12 @@ const LoginScreen = ({ navigation }) => {
                             transition={{ type: 'timing', duration: 400 }}
                             className="items-center mb-8"
                         >
-                            <View className="w-20 h-20 rounded-[28px] bg-brand items-center justify-center shadow-lg" style={shadowStyles.medium}>
-                                <Github size={40} color="white" />
+                            <View className="w-32 h-32 rounded-[28px] items-center justify-center">
+                                <Image
+                                    source={require('../assets/logo.png')}
+                                    style={{ width: '100%', height: '100%' }}
+                                    resizeMode="contain"
+                                />
                             </View>
                         </MotiView>
 

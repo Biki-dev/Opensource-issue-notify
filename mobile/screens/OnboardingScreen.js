@@ -87,8 +87,12 @@ const WelcomeScreen = () => {
             >
                 {/* App Icon */}
                 <View className="relative mb-8">
-                    <View className="w-32 h-32 bg-brand rounded-[40px] items-center justify-center shadow-2xl">
-                        <Github size={64} color="white" strokeWidth={2.5} />
+                    <View className="w-32 h-32">
+                        <Image
+                            source={require('../assets/logo.png')}
+                            style={{ width: '85%', height: '85%' }}
+                            resizeMode="contain"
+                        />
                     </View>
 
                     {/* Glow Effect */}

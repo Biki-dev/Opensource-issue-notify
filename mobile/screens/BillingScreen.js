@@ -49,7 +49,25 @@ const BillingScreen = ({ navigation }) => {
             </View>
 
             <ScrollView contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 120 }}>
-                {/* Pricing Toggle */}
+                {/* Coming Soon Message */}
+                <MotiView
+                    from={{ opacity: 0, translateY: 50 }}
+                    animate={{ opacity: 1, translateY: 0 }}
+                    transition={{ type: 'timing', duration: 800, delay: 200 }}
+                    className="flex-1 justify-center items-center mt-20"
+                >
+                    <View className="w-24 h-24 rounded-full bg-brand/10 items-center justify-center mb-8">
+                        <Sparkles size={48} color="#6366F1" />
+                    </View>
+                    <Text className="text-3xl font-poppins-bold text-primary mb-4">Coming Soon</Text>
+                    <Text className="text-muted text-lg font-inter-medium text-center px-8">
+                        Subscription features will be added shortly. Stay tuned!
+                    </Text>
+                </MotiView>
+
+                {/* Original Content (Commented Out) */}
+                {/*
+                // Pricing Toggle 
                 <View className="items-center mt-4 mb-10">
                     <View className="bg-slate-100 rounded-2xl p-1.5 border border-border flex-row">
                         <TouchableOpacity
@@ -88,7 +106,7 @@ const BillingScreen = ({ navigation }) => {
                     </View>
                 </View>
 
-                {/* Free Plan */}
+                // Free Plan 
                 <MotiView
                     from={{ opacity: 0, translateY: 30 }}
                     animate={{ opacity: 1, translateY: 0 }}
@@ -125,7 +143,7 @@ const BillingScreen = ({ navigation }) => {
                     </Card>
                 </MotiView>
 
-                {/* Pro Plan */}
+                // Pro Plan 
                 <MotiView
                     from={{ opacity: 0, translateY: 30 }}
                     animate={{ opacity: 1, translateY: 0 }}
@@ -135,7 +153,7 @@ const BillingScreen = ({ navigation }) => {
                         className="p-8 mb-8 border-2 border-brand relative overflow-hidden"
                         containerStyle={{ backgroundColor: '#FFFFFF' }}
                     >
-                        {/* Glow Gradient Effect */}
+                        // Glow Gradient Effect
                         <MotiView
                             from={{ opacity: 0.1, scale: 0.8 }}
                             animate={{ opacity: 0.3, scale: 1.2 }}
@@ -199,7 +217,7 @@ const BillingScreen = ({ navigation }) => {
                     </Card>
                 </MotiView>
 
-                {/* Trust Section */}
+                // Trust Section 
                 <MotiView
                     from={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
@@ -214,6 +232,7 @@ const BillingScreen = ({ navigation }) => {
                         Cancel or change your plan at any time. All data remains private and secure.
                     </Text>
                 </MotiView>
+                */}
             </ScrollView>
         </SafeAreaView>
     );
