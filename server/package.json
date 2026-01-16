@@ -1,5 +1,5 @@
 {
-    "name": "issue-notify-server",
+    "name": "IssueWatch-server",
     "version": "1.0.0",
     "description": "",
     "main": "index.js",

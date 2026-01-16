@@ -1,8 +1,8 @@
 {
   "expo": {
-    "scheme": "issuenotify",
-    "name": "IssueNotify",
-    "slug": "issue-notify",
+    "scheme": "IssueWatch",
+    "name": "IssueWatch",
+    "slug": "IssueWatch",
     "version": "1.0.0",
     "orientation": "portrait",
     "assetBundlePatterns": [

@@ -5,7 +5,7 @@ const { MongoMemoryServer } = require('mongodb-memory-server');
 
 const connectDB = async () => {
     try {
-        const uri = process.env.MONGO_URI || 'mongodb://localhost:27017/issue-notify';
+        const uri = process.env.MONGO_URI;
         console.log(`Attempting to connect to: ${uri}`);
 
         await mongoose.connect(uri);
