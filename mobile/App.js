@@ -5,6 +5,8 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { AuthProvider, AuthContext } from './context/AuthContext';
 import { StatusBar } from 'expo-status-bar';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import OnboardingScreen from './screens/OnboardingScreen';
 import LoginScreen from './screens/LoginScreen';
 import HomeScreen from './screens/HomeScreen';
 import DashboardScreen from './screens/DashboardScreen';
@@ -21,7 +23,7 @@ import { Montserrat_700Bold } from '@expo-google-fonts/montserrat';
 import { JetBrainsMono_400Regular } from '@expo-google-fonts/jetbrains-mono';
 import { PlayfairDisplay_500Medium } from '@expo-google-fonts/playfair-display';
 
-// 1. Import global.css for nativewind
+// Import global.css for nativewind
 import './global.css';
 
 const Stack = createNativeStackNavigator();
@@ -50,7 +52,6 @@ const CustomTabBar = ({ state, descriptors, navigation }) => {
             shadowRadius: 10,
             elevation: 20,
         }}>
-            {/* Animated Glow Indicator */}
             <MotiView
                 animate={{
                     translateX: (state.index * tabWidth) + (tabWidth / 2) - 20,
@@ -64,7 +65,7 @@ const CustomTabBar = ({ state, descriptors, navigation }) => {
                     top: 0,
                     width: 40,
                     height: 3,
-                    backgroundColor: '#6366F1', // brand
+                    backgroundColor: '#6366F1',
                     borderRadius: 3,
                     shadowColor: '#6366F1',
                     shadowOffset: { width: 0, height: 2 },
@@ -150,15 +151,52 @@ const AppTabs = () => {
 
 const AppNav = () => {
     const { userToken, isLoading } = useContext(AuthContext);
+    const [hasSeenOnboarding, setHasSeenOnboarding] = useState(null);
 
-    if (isLoading) {
-        return null; // Or splash
+    useEffect(() => {
+        checkOnboarding();
+    }, []);
+
+    // Re-check onboarding status when userToken changes
+    useEffect(() => {
+        if (userToken) {
+            checkOnboarding();
+        }
+    }, [userToken]);
+
+    const checkOnboarding = async () => {
+        try {
+            const value = await AsyncStorage.getItem('hasSeenOnboarding');
+            setHasSeenOnboarding(value === 'true');
+            console.log('Onboarding status:', value);
+        } catch (e) {
+            console.log('Error checking onboarding status', e);
+            setHasSeenOnboarding(false);
+        }
+    };
+
+    // Debug logs
+    useEffect(() => {
+        console.log('AppNav state:', {
+            userToken: userToken ? 'exists' : 'null',
+            isLoading,
+            hasSeenOnboarding
+        });
+    }, [userToken, isLoading, hasSeenOnboarding]);
+
+    if (isLoading || hasSeenOnboarding === null) {
+        return null; // Or show splash screen
     }
 
     return (
         <NavigationContainer>
             <Stack.Navigator screenOptions={{ headerShown: false, animation: 'slide_from_right' }}>
-                {userToken === null ? (
+                {!hasSeenOnboarding ? (
+                    <>
+                        <Stack.Screen name="Onboarding" component={OnboardingScreen} />
+                        <Stack.Screen name="Login" component={LoginScreen} />
+                    </>
+                ) : userToken === null ? (
                     <Stack.Screen name="Login" component={LoginScreen} />
                 ) : (
                     <>

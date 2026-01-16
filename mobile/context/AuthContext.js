@@ -32,9 +32,19 @@ export const AuthProvider = ({ children }) => {
         try {
             const res = await axios.post(`${BASE_URL}/auth/login`, { email, password });
             console.log("Login Success", res.data);
-            setUserToken(res.data.token);
-            await AsyncStorage.setItem('userToken', res.data.token);
-            updateUnreadCount(res.data.token);
+
+            // Set token first
+            const token = res.data.token;
+            setUserToken(token);
+            await AsyncStorage.setItem('userToken', token);
+
+            // Mark onboarding as seen
+            await AsyncStorage.setItem('hasSeenOnboarding', 'true');
+
+            // Update unread count
+            updateUnreadCount(token);
+
+            return res.data;
         } catch (e) {
             console.log("Login Error", e);
             throw e;
@@ -44,9 +54,20 @@ export const AuthProvider = ({ children }) => {
     const signup = async (name, email, password) => {
         try {
             const res = await axios.post(`${BASE_URL}/auth/signup`, { name, email, password });
-            setUserToken(res.data.token);
-            await AsyncStorage.setItem('userToken', res.data.token);
-            updateUnreadCount(res.data.token);
+            console.log("Signup Success", res.data);
+
+            // Set token first
+            const token = res.data.token;
+            setUserToken(token);
+            await AsyncStorage.setItem('userToken', token);
+
+            // Mark onboarding as seen
+            await AsyncStorage.setItem('hasSeenOnboarding', 'true');
+
+            // Update unread count
+            updateUnreadCount(token);
+
+            return res.data;
         } catch (e) {
             console.log("Signup Error", e);
             throw e;
@@ -75,9 +96,18 @@ export const AuthProvider = ({ children }) => {
                 // Step 2: Exchange code for token via backend
                 const res = await axios.post(`${BASE_URL}/auth/github`, { code, redirectUri });
 
-                setUserToken(res.data.token);
-                await AsyncStorage.setItem('userToken', res.data.token);
-                updateUnreadCount(res.data.token);
+                // Set token first
+                const token = res.data.token;
+                setUserToken(token);
+                await AsyncStorage.setItem('userToken', token);
+
+                // Mark onboarding as seen
+                await AsyncStorage.setItem('hasSeenOnboarding', 'true');
+
+                // Update unread count
+                updateUnreadCount(token);
+
+                return res.data;
             } else {
                 throw new Error('Authentication cancelled or failed');
             }

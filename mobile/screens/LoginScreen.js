@@ -36,11 +36,16 @@ const LoginScreen = ({ navigation }) => {
         try {
             if (isLogin) {
                 await login(email, password);
+                console.log('Login successful, should navigate to dashboard');
             } else {
                 await signup(name, email, password);
+                console.log('Signup successful, should navigate to dashboard');
             }
+            // Navigation happens automatically via App.js when userToken changes
         } catch (e) {
-            Alert.alert('Error', e.response?.data?.message || 'Something went wrong.');
+            console.error('Auth error:', e);
+            const errorMessage = e.response?.data?.message || e.message || 'Something went wrong.';
+            Alert.alert('Error', errorMessage);
         } finally {
             setLoading(false);
         }
@@ -50,7 +55,10 @@ const LoginScreen = ({ navigation }) => {
         try {
             setLoading(true);
             await loginWithGitHub();
+            console.log('GitHub login successful, should navigate to dashboard');
+            // Navigation happens automatically via App.js when userToken changes
         } catch (e) {
+            console.error('GitHub auth error:', e);
             Alert.alert('Error', 'GitHub authentication failed.');
         } finally {
             setLoading(false);
@@ -114,6 +122,7 @@ const LoginScreen = ({ navigation }) => {
                                 disabled={loading}
                                 className="bg-[#24292F] h-14 rounded-2xl flex-row items-center justify-center mb-6"
                                 style={shadowStyles.light}
+                                activeOpacity={0.8}
                             >
                                 <Github size={20} color="white" />
                                 <Text className="text-white font-poppins-semibold text-base ml-3">
@@ -141,6 +150,7 @@ const LoginScreen = ({ navigation }) => {
                                         value={name}
                                         onChangeText={setName}
                                         icon={User}
+                                        autoCapitalize="words"
                                     />
                                 </MotiView>
                             )}
@@ -154,6 +164,7 @@ const LoginScreen = ({ navigation }) => {
                                 error={emailError}
                                 keyboardType="email-address"
                                 autoCapitalize="none"
+                                autoCorrect={false}
                             />
 
                             {/* Password Field with Toggle */}
@@ -168,10 +179,12 @@ const LoginScreen = ({ navigation }) => {
                                         placeholderTextColor="#94A3B8"
                                         secureTextEntry={!showPassword}
                                         autoCapitalize="none"
+                                        autoCorrect={false}
                                     />
                                     <TouchableOpacity
                                         onPress={() => setShowPassword(!showPassword)}
                                         className="ml-2 p-2"
+                                        activeOpacity={0.7}
                                     >
                                         {showPassword ? (
                                             <EyeOff size={20} color="#94A3B8" />
@@ -195,12 +208,12 @@ const LoginScreen = ({ navigation }) => {
                                 <MotiView
                                     from={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
-                                    className="mb-6"
+                                    className="mb-6 mt-6"
                                 >
                                     <Text className="text-muted text-xs text-center font-inter-medium leading-5">
-                                        I agree to the{' '}
+                                        By creating an account, you agree to our{' '}
                                         <Text className="text-brand font-inter-semibold">
-                                            Terms & Privacy
+                                            Terms & Privacy Policy
                                         </Text>
                                     </Text>
                                 </MotiView>
@@ -222,6 +235,7 @@ const LoginScreen = ({ navigation }) => {
                                     setEmail('');
                                     setPassword('');
                                 }}
+                                activeOpacity={0.7}
                             >
                                 <Text className="text-brand font-poppins-semibold text-sm">
                                     {isLogin ? 'Sign up' : 'Sign in'}
