@@ -92,7 +92,7 @@ const BillingScreen = ({ navigation }) => {
                 <MotiView
                     from={{ opacity: 0, translateY: 30 }}
                     animate={{ opacity: 1, translateY: 0 }}
-                    transition={{ type: 'spring', damping: 20, delay: 100 }}
+                    transition={{ type: 'timing', duration: 400, delay: 100 }}
                 >
                     <Card className="p-8 mb-8 border border-border">
                         <View className="flex-row items-center mb-6">
@@ -129,7 +129,7 @@ const BillingScreen = ({ navigation }) => {
                 <MotiView
                     from={{ opacity: 0, translateY: 30 }}
                     animate={{ opacity: 1, translateY: 0 }}
-                    transition={{ type: 'spring', damping: 20, delay: 200 }}
+                    transition={{ type: 'timing', duration: 400, delay: 200 }}
                 >
                     <Card
                         className="p-8 mb-8 border-2 border-brand relative overflow-hidden"

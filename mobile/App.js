@@ -56,9 +56,8 @@ const CustomTabBar = ({ state, descriptors, navigation }) => {
                     translateX: (state.index * tabWidth) + (tabWidth / 2) - 20,
                 }}
                 transition={{
-                    type: 'spring',
-                    damping: 20,
-                    stiffness: 200,
+                    type: 'timing',
+                    duration: 300,
                 }}
                 style={{
                     position: 'absolute',
@@ -110,9 +109,8 @@ const CustomTabBar = ({ state, descriptors, navigation }) => {
                                 translateY: isFocused ? -2 : 0,
                             }}
                             transition={{
-                                type: 'spring',
-                                damping: 15,
-                                stiffness: 200,
+                                type: 'timing',
+                                duration: 200,
                             }}
                         >
                             <IconComponent

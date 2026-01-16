@@ -60,7 +60,7 @@ const DashboardScreen = ({ navigation }) => {
         <MotiView
             from={{ opacity: 0, translateY: 30, scale: 0.9 }}
             animate={{ opacity: 1, translateY: 0, scale: 1 }}
-            transition={{ type: 'spring', damping: 15, delay: index * 100 }}
+            transition={{ type: 'timing', duration: 400, delay: index * 100 }}
         >
             <Card className="mb-6 p-6">
                 <View className="flex-row justify-between items-start mb-4">
@@ -138,7 +138,7 @@ const DashboardScreen = ({ navigation }) => {
                 <MotiView
                     from={{ opacity: 0, translateX: -20 }}
                     animate={{ opacity: 1, translateX: 0 }}
-                    transition={{ type: 'spring', damping: 20 }}
+                    transition={{ type: 'timing', duration: 400 }}
                 >
                     <Text className="text-4xl font-poppins-bold text-primary">Dashboard</Text>
                 </MotiView>
@@ -167,7 +167,7 @@ const DashboardScreen = ({ navigation }) => {
                         <MotiView
                             from={{ opacity: 0, scale: 0.9 }}
                             animate={{ opacity: 1, scale: 1 }}
-                            transition={{ type: 'spring', damping: 15, delay: 200 }}
+                            transition={{ type: 'timing', duration: 400, delay: 200 }}
                         >
 
                             <Card className="p-0 overflow-hidden mb-8" containerStyle={{

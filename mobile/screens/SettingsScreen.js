@@ -95,7 +95,7 @@ const SettingsScreen = ({ navigation }) => {
                 <MotiView
                     from={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    transition={{ type: 'spring', damping: 20 }}
+                    transition={{ type: 'timing', duration: 400 }}
                 >
                     <Card className="p-0 overflow-hidden mb-8 shadow-sm">
                         <View className="p-8 items-center">

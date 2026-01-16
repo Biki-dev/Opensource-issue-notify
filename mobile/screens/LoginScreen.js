@@ -76,7 +76,7 @@ const LoginScreen = ({ navigation }) => {
                         <MotiView
                             from={{ opacity: 0, scale: 0.8, translateY: -20 }}
                             animate={{ opacity: 1, scale: 1, translateY: 0 }}
-                            transition={{ type: 'spring', damping: 15 }}
+                            transition={{ type: 'timing', duration: 400 }}
                             className="items-center mb-8"
                         >
                             <View className="w-20 h-20 rounded-[28px] bg-brand items-center justify-center shadow-lg" style={shadowStyles.medium}>

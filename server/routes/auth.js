@@ -144,15 +144,18 @@ router.post('/github', async (req, res) => {
                 githubId: githubUser.id.toString(),
                 githubUsername: githubUser.login,
                 profilePicture: githubUser.avatar_url,
-                authMethod: 'github'
+                authMethod: 'github',
+                githubAccessToken: accessToken,
+                lastProfileUpdate: Date.now()
             });
         } else {
             // Update existing GitHub user's profile picture if changed
-            if (user.profilePicture !== githubUser.avatar_url) {
-                user.profilePicture = githubUser.avatar_url;
-                await user.save();
-            }
+            user.profilePicture = githubUser.avatar_url;
         }
+        user.githubAccessToken = accessToken;
+        user.lastProfileUpdate = Date.now();
+        await user.save();
+
 
         res.json({
             _id: user._id,
@@ -178,8 +181,39 @@ router.post('/github', async (req, res) => {
 // Get current user's profile
 router.get('/me', auth, async (req, res) => {
     try {
-        const user = await User.findById(req.user._id).select('-password');
+        let user = await User.findById(req.user._id).select('-password');
         if (!user) return res.status(404).json({ message: 'User not found' });
+
+        // Periodic GitHub Profile Sync (7 days)
+        if (user.authMethod === 'github') {
+            const sevenDays = 7 * 24 * 60 * 60 * 1000;
+            const lastUpdate = user.lastProfileUpdate ? new Date(user.lastProfileUpdate).getTime() : 0;
+
+            if (Date.now() - lastUpdate > sevenDays) {
+                const userWithToken = await User.findById(req.user._id).select('githubAccessToken');
+                if (userWithToken?.githubAccessToken) {
+                    try {
+                        const ghRes = await axios.get('https://api.github.com/user', {
+                            headers: { Authorization: `Bearer ${userWithToken.githubAccessToken}` }
+                        });
+
+                        // Update if changed
+                        if (user.profilePicture !== ghRes.data.avatar_url) {
+                            user.profilePicture = ghRes.data.avatar_url;
+                        }
+
+                        // Always update timestamp to reset timer
+                        user.lastProfileUpdate = Date.now();
+                        await user.save();
+                        console.log('Synced GitHub profile for:', user.email);
+                    } catch (e) {
+                        console.log('Background GitHub sync failed:', e.message);
+                        // If token invalid (401), could clear it here
+                    }
+                }
+            }
+        }
+
         res.json(user);
     } catch (error) {
         console.error('Get profile error:', error);

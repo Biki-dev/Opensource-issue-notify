@@ -27,6 +27,8 @@ const UserSchema = new mongoose.Schema({
     plan: { type: String, enum: ['free', 'pro'], default: 'free' },
 
     createdAt: { type: Date, default: Date.now },
+    lastProfileUpdate: { type: Date, default: Date.now },
+    githubAccessToken: { type: String, select: false }, // Store token for periodic updates
 });
 
 // Only hash password if it exists and is modified

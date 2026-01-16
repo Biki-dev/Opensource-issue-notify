@@ -75,7 +75,7 @@ const HomeScreen = ({ navigation }) => {
         <MotiView
             from={{ opacity: 0, translateY: 30, scale: 0.95 }}
             animate={{ opacity: 1, translateY: 0, scale: 1 }}
-            transition={{ type: 'spring', damping: 15, delay: index * 50 }}
+            transition={{ type: 'timing', duration: 400, delay: index * 50 }}
             style={{ width: '48%', marginRight: index % 2 === 0 ? '4%' : 0 }}
         >
             <Card className="mb-4 p-4" containerStyle={{ opacity: item.visible === false ? 0.6 : 1 }}>
@@ -170,7 +170,7 @@ const HomeScreen = ({ navigation }) => {
         <MotiView
             from={{ opacity: 0, translateY: 30, scale: 0.95 }}
             animate={{ opacity: 1, translateY: 0, scale: 1 }}
-            transition={{ type: 'spring', damping: 15, delay: index * 50 }}
+            transition={{ type: 'timing', duration: 400, delay: index * 50 }}
         >
             <Card className="mb-6 p-6" containerStyle={{ opacity: item.visible === false ? 0.6 : 1 }}>
                 <View className="flex-row items-start justify-between mb-4">

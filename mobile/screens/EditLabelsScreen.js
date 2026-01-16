@@ -98,7 +98,7 @@ const EditLabelsScreen = ({ route, navigation }) => {
                 <MotiView
                     from={{ opacity: 0, translateY: 10 }}
                     animate={{ opacity: 1, translateY: 0 }}
-                    transition={{ type: 'spring', damping: 20 }}
+                    transition={{ type: 'timing', duration: 400 }}
                 >
                     <Card className="p-6 mb-8 border border-brand/20 bg-slate-50">
                         <View className="flex-row items-center mb-4">
