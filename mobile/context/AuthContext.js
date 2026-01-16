@@ -14,8 +14,7 @@ export const AuthProvider = ({ children }) => {
     const [isLoading, setIsLoading] = useState(true);
     const [unreadCount, setUnreadCount] = useState(0);
 
-    const BASE_URL = 'http://10.119.238.78:5000/api';
-
+    const BASE_URL ='https://issuewatch.onrender.com/api';
     const updateUnreadCount = async (token) => {
         try {
             const res = await axios.get(`${BASE_URL}/notifications`, {
