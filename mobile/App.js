@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { View, TouchableOpacity, Text, useWindowDimensions, Platform } from 'react-native';
+import { View, TouchableOpacity, Text, useWindowDimensions, Platform, Image } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -25,20 +25,22 @@ import { PlayfairDisplay_500Medium } from '@expo-google-fonts/playfair-display';
 
 // Import global.css for nativewind
 import './global.css';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
 const CustomTabBar = ({ state, descriptors, navigation }) => {
     const { width } = useWindowDimensions();
+    const insets = useSafeAreaInsets();
     const tabWidth = width / state.routes.length;
 
     return (
         <View style={{
             flexDirection: 'row',
             backgroundColor: '#FFFFFF',
-            height: 90,
-            paddingBottom: Platform.OS === 'ios' ? 30 : 20,
+            height: 70 + insets.bottom,
+            paddingBottom: insets.bottom > 0 ? insets.bottom : 10,
             paddingTop: 12,
             position: 'absolute',
             bottom: 0,
@@ -190,7 +192,7 @@ const LoadingScreen = () => {
                         <View style={{ padding: 10 }}>
                             {/* Small placeholder if assets haven't loaded yet, or just the image */}
                             <View style={{ width: 80, height: 80, backgroundColor: '#F8FAFC', borderRadius: 24, alignItems: 'center', justifyContent: 'center' }}>
-                                <Text style={{ fontSize: 24, fontWeight: 'bold', color: '#6366F1' }}>i</Text>
+                                <Image source={require('./assets/logo.png')} style={{ width: 60, height: 60 }} resizeMode="contain" />
                             </View>
                         </View>
                     </View>
@@ -290,8 +292,10 @@ export default function App() {
     }
 
     return (
-        <AuthProvider>
-            <AppNav />
-        </AuthProvider>
+        <SafeAreaProvider>
+            <AuthProvider>
+                <AppNav />
+            </AuthProvider>
+        </SafeAreaProvider>
     );
 }

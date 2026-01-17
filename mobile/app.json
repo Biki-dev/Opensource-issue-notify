@@ -6,7 +6,17 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "android": {
-      "package": "com.biki.IssueWatch"
+      "package": "com.biki.IssueWatch",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/logo.png",
+        "backgroundColor": "#FFFFFF"
+      }
+    },
+    "icon": "./assets/logo.png",
+    "splash": {
+      "image": "./assets/logo.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#FFFFFF"
     },
     "assetBundlePatterns": [
       "**/*"
