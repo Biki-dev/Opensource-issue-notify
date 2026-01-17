@@ -5,6 +5,9 @@
     "slug": "IssueWatch",
     "version": "1.0.0",
     "orientation": "portrait",
+    "android": {
+      "package": "com.biki.IssueWatch"
+    },
     "assetBundlePatterns": [
       "**/*"
     ],
@@ -13,6 +16,11 @@
     },
     "plugins": [
       "expo-font"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "d01a75e4-4cba-4431-8de8-e190e6c6fb9c"
+      }
+    }
   }
 }
