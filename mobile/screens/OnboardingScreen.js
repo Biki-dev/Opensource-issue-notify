@@ -97,15 +97,15 @@ const WelcomeScreen = () => {
 
                     {/* Glow Effect */}
                     <MotiView
-                        from={{ opacity: 0.3, scale: 0.9 }}
-                        animate={{ opacity: 0.6, scale: 1.1 }}
+                        from={{ opacity: 0.2, scale: 0.9 }}
+                        animate={{ opacity: 0.4, scale: 1.1 }}
                         transition={{
                             loop: true,
                             type: 'timing',
                             duration: 2000,
                             repeatReverse: true,
                         }}
-                        className="absolute -inset-4 bg-brand/20 rounded-[48px] blur-xl -z-10"
+                        className="absolute -inset-4 bg-[#EEF2FF] rounded-[48px] -z-10"
                     />
                 </View>
 
@@ -180,14 +180,14 @@ const NeverMissScreen = ({ onSkip, onContinue }) => {
                     >
                         <View className="bg-white rounded-2xl p-4 border border-border shadow-sm">
                             <View className="flex-row items-center">
-                                <View className="w-14 h-14 rounded-2xl bg-white border border-gray-100 items-center justify-center mr-3 ">
+                                <View className="w-14 h-14 rounded-2xl bg-white border border-slate-100 items-center justify-center mr-3 ">
                                     {notif.type === "new" ? (
-                                        <View className="w-12 h-12 shadow-md rounded-xl items-center justify-center bg-gradient-to-br from-[#6366F1] to-[#8B5CF6]">
-                                            <CircleDot size={20} color="#fff" />
+                                        <View className="w-12 h-12 rounded-xl items-center justify-center bg-[#6366F1]">
+                                            <CircleDot size={20} color="#fff" fill="none" />
                                         </View>
                                     ) : (
-                                        <View className="w-12 h-12 shadow-md rounded-xl items-center justify-center bg-gradient-to-br from-[#6366F1] to-[#8B5CF6]">
-                                            <Bell size={20} color="#fff" />
+                                        <View className="w-12 h-12 rounded-xl items-center justify-center bg-[#6366F1]">
+                                            <Bell size={20} color="#fff" fill="none" />
                                         </View>
                                     )}
                                 </View>
@@ -295,15 +295,15 @@ const TrackAllReposScreen = ({ onSkip, onContinue }) => {
                     >
                         <View className="bg-white rounded-2xl p-4 border border-border shadow-sm">
                             <View className="flex-row items-center">
-                                <View className="w-12 h-12 rounded-xl bg-brand/10 items-center justify-center bg-gradient-to-br from-[#6366F1] to-[#8B5CF6] mr-3 shadow-md">
-                                    <GitFork size={20} color="#fff" />
+                                <View className="w-12 h-12 rounded-xl bg-[#6366F1] items-center justify-center mr-3 shadow-md">
+                                    <GitFork size={20} color="#fff" fill="none" />
                                 </View>
                                 <View className="flex-1">
                                     <Text className="text-sm font-poppins-semibold text-primary mb-1">
                                         {repo.name}
                                     </Text>
                                     <View className="flex-row items-center">
-                                        <Star size={12} color="#94A3B8" />
+                                        <Star size={12} color="#94A3B8" fill="none" />
                                         <Text className="text-xs text-muted ml-1 font-inter-medium">
                                             {repo.stars}
                                         </Text>

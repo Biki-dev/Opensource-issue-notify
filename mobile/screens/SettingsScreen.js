@@ -130,7 +130,7 @@ const SettingsScreen = ({ navigation }) => {
                                     onPress={() => setIsEditing(true)}
                                     className="absolute -bottom-2 -right-2 w-10 h-10 bg-white border border-border rounded-xl items-center justify-center shadow-sm"
                                 >
-                                    <Edit3 size={18} color="#6366F1" />
+                                    <Edit3 size={18} color="#6366F1" fill="none" />
                                 </TouchableOpacity>
                             </View>
 
@@ -149,7 +149,7 @@ const SettingsScreen = ({ navigation }) => {
                                             onPress={handleUpdateName}
                                             className="ml-2 w-14 h-14 bg-brand rounded-xl items-center justify-center shadow-sm"
                                         >
-                                            {saveLoading ? <ActivityIndicator color="white" /> : <Check size={24} color="white" />}
+                                            {saveLoading ? <ActivityIndicator color="white" /> : <Check size={24} color="white" fill="none" />}
                                         </TouchableOpacity>
                                         <TouchableOpacity
                                             onPress={() => {
@@ -158,7 +158,7 @@ const SettingsScreen = ({ navigation }) => {
                                             }}
                                             className="ml-2 w-14 h-14 bg-slate-200 rounded-xl items-center justify-center"
                                         >
-                                            <X size={24} color="#64748B" />
+                                            <X size={24} color="#64748B" fill="none" />
                                         </TouchableOpacity>
                                     </MotiView>
                                 ) : (
@@ -170,7 +170,7 @@ const SettingsScreen = ({ navigation }) => {
                                         <View className="flex-row items-center mt-3">
                                             {profile?.authMethod === 'github' ? (
                                                 <View className="bg-[#0F172A] px-4 py-1.5 rounded-full flex-row items-center border border-slate-700">
-                                                    <Github size={12} color="white" className="mr-2" />
+                                                    <Github size={12} color="white" className="mr-2" fill="none" />
                                                     <Text className="text-white text-[10px] font-poppins-bold uppercase tracking-wider">
                                                         GitHub Account
                                                     </Text>
@@ -224,11 +224,11 @@ const SettingsScreen = ({ navigation }) => {
                     <TouchableOpacity className="flex-row items-center justify-between py-4">
                         <View className="flex-row items-center">
                             <View className="w-10 h-10 rounded-full bg-brand/10 items-center justify-center mr-4">
-                                <HelpCircle size={20} color="#6366F1" />
+                                <HelpCircle size={20} color="#6366F1" fill="none" />
                             </View>
                             <Text className="text-base font-inter-medium text-primary">Privacy Policy</Text>
                         </View>
-                        <ChevronRight size={20} color="#94A3B8" />
+                        <ChevronRight size={20} color="#94A3B8" fill="none" />
                     </TouchableOpacity>
                 </Card>
 

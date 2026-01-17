@@ -75,7 +75,7 @@ const AddRepoScreen = ({ navigation }) => {
                     style={shadowStyles.light}
                     onPress={() => step === 2 ? setStep(1) : navigation.goBack()}
                 >
-                    <ArrowLeft size={22} color="#0F172A" />
+                    <ArrowLeft size={22} color="#0F172A" fill="none" />
                 </TouchableOpacity>
                 <View className="ml-4">
                     <Text className="text-2xl font-poppins-bold text-primary">Add Repository</Text>
@@ -99,7 +99,7 @@ const AddRepoScreen = ({ navigation }) => {
                             >
                                 <View className="bg-brand/10 p-6 rounded-3xl border border-brand/20 mb-8">
                                     <View className="flex-row items-center mb-4">
-                                        <Github size={24} color="#6366F1" />
+                                        <Github size={24} color="#6366F1" fill="none" />
                                         <Text className="text-primary font-poppins-bold text-lg ml-3">Source Information</Text>
                                     </View>
                                     <Text className="text-muted font-inter-medium leading-6">
@@ -123,7 +123,7 @@ const AddRepoScreen = ({ navigation }) => {
                                 />
 
                                 <View className="mt-10 flex-row items-center justify-center">
-                                    <Info size={14} color="#94A3B8" className="mr-2" />
+                                    <Info size={14} color="#94A3B8" className="mr-2" fill="none" />
                                     <Text className="text-muted text-xs font-inter-medium italic text-center">
                                         Currently supporting public repositories only
                                     </Text>
@@ -149,13 +149,13 @@ const AddRepoScreen = ({ navigation }) => {
                                                             resizeMode="cover"
                                                         />
                                                     ) : (
-                                                        <Github size={28} color="white" />
+                                                        <Github size={28} color="white" fill="none" />
                                                     )}
                                                 </View>
                                                 <View className="flex-1">
                                                     <Text className="text-xl font-poppins-bold text-primary">{repoData.owner}/{repoData.name}</Text>
                                                     <View className="flex-row items-center mt-1">
-                                                        <Star size={12} color="#D97706" className="mr-1" />
+                                                        <Star size={12} color="#D97706" className="mr-1" fill="none" />
                                                         <Text className="text-muted text-[10px] font-inter-bold uppercase">Popular Repository</Text>
                                                     </View>
                                                 </View>
@@ -167,7 +167,7 @@ const AddRepoScreen = ({ navigation }) => {
 
                                         <View className="flex-row items-center justify-between mb-6">
                                             <View className="flex-row items-center">
-                                                <Tag size={18} color="#6366F1" className="mr-2" />
+                                                <Tag size={18} color="#6366F1" className="mr-2" fill="none" />
                                                 <Text className="text-xl font-poppins-bold text-primary">Select Labels</Text>
                                             </View>
                                             <View className="bg-brand/10 px-3 py-1 rounded-full border border-brand/10">

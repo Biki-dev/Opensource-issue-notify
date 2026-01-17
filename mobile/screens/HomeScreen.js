@@ -3,7 +3,7 @@ import { View, Text, FlatList, RefreshControl, TouchableOpacity, TextInput, Aler
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
-import { Button, Card, AnimatedMascot, FAB, shadowStyles, LabelChip, SectionHeader } from '../components/UI';
+import { Button, Card, AnimatedMascot, FAB, shadowStyles, LabelChip, SectionHeader, ListSkeleton, cn } from '../components/UI';
 import { Clock, Tag, Search, Plus, Bell, Edit2, GitFork, Star, Code2, Trash2, Filter, Eye, EyeOff } from 'lucide-react-native';
 import { MotiView, AnimatePresence } from 'moti';
 import { StatusBar } from 'expo-status-bar';
@@ -70,17 +70,16 @@ const HomeScreen = ({ navigation }) => {
         }
     };
 
-    // Compact card for grid view (2 columns)
     const renderCompactCard = ({ item, index }) => (
         <MotiView
-            from={{ opacity: 0, translateY: 30, scale: 0.95 }}
+            from={{ opacity: 0, translateY: 15, scale: 0.98 }}
             animate={{ opacity: 1, translateY: 0, scale: 1 }}
-            transition={{ type: 'timing', duration: 400, delay: index * 50 }}
+            transition={{ type: 'timing', duration: 300, delay: index * 40 }}
             style={{ width: '48%', marginRight: index % 2 === 0 ? '4%' : 0 }}
         >
-            <Card className="mb-4 p-4" containerStyle={{ opacity: item.visible === false ? 0.6 : 1 }}>
-                <View className="items-center mb-3">
-                    <View className="w-12 h-12 rounded-xl bg-brand/10 items-center justify-center mb-2 overflow-hidden">
+            <Card className="mb-4 p-3" containerStyle={{ opacity: item.visible === false ? 0.6 : 1 }}>
+                <View className="items-center mb-2">
+                    <View className="w-10 h-10 rounded-xl bg-[#EEF2FF] items-center justify-center mb-2 overflow-hidden">
                         {item.repository?.ownerAvatarUrl ? (
                             <Image
                                 source={{ uri: item.repository.ownerAvatarUrl }}
@@ -88,177 +87,71 @@ const HomeScreen = ({ navigation }) => {
                                 resizeMode="cover"
                             />
                         ) : (
-                            <GitFork size={20} color="#6366F1" />
+                            <GitFork size={18} color="#6366F1" fill="none" />
                         )}
                     </View>
-                    <Text className="text-[10px] text-muted font-mono mb-0.5" numberOfLines={1}>
+                    <Text className="text-[9px] text-muted font-mono mb-0.5" numberOfLines={1}>
                         {item.repository.owner}
                     </Text>
-                    <Text className="text-sm font-poppins-bold text-primary text-center leading-5" numberOfLines={2}>
+                    <Text className="text-xs font-poppins-bold text-primary text-center leading-4" numberOfLines={2}>
                         {item.repository.name}
                     </Text>
                 </View>
 
-                <View className="flex-row flex-wrap justify-center mb-3">
-                    {item.labels.slice(0, 2).map((label, idx) => (
-                        <View key={idx} className="bg-brand/10 rounded-full px-2 py-1 m-0.5">
-                            <Text className="text-brand text-[9px] font-inter-bold">{label}</Text>
+                <View className="flex-row flex-wrap justify-center mb-2 h-14 overflow-hidden">
+                    {item.labels.slice(0, 3).map((label, idx) => (
+                        <View key={idx} className="bg-[#EEF2FF] rounded-full px-2 py-0.5 m-0.5">
+                            <Text className="text-brand text-[8px] font-inter-bold" numberOfLines={1}>{label}</Text>
                         </View>
                     ))}
-                    {item.labels.length > 2 && (
-                        <View className="bg-slate-100 rounded-full px-2 py-1 m-0.5">
-                            <Text className="text-muted text-[9px] font-inter-bold">+{item.labels.length - 2}</Text>
+                    {item.labels.length > 3 && (
+                        <View className="bg-slate-100 rounded-full px-2 py-0.5 m-0.5">
+                            <Text className="text-muted text-[8px] font-inter-bold">+{item.labels.length - 3}</Text>
                         </View>
                     )}
                 </View>
 
-                <View className="flex-row items-center justify-center mb-3 pb-3 border-b border-border/50">
-                    {item.visible === false ? (
-                        <>
-                            <View className="w-1.5 h-1.5 rounded-full bg-muted mr-1.5" />
-                            <Text className="text-muted text-[9px] font-inter-semibold uppercase">Hidden</Text>
-                        </>
-                    ) : (
-                        <>
-                            <View className="w-1.5 h-1.5 rounded-full bg-success mr-1.5" />
-                            <Text className="text-muted text-[9px] font-inter-semibold uppercase">Active</Text>
-                        </>
-                    )}
+                <View className="flex-row items-center justify-center mb-2 pb-2 border-b border-border/50">
+                    <View className={cn("w-1.5 h-1.5 rounded-full mr-1.5", item.visible === false ? "bg-muted" : "bg-success")} />
+                    <Text className="text-muted text-[8px] font-inter-bold uppercase tracking-tighter">
+                        {item.visible === false ? "Hidden" : "Monitoring"}
+                    </Text>
                 </View>
 
                 <View className="flex-row justify-between">
                     <TouchableOpacity
                         onPress={() => toggleVisibility(item._id, item.visible)}
-                        className="flex-1 h-9 rounded-lg bg-slate-50 border border-border items-center justify-center mr-1"
+                        className="w-8 h-8 rounded-lg bg-slate-50 border border-border items-center justify-center"
                     >
-                        {item.visible === false ? <Eye size={14} color="#6366F1" /> : <EyeOff size={14} color="#94A3B8" />}
+                        {item.visible === false ? <Eye size={12} color="#6366F1" fill="none" /> : <EyeOff size={12} color="#94A3B8" fill="none" />}
                     </TouchableOpacity>
                     <TouchableOpacity
                         onPress={() => navigation.navigate('EditLabels', { sub: item })}
-                        className="flex-1 h-9 rounded-lg bg-slate-50 border border-border items-center justify-center mx-1"
+                        className="w-8 h-8 rounded-lg bg-slate-50 border border-border items-center justify-center"
                     >
-                        <Edit2 size={14} color="#6366F1" />
+                        <Edit2 size={12} color="#6366F1" fill="none" />
                     </TouchableOpacity>
                     <TouchableOpacity
                         onPress={() => {
                             if (Platform.OS === 'web') {
-                                if (window.confirm('Stop tracking this repository?')) {
-                                    handleDeleteSub(item._id);
-                                }
+                                if (window.confirm('Stop tracking?')) handleDeleteSub(item._id);
                             } else {
-                                Alert.alert(
-                                    'Delete Subscription',
-                                    'Stop tracking this repository?',
-                                    [
-                                        { text: 'Cancel', style: 'cancel' },
-                                        { text: 'Delete', style: 'destructive', onPress: () => handleDeleteSub(item._id) }
-                                    ]
-                                );
+                                Alert.alert('Delete', 'Stop tracking?', [
+                                    { text: 'Cancel', style: 'cancel' },
+                                    { text: 'Yes', style: 'destructive', onPress: () => handleDeleteSub(item._id) }
+                                ]);
                             }
                         }}
-                        className="flex-1 h-9 rounded-lg bg-danger/10 items-center justify-center ml-1"
+                        className="w-8 h-8 rounded-lg bg-danger/10 items-center justify-center"
                     >
-                        <Trash2 size={14} color="#EF4444" />
+                        <Trash2 size={12} color="#EF4444" fill="none" />
                     </TouchableOpacity>
                 </View>
             </Card>
         </MotiView>
     );
 
-    // Full-width card for single repo view
-    const renderFullCard = ({ item, index }) => (
-        <MotiView
-            from={{ opacity: 0, translateY: 30, scale: 0.95 }}
-            animate={{ opacity: 1, translateY: 0, scale: 1 }}
-            transition={{ type: 'timing', duration: 400, delay: index * 50 }}
-        >
-            <Card className="mb-6 p-6" containerStyle={{ opacity: item.visible === false ? 0.6 : 1 }}>
-                <View className="flex-row items-start justify-between mb-4">
-                    <View className="flex-row flex-1">
-                        <View className="w-14 h-14 rounded-2xl bg-brand/10 items-center justify-center mr-4 overflow-hidden">
-                            {item.repository?.ownerAvatarUrl ? (
-                                <Image
-                                    source={{ uri: item.repository.ownerAvatarUrl }}
-                                    className="w-full h-full"
-                                    resizeMode="cover"
-                                />
-                            ) : (
-                                <GitFork size={28} color="#6366F1" />
-                            )}
-                        </View>
-                        <View className="flex-1">
-                            <Text className="text-xs text-muted font-mono mb-0.5">{item.repository.owner}</Text>
-                            <Text className="text-lg font-poppins-bold text-primary leading-6" numberOfLines={1}>
-                                {item.repository.name}
-                            </Text>
-                            <View className="flex-row items-center mt-1">
-                                <View className="flex-row items-center mr-3">
-                                    <View className={`w-2 h-2 rounded-full mr-1.5 ${item.visible === false ? 'bg-muted' : 'bg-success'}`} />
-                                    <Text className="text-muted text-[10px] font-inter-semibold uppercase">
-                                        {item.visible === false ? 'Hidden' : 'Monitoring'}
-                                    </Text>
-                                </View>
-                                <View className="flex-row items-center">
-                                    <Star size={12} color="#94A3B8" className="mr-1" />
-                                    <Text className="text-muted text-[10px] font-inter-semibold">GitHub</Text>
-                                </View>
-                            </View>
-                        </View>
-                    </View>
-                </View>
 
-                <View className="flex-row flex-wrap mb-6">
-                    {item.labels.map((label, idx) => (
-                        <LabelChip key={idx} label={label} selected />
-                    ))}
-                </View>
-
-                <View className="flex-row items-center justify-between pt-4 border-t border-border/50">
-                    <View className="flex-row items-center">
-                        <Clock size={14} color="#94A3B8" className="mr-2" />
-                        <Text className="text-muted text-xs font-inter-medium">
-                            {new Date(item.repository.lastChecked).toLocaleDateString()}
-                        </Text>
-                    </View>
-                    <View className="flex-row">
-                        <TouchableOpacity
-                            onPress={() => toggleVisibility(item._id, item.visible)}
-                            className="w-10 h-10 rounded-xl bg-slate-50 border border-border items-center justify-center mr-2 shadow-sm"
-                        >
-                            {item.visible === false ? <Eye size={18} color="#6366F1" /> : <EyeOff size={18} color="#94A3B8" />}
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            onPress={() => navigation.navigate('EditLabels', { sub: item })}
-                            className="w-10 h-10 rounded-xl bg-slate-50 border border-border items-center justify-center mr-2 shadow-sm"
-                        >
-                            <Edit2 size={18} color="#6366F1" />
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            onPress={() => {
-                                if (Platform.OS === 'web') {
-                                    if (window.confirm('Stop tracking this repository and remove all matched issues?')) {
-                                        handleDeleteSub(item._id);
-                                    }
-                                } else {
-                                    Alert.alert(
-                                        'Delete Subscription',
-                                        'Stop tracking this repository and remove all matched issues?',
-                                        [
-                                            { text: 'Cancel', style: 'cancel' },
-                                            { text: 'Delete', style: 'destructive', onPress: () => handleDeleteSub(item._id) }
-                                        ]
-                                    );
-                                }
-                            }}
-                            className="w-10 h-10 rounded-xl bg-danger/10 items-center justify-center"
-                        >
-                            <Trash2 size={18} color="#EF4444" />
-                        </TouchableOpacity>
-                    </View>
-                </View>
-            </Card>
-        </MotiView>
-    );
 
     // Decide which render function to use
     const isSingleRepo = filteredSubs.length === 1;
@@ -282,14 +175,14 @@ const HomeScreen = ({ navigation }) => {
                             className="w-12 h-12 rounded-2xl bg-white border border-border items-center justify-center mr-2 shadow-sm"
                             style={shadowStyles.light}
                         >
-                            <Search size={22} color="#0F172A" />
+                            <Search size={22} color="#0F172A" fill="none" />
                         </TouchableOpacity>
                         <TouchableOpacity
                             onPress={() => navigation.navigate('Notifications')}
                             className="w-12 h-12 rounded-2xl bg-white border border-border items-center justify-center shadow-sm"
                             style={shadowStyles.light}
                         >
-                            <Bell size={22} color="#0F172A" />
+                            <Bell size={22} color="#0F172A" fill="none" />
                             {unreadCount > 0 && <View className="absolute top-2.5 right-2.5 w-3 h-3 bg-danger rounded-full border-2 border-white" />}
                         </TouchableOpacity>
                     </View>
@@ -324,14 +217,19 @@ const HomeScreen = ({ navigation }) => {
                 </AnimatePresence>
             </View>
 
+            {loading && (
+                <View className="px-6">
+                    <ListSkeleton count={4} type={isSingleRepo ? 'default' : 'compact'} />
+                </View>
+            )}
+
             <FlatList
                 data={filteredSubs}
-                renderItem={isSingleRepo ? renderFullCard : renderCompactCard}
+                renderItem={renderCompactCard}
                 keyExtractor={item => item._id}
-                numColumns={isSingleRepo ? 1 : 2}
-                key={isSingleRepo ? 'single' : 'grid'} // Force re-render when switching layouts
-                columnWrapperStyle={isSingleRepo ? null : { paddingHorizontal: 24 }}
-                contentContainerStyle={isSingleRepo ? { paddingHorizontal: 24, paddingBottom: 110, paddingTop: 10 } : { paddingBottom: 110, paddingTop: 10 }}
+                numColumns={2}
+                columnWrapperStyle={{ paddingHorizontal: 24 }}
+                contentContainerStyle={{ paddingBottom: 110, paddingTop: 10 }}
                 refreshControl={
                     <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#6366F1" />
                 }

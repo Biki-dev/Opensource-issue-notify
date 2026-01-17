@@ -149,6 +149,67 @@ const AppTabs = () => {
     );
 };
 
+// Custom Loading/Splash Screen to prevent "Empty Grid" flicker
+const LoadingScreen = () => {
+    return (
+        <View style={{ flex: 1, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' }}>
+            <StatusBar style="dark" />
+            <MotiView
+                from={{ opacity: 0.5, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1.1 }}
+                transition={{
+                    type: 'timing',
+                    duration: 1000,
+                    loop: true,
+                    repeatReverse: true,
+                }}
+            >
+                <MotiView
+                    from={{ rotate: '0deg' }}
+                    animate={{ rotate: '360deg' }}
+                    transition={{
+                        type: 'timing',
+                        duration: 3000,
+                        loop: true,
+                    }}
+                    style={{
+                        position: 'absolute',
+                        top: -10,
+                        left: -10,
+                        right: -10,
+                        bottom: -10,
+                        borderWidth: 2,
+                        borderColor: '#6366F1',
+                        borderStyle: 'dashed',
+                        borderRadius: 40,
+                        opacity: 0.2
+                    }}
+                />
+                <View style={{ width: 100, height: 100 }}>
+                    <View style={{ width: '100%', height: '100%' }}>
+                        <View style={{ padding: 10 }}>
+                            {/* Small placeholder if assets haven't loaded yet, or just the image */}
+                            <View style={{ width: 80, height: 80, backgroundColor: '#F8FAFC', borderRadius: 24, alignItems: 'center', justifyContent: 'center' }}>
+                                <Text style={{ fontSize: 24, fontWeight: 'bold', color: '#6366F1' }}>i</Text>
+                            </View>
+                        </View>
+                    </View>
+                </View>
+            </MotiView>
+            <MotiView
+                from={{ opacity: 0, translateY: 20 }}
+                animate={{ opacity: 1, translateY: 0 }}
+                transition={{ delay: 500 }}
+                style={{ marginTop: 24 }}
+            >
+                <Text style={{ fontSize: 14, fontWeight: '600', color: '#64748B', letterSpacing: 2 }}>
+                    ISSUE WATCH
+                </Text>
+            </MotiView>
+        </View >
+    );
+};
+
 const AppNav = () => {
     const { userToken, isLoading } = useContext(AuthContext);
     const [hasSeenOnboarding, setHasSeenOnboarding] = useState(null);
@@ -185,7 +246,7 @@ const AppNav = () => {
     }, [userToken, isLoading, hasSeenOnboarding]);
 
     if (isLoading || hasSeenOnboarding === null) {
-        return null; // Or show splash screen
+        return <LoadingScreen />;
     }
 
     return (
@@ -225,7 +286,7 @@ export default function App() {
     });
 
     if (!fontsLoaded) {
-        return null;
+        return <LoadingScreen />;
     }
 
     return (

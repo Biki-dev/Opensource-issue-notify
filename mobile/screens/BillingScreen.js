@@ -18,7 +18,7 @@ const BillingScreen = ({ navigation }) => {
     const FeatureItem = ({ text, included = true }) => (
         <View className="flex-row items-center mb-4">
             <View className={included ? "bg-success/20 p-1 rounded-full mr-3" : "bg-muted/10 p-1 rounded-full mr-3"}>
-                <CheckCircle2 size={16} color={included ? "#10B981" : "#94A3B8"} />
+                <CheckCircle2 size={16} color={included ? "#10B981" : "#94A3B8"} fill="none" />
             </View>
             <Text className={included ? "text-primary text-sm font-inter-medium" : "text-muted text-sm font-inter-medium"}>{text}</Text>
         </View>
@@ -41,7 +41,7 @@ const BillingScreen = ({ navigation }) => {
                     className="w-12 h-12 rounded-2xl bg-white border border-border items-center justify-center shadow-sm"
                     style={shadowStyles.light}
                 >
-                    <Bell size={22} color="#0F172A" />
+                    <Bell size={22} color="#0F172A" fill="none" />
                     {unreadCount > 0 && (
                         <View className="absolute top-2.5 right-2.5 w-3 h-3 bg-danger rounded-full border-2 border-white" />
                     )}
@@ -57,7 +57,7 @@ const BillingScreen = ({ navigation }) => {
                     className="flex-1 justify-center items-center mt-20"
                 >
                     <View className="w-24 h-24 rounded-full bg-brand/10 items-center justify-center mb-8">
-                        <Sparkles size={48} color="#6366F1" />
+                        <Sparkles size={48} color="#6366F1" fill="none" />
                     </View>
                     <Text className="text-3xl font-poppins-bold text-primary mb-4">Coming Soon</Text>
                     <Text className="text-muted text-lg font-inter-medium text-center px-8">

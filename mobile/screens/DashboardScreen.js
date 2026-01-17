@@ -3,7 +3,7 @@ import { View, Text, FlatList, TouchableOpacity, Image, RefreshControl, Linking,
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
-import { Card, Button, LabelChip, AnimatedMascot, Badge, shadowStyles, SectionHeader } from '../components/UI';
+import { Card, Button, LabelChip, AnimatedMascot, Badge, shadowStyles, SectionHeader, ListSkeleton } from '../components/UI';
 import { GitBranch, ExternalLink, Bell, Trash2, Hash, Layers, ChevronRight, Github } from 'lucide-react-native';
 import { MotiView } from 'moti';
 import { StatusBar } from 'expo-status-bar';
@@ -58,9 +58,9 @@ const DashboardScreen = ({ navigation }) => {
 
     const renderIssue = ({ item, index }) => (
         <MotiView
-            from={{ opacity: 0, translateY: 30, scale: 0.9 }}
+            from={{ opacity: 0, translateY: 15, scale: 0.98 }}
             animate={{ opacity: 1, translateY: 0, scale: 1 }}
-            transition={{ type: 'timing', duration: 400, delay: index * 100 }}
+            transition={{ type: 'timing', duration: 300, delay: index * 50 }}
         >
             <Card className="mb-6 p-6">
                 <View className="flex-row justify-between items-start mb-4">
@@ -73,7 +73,7 @@ const DashboardScreen = ({ navigation }) => {
                                     resizeMode="cover"
                                 />
                             ) : (
-                                <Github size={20} color="#6366F1" />
+                                <Github size={20} color="#6366F1" fill="none" />
                             )}
                         </View>
                         <View className="flex-1">
@@ -104,7 +104,7 @@ const DashboardScreen = ({ navigation }) => {
                         }}
                         className="w-10 h-10 items-center justify-center rounded-full bg-danger/10"
                     >
-                        <Trash2 size={18} color="#EF4444" />
+                        <Trash2 size={18} color="#EF4444" fill="none" />
                     </TouchableOpacity>
                 </View>
 
@@ -122,7 +122,7 @@ const DashboardScreen = ({ navigation }) => {
                     title="View on GitHub"
                     variant="outline"
                     icon={ExternalLink}
-                    onPress={() => Linking.openURL(`https://github.com/${item.repository?.owner}/${item.repository?.name}/issues/${item.issueNumber}`)}
+                    onPress={() => Linking.openURL(item.issueUrl)}
                     className="h-14"
                 />
             </Card>
@@ -148,7 +148,7 @@ const DashboardScreen = ({ navigation }) => {
                     className="w-12 h-12 rounded-2xl bg-white border border-border items-center justify-center shadow-sm"
                     style={shadowStyles.light}
                 >
-                    <Bell size={22} color="#0F172A" />
+                    <Bell size={22} color="#0F172A" fill="none" />
                     {unreadCount > 0 && <View className="absolute top-2.5 right-2.5 w-3 h-3 bg-danger rounded-full border-2 border-white" />}
                 </TouchableOpacity>
             </View>
@@ -161,6 +161,7 @@ const DashboardScreen = ({ navigation }) => {
                 refreshControl={
                     <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#6366F1" />
                 }
+                ListFooterComponent={loading ? <ListSkeleton count={2} containerStyle={{ paddingHorizontal: 24, marginTop: 10 }} /> : null}
                 ListHeaderComponent={
                     <View className="mt-4 mb-2">
                         {/* Hero Stats Card */}
@@ -213,7 +214,7 @@ const DashboardScreen = ({ navigation }) => {
                         <SectionHeader
                             title="Recent Issues"
                             icon={Layers}
-                            action={<Text className="text-xs text-muted font-inter-medium">{notifications.length} total</Text>}
+                            action={<Text className="text-xs text-muted font-inter-medium">{loading ? "..." : notifications.length} total</Text>}
                         />
                     </View>
                 }

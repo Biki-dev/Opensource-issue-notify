@@ -3,7 +3,7 @@ import { View, Text, FlatList, Linking, TouchableOpacity, RefreshControl, Alert,
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
-import { Card, AnimatedMascot, LabelChip, Button, shadowStyles } from '../components/UI';
+import { Card, AnimatedMascot, LabelChip, Button, shadowStyles, ListSkeleton } from '../components/UI';
 import { ArrowLeft, ExternalLink, GitBranch, Bell, CheckCheck, Trash2, Calendar, Circle, Github, Clock, Tag } from 'lucide-react-native';
 import { MotiView, AnimatePresence } from 'moti';
 import { StatusBar } from 'expo-status-bar';
@@ -91,9 +91,9 @@ const NotificationsScreen = ({ navigation }) => {
 
         return (
             <MotiView
-                from={{ opacity: 0, translateX: -20 }}
+                from={{ opacity: 0, translateX: -10 }}
                 animate={{ opacity: 1, translateX: 0 }}
-                transition={{ type: 'timing', duration: 200, delay: index * 40 }}
+                transition={{ type: 'timing', duration: 250, delay: index * 30 }}
             >
                 <TouchableOpacity
                     onPress={() => handleOpenNotification(item)}
@@ -105,7 +105,7 @@ const NotificationsScreen = ({ navigation }) => {
                             {/* Left: Icon + Unread */}
                             <View className="mr-3">
                                 <View className="relative">
-                                    <View className="w-10 h-10 rounded-xl bg-brand/10 items-center justify-center overflow-hidden">
+                                    <View className="w-10 h-10 rounded-xl bg-[#EEF2FF] items-center justify-center overflow-hidden">
                                         {item.repository?.ownerAvatarUrl ? (
                                             <Image
                                                 source={{ uri: item.repository.ownerAvatarUrl }}
@@ -113,7 +113,7 @@ const NotificationsScreen = ({ navigation }) => {
                                                 resizeMode="cover"
                                             />
                                         ) : (
-                                            <Github size={18} color="#6366F1" />
+                                            <Github size={18} color="#6366F1" fill="none" />
                                         )}
                                     </View>
                                     <View className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 rounded-full bg-brand border-2 border-white z-20" />
@@ -173,7 +173,7 @@ const NotificationsScreen = ({ navigation }) => {
                                 }}
                                 className="w-7 h-7 rounded-lg bg-slate-50 items-center justify-center ml-2"
                             >
-                                <Trash2 size={14} color="#94A3B8" />
+                                <Trash2 size={14} color="#94A3B8" fill="none" />
                             </TouchableOpacity>
                         </View>
                     </View>
@@ -195,7 +195,7 @@ const NotificationsScreen = ({ navigation }) => {
                             className="w-12 h-12 items-center justify-center rounded-2xl bg-white border border-border shadow-sm mr-4"
                             style={shadowStyles.light}
                         >
-                            <ArrowLeft size={22} color="#0F172A" />
+                            <ArrowLeft size={22} color="#0F172A" fill="none" />
                         </TouchableOpacity>
                         <View className="flex-1">
                             <Text className="text-3xl font-poppins-bold text-primary">Inbox</Text>
@@ -211,10 +211,9 @@ const NotificationsScreen = ({ navigation }) => {
                     {notifs.length > 0 && (
                         <TouchableOpacity
                             onPress={handleMarkAllRead}
-                            className="w-12 h-12 bg-success/10 items-center justify-center rounded-2xl border border-success/20"
-                            style={shadowStyles.light}
+                            className="w-12 h-12 bg-[#ECFDF5] items-center justify-center rounded-2xl border border-[#D1FAE5]"
                         >
-                            <CheckCheck size={22} color="#10B981" />
+                            <CheckCheck size={22} color="#10B981" fill="none" />
                         </TouchableOpacity>
                     )}
                 </View>
@@ -228,7 +227,7 @@ const NotificationsScreen = ({ navigation }) => {
                     >
                         <View className="flex-row items-center justify-between">
                             <View className="flex-row items-center">
-                                <Bell size={16} color="#6366F1" className="mr-2" />
+                                <Bell size={16} color="#6366F1" className="mr-2" fill="none" />
                                 <Text className="text-primary font-inter-semibold text-sm">
                                     New updates from {new Set(notifs.map(n => n.repository?.name)).size} repositories
                                 </Text>
@@ -237,6 +236,12 @@ const NotificationsScreen = ({ navigation }) => {
                     </MotiView>
                 )}
             </View>
+
+            {loading && (
+                <View className="px-6">
+                    <ListSkeleton count={5} />
+                </View>
+            )}
 
             <FlatList
                 data={notifs}

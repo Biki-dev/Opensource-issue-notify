@@ -3,11 +3,11 @@ import { View, Text, TouchableOpacity, TextInput, ActivityIndicator, Image, Plat
 import clsx from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { MotiView } from 'moti';
-import { ChevronRight } from 'lucide-react-native';
+import { ChevronRight, Github, Bell, Star, GitFork } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 
 // Helper for merging classes
-const cn = (...inputs) => twMerge(clsx(inputs));
+export const cn = (...inputs) => twMerge(clsx(inputs));
 
 // Shadow Styles Helper
 export const shadowStyles = {
@@ -113,7 +113,7 @@ export const Button = ({ title, onPress, variant = 'primary', className, loading
                     <ActivityIndicator color={variant === 'secondary' || variant === 'outline' ? '#6366F1' : '#fff'} />
                 ) : (
                     <>
-                        {Icon && <Icon size={24} color={variant === 'secondary' || variant === 'outline' ? '#94A3B8' : '#fff'} className="mr-3" />}
+                        {Icon && <Icon size={24} color={variant === 'secondary' || variant === 'outline' ? '#94A3B8' : '#fff'} className="mr-3" fill="none" />}
                         {typeof title === 'string' ? <Text className={textVariants[variant]}>{title}</Text> : title}
                     </>
                 )}
@@ -177,12 +177,12 @@ export const LabelChip = ({ label, selected, onPress }) => {
             <TouchableOpacity
                 onPress={handlePress}
                 className={cn(
-                    "px-4 py-2 rounded-full mr-2 mb-2 border flex-row items-center",
+                    "px-3 py-1 rounded-full mr-2 mb-2 border flex-row items-center self-start",
                     selected ? "bg-brand/10" : "bg-white"
                 )}
             >
-                <View className={cn("w-2 h-2 rounded-full mr-2", selected ? "bg-brand" : "bg-slate-300")} />
-                <Text className={cn("text-sm font-inter-medium", selected ? "text-brand" : "text-slate-500")}>
+                <View className={cn("w-1.5 h-1.5 rounded-full mr-1.5", selected ? "bg-brand" : "bg-slate-300")} />
+                <Text className={cn("text-[11px] font-inter-bold", selected ? "text-brand" : "text-slate-500")}>
                     {label}
                 </Text>
             </TouchableOpacity>
@@ -192,20 +192,86 @@ export const LabelChip = ({ label, selected, onPress }) => {
 
 // New Components
 
-export const Skeleton = ({ width, height, radius = 8, className }) => {
+export const Skeleton = ({ width, height, radius = 12, className, style }) => {
     return (
         <MotiView
-            from={{ opacity: 0.3 }}
-            animate={{ opacity: 0.7 }}
+            from={{ opacity: 0.4 }}
+            animate={{ opacity: 0.8 }}
             transition={{
                 loop: true,
                 type: 'timing',
-                duration: 1000,
+                duration: 800,
                 repeatReverse: true,
             }}
-            style={{ width, height, borderRadius: radius }}
+            style={[{ width, height, borderRadius: radius }, style]}
             className={cn("bg-slate-200", className)}
         />
+    );
+};
+
+export const SkeletonCard = ({ type = 'default' }) => {
+    if (type === 'compact') {
+        return (
+            <View className="mb-4 p-4 bg-white rounded-3xl border border-border" style={{ width: '48%' }}>
+                <View className="items-center mb-3">
+                    <Skeleton width={48} height={48} radius={12} className="mb-2" />
+                    <Skeleton width="60%" height={10} radius={4} className="mb-1.5" />
+                    <Skeleton width="80%" height={14} radius={4} />
+                </View>
+                <View className="flex-row justify-center mb-3">
+                    <Skeleton width={40} height={18} radius={20} className="mr-1" />
+                    <Skeleton width={40} height={18} radius={20} />
+                </View>
+                <View className="flex-row justify-between pt-3 border-t border-border/50">
+                    <Skeleton width="30%" height={24} radius={8} />
+                    <Skeleton width="30%" height={24} radius={8} />
+                </View>
+            </View>
+        );
+    }
+
+    return (
+        <Card className="mb-6 p-6">
+            <View className="flex-row items-center mb-4">
+                <Skeleton width={40} height={40} radius={20} className="mr-3" />
+                <View className="flex-1">
+                    <Skeleton width="40%" height={10} radius={4} className="mb-1.5" />
+                    <Skeleton width="60%" height={14} radius={4} />
+                </View>
+            </View>
+            <Skeleton width="100%" height={20} radius={4} className="mb-2" />
+            <Skeleton width="100%" height={20} radius={4} className="mb-4" />
+            <View className="flex-row mb-6">
+                <Skeleton width={60} height={24} radius={20} className="mr-2" />
+                <Skeleton width={60} height={24} radius={20} />
+            </View>
+            <Skeleton width="100%" height={56} radius={16} />
+        </Card>
+    );
+};
+
+export const ListSkeleton = ({ count = 3, type = 'default', containerStyle }) => {
+    return (
+        <View style={containerStyle} className={type === 'compact' ? "flex-row flex-wrap justify-between" : ""}>
+            {[...Array(count)].map((_, i) => (
+                <MotiView
+                    key={i}
+                    from={{ opacity: 0, translateY: 10 }}
+                    animate={{ opacity: 1, translateY: 0 }}
+                    transition={{ delay: i * 100 }}
+                    style={type === 'compact' ? { width: '100%', flexDirection: 'row', gap: '4%', flexWrap: 'wrap' } : {}}
+                >
+                    {type === 'compact' ? (
+                        <>
+                            <SkeletonCard type="compact" />
+                            <SkeletonCard type="compact" />
+                        </>
+                    ) : (
+                        <SkeletonCard type={type} />
+                    )}
+                </MotiView>
+            ))}
+        </View>
     );
 };
 
@@ -235,7 +301,7 @@ export const FAB = ({ icon: Icon, onPress }) => {
                 className="w-16 h-16 bg-brand rounded-full items-center justify-center shadow-lg"
                 style={shadowStyles.fab}
             >
-                <Icon size={32} color="white" />
+                <Icon size={32} color="white" fill="none" />
             </TouchableOpacity>
         </MotiView>
     );
@@ -244,7 +310,7 @@ export const FAB = ({ icon: Icon, onPress }) => {
 export const SectionHeader = ({ title, icon: Icon, action }) => (
     <View className="flex-row items-center justify-between mb-4 mt-2 px-1">
         <View className="flex-row items-center">
-            {Icon && <Icon size={20} color="#6366F1" className="mr-2" />}
+            {Icon && <Icon size={20} color="#6366F1" className="mr-2" fill="none" />}
             <Text className="text-xl font-poppins-semibold text-primary">{title}</Text>
         </View>
         {action}
@@ -264,7 +330,7 @@ export const SwitchRow = ({ label, value, onValueChange, icon: Icon }) => {
         >
             <View className="flex-row items-center">
                 {Icon && <View className="w-10 h-10 rounded-full bg-brand/10 items-center justify-center mr-4">
-                    <Icon size={20} color="#6366F1" />
+                    <Icon size={20} color="#6366F1" fill="none" />
                 </View>}
                 <Text className="text-base font-inter-medium text-primary">{label}</Text>
             </View>
