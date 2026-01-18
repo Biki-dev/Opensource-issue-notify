@@ -17,21 +17,21 @@ export const AuthProvider = ({ children }) => {
     const [isLoading, setIsLoading] = useState(true);
     const [unreadCount, setUnreadCount] = useState(0);
 
-    const BASE_URL ='https://opensource-issue-notify-production-e468.up.railway.app/api';
-    
+    const BASE_URL = 'https://opensource-issue-notify-production-e468.up.railway.app/api';
+
     // Register push token with backend
     const registerPushToken = async (token) => {
         try {
             console.log('🔔 Starting push token registration...');
-            const pushToken = await registerForPushNotificationsAsync();
+            const { token: pushToken, error, userMessage } = await registerForPushNotificationsAsync();
             console.log('🔔 Push token result:', pushToken ? 'Got token' : 'No token');
-            
+
             if (pushToken) {
                 try {
                     console.log('🔔 Sending token to backend...');
                     const response = await axios.post(
                         `${BASE_URL}/auth/register-push-token`,
-                        { 
+                        {
                             expoPushToken: pushToken,
                             deviceInfo: {
                                 platform: Platform.OS
@@ -44,8 +44,8 @@ export const AuthProvider = ({ children }) => {
                 } catch (error) {
                     console.error('❌ Failed to register push token:', error.response?.data?.message || error.message);
                 }
-            } else {
-                console.warn('⚠️  No push token generated - may not have permissions or device issue');
+            } else if (userMessage) {
+                console.warn('⚠️  Push registration failed:', userMessage);
             }
         } catch (error) {
             console.error('❌ Error in registerPushToken:', error.message);
@@ -59,6 +59,13 @@ export const AuthProvider = ({ children }) => {
             });
             const unread = (res.data || []).filter(n => !n.isRead).length;
             setUnreadCount(unread);
+
+            // ✅ Update app badge
+            try {
+                await Notifications.setBadgeCountAsync(unread);
+            } catch (badgeError) {
+                console.log("Error setting badge count:", badgeError);
+            }
         } catch (e) {
             console.log("Error updating unread count", e);
         }
@@ -69,19 +76,17 @@ export const AuthProvider = ({ children }) => {
             const res = await axios.post(`${BASE_URL}/auth/login`, { email, password });
             console.log("Login Success", res.data);
 
-            // Set token first
+            // ✅ 1. Set token FIRST
             const token = res.data.token;
             setUserToken(token);
             await AsyncStorage.setItem('userToken', token);
-
-            // Mark onboarding as seen
             await AsyncStorage.setItem('hasSeenOnboarding', 'true');
 
-            // Update unread count
+            // ✅ 2. THEN update unread count
             updateUnreadCount(token);
 
-            // Register push token
-            registerPushToken(token);
+            // ✅ 3. FINALLY register push token (after user is authenticated)
+            await registerPushToken(token); // Make this await to ensure it completes
 
             return res.data;
         } catch (e) {
@@ -95,19 +100,17 @@ export const AuthProvider = ({ children }) => {
             const res = await axios.post(`${BASE_URL}/auth/signup`, { name, email, password });
             console.log("Signup Success", res.data);
 
-            // Set token first
+            // ✅ 1. Set token FIRST
             const token = res.data.token;
             setUserToken(token);
             await AsyncStorage.setItem('userToken', token);
-
-            // Mark onboarding as seen
             await AsyncStorage.setItem('hasSeenOnboarding', 'true');
 
-            // Update unread count
+            // ✅ 2. THEN update unread count
             updateUnreadCount(token);
 
-            // Register push token
-            registerPushToken(token);
+            // ✅ 3. FINALLY register push token (after user is authenticated)
+            await registerPushToken(token);
 
             return res.data;
         } catch (e) {
@@ -138,19 +141,17 @@ export const AuthProvider = ({ children }) => {
                 // Step 2: Exchange code for token via backend
                 const res = await axios.post(`${BASE_URL}/auth/github`, { code, redirectUri });
 
-                // Set token first
+                // ✅ 1. Set token FIRST
                 const token = res.data.token;
                 setUserToken(token);
                 await AsyncStorage.setItem('userToken', token);
-
-                // Mark onboarding as seen
                 await AsyncStorage.setItem('hasSeenOnboarding', 'true');
 
-                // Update unread count
+                // ✅ 2. THEN update unread count
                 updateUnreadCount(token);
 
-                // Register push token
-                registerPushToken(token);
+                // ✅ 3. FINALLY register push token (after user is authenticated)
+                await registerPushToken(token);
 
                 return res.data;
             } else {
@@ -163,54 +164,54 @@ export const AuthProvider = ({ children }) => {
     };
 
     const logout = async () => {
-    try {
-        console.log('🚪 Starting logout process...');
-        
-        // Cancel all active API requests immediately
-        cancelAllRequests();
-        console.log('   ✓ Cancelled active requests');
+        try {
+            console.log('🚪 Starting logout process...');
 
-        // Call backend logout endpoint to deactivate subscriptions
-        if (userToken) {
-            try {
-                const response = await axios.post(
-                    `${BASE_URL}/auth/logout`, 
-                    {}, 
-                    {
-                        headers: { Authorization: `Bearer ${userToken}` },
-                        timeout: 5000 // 5 second timeout
-                    }
-                );
-                console.log('   ✓ Backend logout:', response.data);
-            } catch (err) {
-                // Don't fail logout if backend call fails
-                console.log('   ⚠️  Backend logout failed (continuing anyway):', err.message);
+            // Cancel all active API requests immediately
+            cancelAllRequests();
+            console.log('   ✓ Cancelled active requests');
+
+            // Call backend logout endpoint to deactivate subscriptions
+            if (userToken) {
+                try {
+                    const response = await axios.post(
+                        `${BASE_URL}/auth/logout`,
+                        {},
+                        {
+                            headers: { Authorization: `Bearer ${userToken}` },
+                            timeout: 5000 // 5 second timeout
+                        }
+                    );
+                    console.log('   ✓ Backend logout:', response.data);
+                } catch (err) {
+                    // Don't fail logout if backend call fails
+                    console.log('   ⚠️  Backend logout failed (continuing anyway):', err.message);
+                }
             }
+        } catch (e) {
+            console.log('Logout error:', e.message);
+        } finally {
+            // Clear local state regardless of backend call success
+            console.log('   ✓ Clearing local state...');
+            setUserToken(null);
+            setUnreadCount(0);
+            await AsyncStorage.removeItem('userToken');
+
+            // DON'T remove onboarding status - user already saw it
+            // await AsyncStorage.removeItem('hasSeenOnboarding'); // ❌ REMOVE THIS LINE
+
+            console.log('✅ Logout complete');
         }
-    } catch (e) {
-        console.log('Logout error:', e.message);
-    } finally {
-        // Clear local state regardless of backend call success
-        console.log('   ✓ Clearing local state...');
-        setUserToken(null);
-        setUnreadCount(0);
-        await AsyncStorage.removeItem('userToken');
-        
-        // DON'T remove onboarding status - user already saw it
-        // await AsyncStorage.removeItem('hasSeenOnboarding'); // ❌ REMOVE THIS LINE
-        
-        console.log('✅ Logout complete');
-    }
-};
+    };
 
     const isLoggedIn = async () => {
         try {
             let token = await AsyncStorage.getItem('userToken');
             setUserToken(token);
-            
+
             if (token) {
                 updateUnreadCount(token);
-                
+
                 // Register for push notifications for freshly authenticated users
                 registerPushToken(token);
             }

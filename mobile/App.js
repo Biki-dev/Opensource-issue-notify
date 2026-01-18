@@ -300,22 +300,7 @@ export default function App() {
         PlayfairDisplay_500Medium,
     });
 
-    // Request notification permissions early
-    useEffect(() => {
-        const requestNotificationPermissions = async () => {
-            try {
-                const { status } = await Notifications.getPermissionsAsync();
-                if (status !== 'granted') {
-                    console.log('📢 Requesting notification permissions...');
-                    await Notifications.requestPermissionsAsync();
-                }
-            } catch (error) {
-                console.log('Permission request error:', error.message);
-            }
-        };
-        
-        requestNotificationPermissions();
-    }, []);
+
 
     if (!fontsLoaded) {
         return <LoadingScreen />;

@@ -15,12 +15,12 @@ const checkRepositoriesForTier = async (tierName, frequencyMinutes) => {
     try {
         // Find subscriptions that belong to this tier
         // IMPORTANT: Only fetch ACTIVE subscriptions
-        const activeSubscriptions = await Subscription.find({ 
+        const activeSubscriptions = await Subscription.find({
             active: true  // ✅ This filters out logged-out users
         })
             .populate({
                 path: 'repository',
-                match: { 
+                match: {
                     $or: [
                         { lastChecked: { $lt: cutoffTime } },
                         { lastChecked: null }
@@ -36,24 +36,24 @@ const checkRepositoriesForTier = async (tierName, frequencyMinutes) => {
                 console.warn(`⚠️  Subscription ${sub._id} has no repository, skipping...`);
                 return false;
             }
-            
+
             // Skip if user doesn't exist (was deleted)
             if (!sub.user) {
                 console.warn(`⚠️  Subscription ${sub._id} has no user, skipping...`);
                 return false;
             }
-            
+
             // Skip if user has notifications disabled
             if (!sub.user.notificationsEnabled) {
                 console.log(`ℹ️  User ${sub.user._id} has notifications disabled, skipping...`);
                 return false;
             }
-            
+
             // Check if user tier matches
             if (tierName === 'personal' && sub.user.rateLimitTier !== 'personal') return false;
             if (tierName === 'premium' && sub.user.rateLimitTier !== 'premium') return false;
             if (tierName === 'default' && sub.user.rateLimitTier !== 'default') return false;
-            
+
             return true;
         });
 
@@ -80,7 +80,7 @@ const checkRepositoriesForTier = async (tierName, frequencyMinutes) => {
         // Process each repository
         for (const [repoId, { repository, subscriptions }] of repoSubscriptionsMap.entries()) {
             const headers = await getBestTokenForRepo(subscriptions);
-            
+
             if (!headers.Authorization && headers.source === 'none') {
                 console.warn(`⚠️ No token available for ${repository.owner}/${repository.name}`);
             }
@@ -89,25 +89,42 @@ const checkRepositoriesForTier = async (tierName, frequencyMinutes) => {
                 // 🆕 CRITICAL FIX: Limit pagination to prevent API abuse
                 const MAX_PAGES = 3; // Only fetch 3 pages (300 issues max)
                 const PER_PAGE = 100;
-                
+
                 let nextUrl = `https://api.github.com/repos/${repository.owner}/${repository.name}/issues?state=all&per_page=${PER_PAGE}&sort=created&direction=desc`;
                 let allIssues = [];
                 let pageCount = 0;
-                
+
+                // Add rate limit helper
+                const checkWithRateLimit = async (url, headers) => {
+                    const response = await axios.get(url, { headers });
+                    const remaining = parseInt(response.headers['x-ratelimit-remaining']);
+
+                    if (remaining < 10) {
+                        const resetTime = parseInt(response.headers['x-ratelimit-reset']) * 1000;
+                        const waitTime = resetTime - Date.now();
+                        const waitMin = Math.ceil(waitTime / 60000);
+                        if (waitMin > 0) {
+                            console.warn(`   ⚠️ Rate limit low (${remaining}), waiting ${waitMin}min`);
+                            await new Promise(r => setTimeout(r, waitTime + 1000));
+                        }
+                    }
+                    return response;
+                };
+
                 while (nextUrl && pageCount < MAX_PAGES) {
-                    const response = await axios.get(nextUrl, { headers });
+                    const response = await checkWithRateLimit(nextUrl, headers);
                     const pageIssues = response.data;
 
                     if (pageIssues.length === 0) break;
 
                     // 🆕 OPTIMIZATION: Stop early if we see old issues
-                    const hasOldIssue = pageIssues.some(issue => 
+                    const hasOldIssue = pageIssues.some(issue =>
                         issue.number <= repository.latestIssueNumber
                     );
-                    
+
                     if (hasOldIssue) {
                         // Only add new issues from this page
-                        const newIssues = pageIssues.filter(issue => 
+                        const newIssues = pageIssues.filter(issue =>
                             issue.number > repository.latestIssueNumber
                         );
                         allIssues = allIssues.concat(newIssues);
@@ -160,7 +177,7 @@ const checkRepositoriesForTier = async (tierName, frequencyMinutes) => {
                 for (const issue of issues.reverse()) {
                     // CRITICAL: Skip already processed issues
                     if (issue.number <= repository.latestIssueNumber) continue;
-                    
+
                     // CRITICAL: Skip pull requests
                     if (issue.pull_request) continue;
 
@@ -169,7 +186,7 @@ const checkRepositoriesForTier = async (tierName, frequencyMinutes) => {
 
                     // Create notifications for matching subscriptions
                     for (const sub of subscriptions) {
-                        const matchedLabels = issueLabels.filter(label => 
+                        const matchedLabels = issueLabels.filter(label =>
                             sub.labels.includes(label)
                         );
 
@@ -195,9 +212,9 @@ const checkRepositoriesForTier = async (tierName, frequencyMinutes) => {
                                 console.log(`  👤 User: ${sub.user.email || sub.user._id}`);
                                 console.log(`  📖 Issue: ${issue.title}`);
 
-                                // Send push notification (non-blocking)
+                                // ✅ DETAILED push notification attempt
                                 try {
-                                    await sendPushNotification(sub.user._id, {
+                                    const pushResult = await sendPushNotification(sub.user._id, {
                                         _id: notification._id,
                                         issueTitle: issue.title,
                                         issueUrl: issue.html_url,
@@ -207,9 +224,20 @@ const checkRepositoriesForTier = async (tierName, frequencyMinutes) => {
                                             name: repository.name
                                         }
                                     });
+
+                                    // ✅ LOG result
+                                    if (pushResult.success) {
+                                        console.log(`     ✅ Push sent successfully!`);
+                                    } else {
+                                        console.error(`     ❌ Push failed: ${pushResult.reason}`);
+                                        if (pushResult.error) {
+                                            console.error(`        Error: ${pushResult.error}`);
+                                        }
+                                    }
                                 } catch (pushError) {
-                                    console.error(`   ⚠️  Push notification error:`, pushError.message);
-                                }                            
+                                    console.error(`     ❌ Push error:`, pushError.message);
+                                    console.error(`        Stack:`, pushError.stack); // ✅ Full stack trace
+                                }
                             }
                         }
                     }

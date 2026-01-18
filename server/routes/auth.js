@@ -81,9 +81,9 @@ router.post('/logout', auth, async (req, res) => {
     try {
         const { Subscription } = require('../models/Resources');
         const Notification = require('../models/Notification');
-        
+
         console.log(`🚪 Logout initiated for user: ${req.user.email}`);
-        
+
         // 1. Deactivate all subscriptions
         const deactivated = await Subscription.updateMany(
             { user: req.user.id },
@@ -102,17 +102,18 @@ router.post('/logout', auth, async (req, res) => {
         // This ensures the token is removed from database immediately
         await User.findByIdAndUpdate(
             req.user.id,
-            { 
+            {
                 personalGitHubToken: null,
                 tokenIsValid: false,
-                rateLimitTier: 'default' // Reset to default tier
+                rateLimitTier: 'default', // Reset to default tier
+                expoPushToken: null // ✅ Clear push token on logout
             }
         );
         console.log(`   ✓ Cleared personal GitHub token`);
 
         console.log(`✅ Logout complete for user: ${req.user.email}`);
-        
-        res.json({ 
+
+        res.json({
             message: 'Logged out successfully',
             subscriptionsPaused: deactivated.modifiedCount,
             notificationsCleared: markedRead.modifiedCount
@@ -299,42 +300,52 @@ router.patch('/me', auth, async (req, res) => {
 // Register Expo push token for push notifications
 router.post('/register-push-token', auth, async (req, res) => {
     const { expoPushToken, deviceInfo } = req.body;
-    
+
     try {
-        // Validate token is provided
         if (!expoPushToken) {
             return res.status(400).json({ message: 'expoPushToken is required' });
         }
 
-        // Validate token format
         if (!Expo.isExpoPushToken(expoPushToken)) {
-            return res.status(400).json({ 
-                message: 'Invalid Expo push token format' 
-            });
+            return res.status(400).json({ message: 'Invalid Expo push token format' });
         }
 
-        // Save push token to user
+        // ✅ SAVE and VERIFY
         const user = await User.findByIdAndUpdate(
             req.user.id,
-            { 
+            {
                 expoPushToken,
-                deviceInfo 
+                deviceInfo,
+                notificationsEnabled: true // ✅ Ensure enabled by default
             },
-            { new: true, select: '-password -personalGitHubToken' }
+            {
+                new: true,
+                select: '-password -personalGitHubToken',
+                runValidators: true // ✅ Run schema validation
+            }
         );
-        
+
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
-        
-        console.log(`✅ Push token registered for user ${req.user.id} (${deviceInfo?.platform || 'unknown'})`);
-        
-        res.json({ 
+
+        // ✅ VERIFY token was saved
+        const savedToken = user.expoPushToken;
+        if (savedToken !== expoPushToken) {
+            throw new Error('Token save verification failed');
+        }
+
+        console.log(`✅ Push token VERIFIED for user ${req.user.id}`);
+        console.log(`   Token: ${expoPushToken.substring(0, 30)}...`);
+        console.log(`   Platform: ${deviceInfo?.platform || 'unknown'}`);
+
+        res.json({
             message: 'Push token registered successfully',
-            success: true
+            success: true,
+            token: savedToken.substring(0, 30) + '...' // Return partial token for verification
         });
     } catch (error) {
-        console.error(`Error registering push token:`, error.message);
+        console.error(`❌ Error registering push token:`, error.message);
         res.status(500).json({ message: 'Failed to register push token', error: error.message });
     }
 });
@@ -343,14 +354,14 @@ router.post('/register-push-token', auth, async (req, res) => {
 router.get('/debug/push-status', auth, async (req, res) => {
     try {
         const user = await User.findById(req.user.id).select('expoPushToken deviceInfo notificationsEnabled');
-        
+
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
 
         const { Expo } = require('expo-server-sdk');
         const hasValidToken = user.expoPushToken && Expo.isExpoPushToken(user.expoPushToken);
-        
+
         res.json({
             userId: req.user.id,
             hasToken: !!user.expoPushToken,
