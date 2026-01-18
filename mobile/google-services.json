@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1039176971395",
+    "project_id": "issuewatch-23926",
+    "storage_bucket": "issuewatch-23926.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1039176971395:android:ff02a40fa12bf7336057b6",
+        "android_client_info": {
+          "package_name": "com.biki.IssueWatch"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDvJwDMhmP01oI9oH9slCw-7Cd2sJ1ItG8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

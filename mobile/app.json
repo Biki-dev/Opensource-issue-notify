@@ -7,6 +7,8 @@
     "orientation": "portrait",
     "android": {
       "package": "com.biki.IssueWatch",
+      "googleServicesFile": "./google-services.json",
+      "display": "standalone",
       "adaptiveIcon": {
         "foregroundImage": "./assets/logo.png",
         "backgroundColor": "#FFFFFF"

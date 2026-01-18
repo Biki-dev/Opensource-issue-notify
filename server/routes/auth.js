@@ -335,7 +335,7 @@ router.post('/register-push-token', auth, async (req, res) => {
             throw new Error('Token save verification failed');
         }
 
-        console.log(`✅ Push token VERIFIED for user ${req.user.id}`);
+        console.log(`✅nfor user ${req.user.id}`);
         console.log(`   Token: ${expoPushToken.substring(0, 30)}...`);
         console.log(`   Platform: ${deviceInfo?.platform || 'unknown'}`);
 
