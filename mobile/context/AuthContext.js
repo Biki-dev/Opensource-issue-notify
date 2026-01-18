@@ -1,7 +1,7 @@
 import React, { createContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
-import { Platform } from 'react-native';
+import { Alert, Platform } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
 import { cancelAllRequests } from '../utils/requestManager';
@@ -23,33 +23,44 @@ export const AuthProvider = ({ children }) => {
     // Register push token with backend
     const registerPushToken = async (token) => {
         try {
-            console.log('🔔 Starting push token registration...');
-            const { token: pushToken, error, userMessage } = await registerForPushNotificationsAsync();
-            console.log('🔔 Push token result:', pushToken ? 'Got token' : 'No token');
+            console.log('🔔 [AUTH] Starting push token registration flow...');
+            const result = await registerForPushNotificationsAsync();
+            const { token: pushToken, error, userMessage } = result;
+
+            console.log('🔔 [AUTH] Push registration result:', result);
 
             if (pushToken) {
                 try {
-                    console.log('🔔 Sending token to backend...');
+                    console.log('🔔 [AUTH] Sending token to backend:', pushToken.substring(0, 15) + '...');
                     const response = await axios.post(
                         `${BASE_URL}/auth/register-push-token`,
                         {
                             expoPushToken: pushToken,
                             deviceInfo: {
-                                platform: Platform.OS
+                                platform: Platform.OS,
+                                model: Device.modelName,
+                                osVersion: Device.osVersion
                             }
                         },
                         { headers: { Authorization: `Bearer ${token}` } }
                     );
-                    console.log('✅ Push token registered with backend');
-                    console.log('✅ Response:', response.data?.message);
+                    console.log('✅ [AUTH] Push token registered with backend successfully');
                 } catch (error) {
-                    console.error('❌ Failed to register push token:', error.response?.data?.message || error.message);
+                    console.error('❌ [AUTH] Backend registration failed:', error.response?.data?.message || error.message);
+                    if (Platform.OS !== 'web') {
+                        Alert.alert('Server Error', 'Failed to save notification token on server.');
+                    }
                 }
-            } else if (userMessage) {
-                console.warn('⚠️  Push registration failed:', userMessage);
+            } else {
+                console.warn('⚠️ [AUTH] No push token obtained:', error);
+                const message = userMessage || error || 'Unknown notification error';
+                if (Platform.OS !== 'web') {
+                    // Show detailed error for debugging
+                    Alert.alert('Notification Setup', message);
+                }
             }
         } catch (error) {
-            console.error('❌ Error in registerPushToken:', error.message);
+            console.error('❌ [AUTH] Critical error in registerPushToken:', error.message);
         }
     };
 
@@ -61,7 +72,6 @@ export const AuthProvider = ({ children }) => {
             const unread = (res.data || []).filter(n => !n.isRead).length;
             setUnreadCount(unread);
 
-            // ✅ Update app badge
             try {
                 await Notifications.setBadgeCountAsync(unread);
             } catch (badgeError) {
@@ -77,17 +87,13 @@ export const AuthProvider = ({ children }) => {
             const res = await axios.post(`${BASE_URL}/auth/login`, { email, password });
             console.log("Login Success", res.data);
 
-            // ✅ 1. Set token FIRST
             const token = res.data.token;
             setUserToken(token);
             await AsyncStorage.setItem('userToken', token);
             await AsyncStorage.setItem('hasSeenOnboarding', 'true');
 
-            // ✅ 2. THEN update unread count
             updateUnreadCount(token);
-
-            // ✅ 3. FINALLY register push token (after user is authenticated)
-            await registerPushToken(token); // Make this await to ensure it completes
+            await registerPushToken(token);
 
             return res.data;
         } catch (e) {
@@ -101,16 +107,12 @@ export const AuthProvider = ({ children }) => {
             const res = await axios.post(`${BASE_URL}/auth/signup`, { name, email, password });
             console.log("Signup Success", res.data);
 
-            // ✅ 1. Set token FIRST
             const token = res.data.token;
             setUserToken(token);
             await AsyncStorage.setItem('userToken', token);
             await AsyncStorage.setItem('hasSeenOnboarding', 'true');
 
-            // ✅ 2. THEN update unread count
             updateUnreadCount(token);
-
-            // ✅ 3. FINALLY register push token (after user is authenticated)
             await registerPushToken(token);
 
             return res.data;
@@ -122,36 +124,27 @@ export const AuthProvider = ({ children }) => {
 
     const loginWithGitHub = async () => {
         try {
-            // Step 1: Open GitHub OAuth page
             const redirectUri = Linking.createURL('auth/callback');
-            const clientId = 'Ov23liRMnBFgrzjvLxvG'; // Replace with actual client ID
+            const clientId = 'Ov23liRMnBFgrzjvLxvG';
 
             const authUrl = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=user:email`;
 
             const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUri);
 
             if (result.type === 'success' && result.url) {
-                // Extract the code from the callback URL
                 const url = new URL(result.url);
                 const code = url.searchParams.get('code');
 
-                if (!code) {
-                    throw new Error('No authorization code received');
-                }
+                if (!code) throw new Error('No authorization code received');
 
-                // Step 2: Exchange code for token via backend
                 const res = await axios.post(`${BASE_URL}/auth/github`, { code, redirectUri });
 
-                // ✅ 1. Set token FIRST
                 const token = res.data.token;
                 setUserToken(token);
                 await AsyncStorage.setItem('userToken', token);
                 await AsyncStorage.setItem('hasSeenOnboarding', 'true');
 
-                // ✅ 2. THEN update unread count
                 updateUnreadCount(token);
-
-                // ✅ 3. FINALLY register push token (after user is authenticated)
                 await registerPushToken(token);
 
                 return res.data;
@@ -167,40 +160,28 @@ export const AuthProvider = ({ children }) => {
     const logout = async () => {
         try {
             console.log('🚪 Starting logout process...');
-
-            // Cancel all active API requests immediately
             cancelAllRequests();
-            console.log('   ✓ Cancelled active requests');
 
-            // Call backend logout endpoint to deactivate subscriptions
             if (userToken) {
                 try {
-                    const response = await axios.post(
+                    await axios.post(
                         `${BASE_URL}/auth/logout`,
                         {},
                         {
                             headers: { Authorization: `Bearer ${userToken}` },
-                            timeout: 5000 // 5 second timeout
+                            timeout: 5000
                         }
                     );
-                    console.log('   ✓ Backend logout:', response.data);
                 } catch (err) {
-                    // Don't fail logout if backend call fails
-                    console.log('   ⚠️  Backend logout failed (continuing anyway):', err.message);
+                    console.log('⚠️ Backend logout failed:', err.message);
                 }
             }
         } catch (e) {
             console.log('Logout error:', e.message);
         } finally {
-            // Clear local state regardless of backend call success
-            console.log('   ✓ Clearing local state...');
             setUserToken(null);
             setUnreadCount(0);
             await AsyncStorage.removeItem('userToken');
-
-            // DON'T remove onboarding status - user already saw it
-            // await AsyncStorage.removeItem('hasSeenOnboarding'); // ❌ REMOVE THIS LINE
-
             console.log('✅ Logout complete');
         }
     };
@@ -212,8 +193,6 @@ export const AuthProvider = ({ children }) => {
 
             if (token) {
                 updateUnreadCount(token);
-
-                // Register for push notifications for freshly authenticated users
                 registerPushToken(token);
             }
         } catch (e) {

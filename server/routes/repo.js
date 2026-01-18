@@ -183,37 +183,51 @@ router.patch('/:id', auth, async (req, res) => {
         if (!sub) return res.status(404).json({ message: 'Subscription not found' });
 
         // If labels were changed, refresh notifications for this repo & user
-        if (labelsBeingUpdated && sub.repository && Array.isArray(sub.labels) && sub.labels.length > 0) {
+        if (labelsBeingUpdated && sub.repository) {
             try {
-                const { owner, name } = sub.repository;
-                const headers = process.env.GITHUB_TOKEN ? { Authorization: `token ${process.env.GITHUB_TOKEN}` } : {};
-
                 // Remove old notifications for this repo + user (old label matches)
                 await Notification.deleteMany({ user: req.user.id, repository: sub.repository._id });
 
-                // Fetch open issues again and create notifications that match new labels
-                const issuesRes = await axios.get(
-                    `https://api.github.com/repos/${owner}/${name}/issues?state=open&per_page=100`,
-                    { headers }
-                );
-                const issues = issuesRes.data || [];
+                if (Array.isArray(sub.labels) && sub.labels.length > 0) {
+                    const { owner, name } = sub.repository;
 
-                for (const issue of issues) {
-                    const issueLabels = (issue.labels || []).map(l => l.name);
-                    const matched = issueLabels.filter(label => sub.labels.includes(label));
-                    if (matched.length === 0) continue;
+                    // Use helper to get the best token
+                    const { getBestTokenForRepo } = require('../utils/githubHelpers');
+                    const headers = await getBestTokenForRepo([{ user: req.user.id }]);
 
-                    await Notification.create({
-                        user: sub.user,
-                        repository: sub.repository._id,
-                        issueTitle: issue.title,
-                        issueUrl: issue.html_url,
-                        matchedLabels: matched
-                    });
+                    // Fetch open issues again and create notifications that match new labels
+                    const issuesRes = await axios.get(
+                        `https://api.github.com/repos/${owner}/${name}/issues?state=open&per_page=100`,
+                        { headers: headers.Authorization ? { Authorization: headers.Authorization } : {} }
+                    );
+                    const issues = issuesRes.data || [];
+
+                    if (Array.isArray(issues)) {
+                        const newNotifs = [];
+                        for (const issue of issues) {
+                            if (issue.pull_request) continue; // Skip PRs
+
+                            const issueLabels = (issue.labels || []).map(l => l.name);
+                            const matched = issueLabels.filter(label => sub.labels.includes(label));
+                            if (matched.length === 0) continue;
+
+                            newNotifs.push({
+                                user: req.user.id,
+                                repository: sub.repository._id,
+                                issueTitle: issue.title,
+                                issueUrl: issue.html_url,
+                                matchedLabels: matched,
+                                isRead: false
+                            });
+                        }
+
+                        if (newNotifs.length > 0) {
+                            await Notification.insertMany(newNotifs);
+                        }
+                    }
                 }
             } catch (err) {
                 console.error('Error reseeding notifications on labels update:', err.message);
-                // Do not fail the update if reseeding fails
             }
         }
 

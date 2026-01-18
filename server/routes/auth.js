@@ -377,4 +377,31 @@ router.get('/debug/push-status', auth, async (req, res) => {
     }
 });
 
+// 🆕 DEBUG: Explicitly trigger a test notification to the current user
+router.post('/debug/test-push', auth, async (req, res) => {
+    try {
+        console.log(`🧪 Received test-push request for user: ${req.user.email}`);
+        const { sendPushNotification } = require('../services/pushNotifications');
+
+        const result = await sendPushNotification(req.user.id, {
+            issueTitle: '🧪 System Test: Push notifications are working!',
+            issueUrl: 'https://github.com/Biki-dev/IssueWatch',
+            matchedLabels: ['test', 'debug'],
+            repository: {
+                owner: 'System',
+                name: 'Test'
+            }
+        });
+
+        if (result.success) {
+            res.json({ message: 'Test notification sent to Expo!', result });
+        } else {
+            res.status(400).json({ message: 'Expo rejected the notification', reason: result.reason, error: result.error });
+        }
+    } catch (error) {
+        console.error('❌ Test-push error:', error.message);
+        res.status(500).json({ message: 'Internal server error during test-push', error: error.message });
+    }
+});
+
 module.exports = router;

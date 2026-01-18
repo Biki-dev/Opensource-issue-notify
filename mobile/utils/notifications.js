@@ -48,78 +48,57 @@ if (Platform.OS === 'android') {
 export async function registerForPushNotificationsAsync() {
     try {
         console.log('🔔 Starting push notification registration...');
+        console.log('📱 Device.isDevice:', Device.isDevice);
 
-        // Check if device
-        // Check if device
         if (!Device.isDevice) {
-            console.warn('⚠️  Simulator detected - push notifications not available on simulator');
-            return { token: null, error: 'Simulator detected', userMessage: 'Push notifications not available on simulator' };
+            console.warn('⚠️ Simulator detected');
+            return { token: null, error: 'Simulator', userMessage: 'Push notifications require a physical device' };
         }
 
-        // Configure Android channel
         if (Platform.OS === 'android') {
             await Notifications.setNotificationChannelAsync('default', {
                 name: 'Issue Notifications',
-                importance: Notifications.AndroidImportance.MAX, // ✅ MAX importance
+                importance: Notifications.AndroidImportance.MAX,
                 vibrationPattern: [0, 250, 250, 250],
                 lightColor: '#6366F1',
-                enableVibrate: true,    // ✅ Enable vibration
-                enableLights: true,     // ✅ Enable LED
-                bypassDnd: true,        // ✅ Bypass Do Not Disturb
-                showBadge: true,        // ✅ Show badge count
-                sound: 'default'        // ✅ Default sound
+                enableVibrate: true,
+                enableLights: true,
+                bypassDnd: true,
+                showBadge: true,
+                sound: 'default'
             });
-            console.log('✅ Android notification channel configured');
         }
 
-        // Get existing permissions
         const { status: existingStatus } = await Notifications.getPermissionsAsync();
-        console.log('📋 Current permission status:', existingStatus);
-
         let finalStatus = existingStatus;
 
-        // Request permissions if not granted
         if (existingStatus !== 'granted') {
-            console.log('🔔 Requesting notification permissions...');
             const { status } = await Notifications.requestPermissionsAsync();
             finalStatus = status;
-            console.log('📋 Permission request result:', status);
         }
 
-        // Check final status
         if (finalStatus !== 'granted') {
-            console.warn('❌ Push notification permission not granted. Status:', finalStatus);
             return {
                 token: null,
                 error: 'Permission denied',
-                userMessage: 'Please enable notifications in Settings to receive issue updates'
+                userMessage: 'Notification permission not granted'
             };
         }
 
-        // Get the push token
-        console.log('🔔 Getting push token...');
-
-        // PROJECT ID is required for newer Expo versions
         const projectId = 'd01a75e4-4cba-4431-8de8-e190e6c6fb9c';
-
-        const tokenResponse = await Notifications.getExpoPushTokenAsync({
-            projectId: projectId
-        });
-
+        const tokenResponse = await Notifications.getExpoPushTokenAsync({ projectId });
         const token = tokenResponse.data;
 
         if (!token) {
-            console.error('❌ No token returned from getExpoPushTokenAsync');
             return { token: null, error: 'No token', userMessage: 'Failed to generate push token' };
         }
 
-        console.log('✅ Got Expo Push Token:', token);
+        console.log('✅ Token generated:', token);
         return { token, error: null };
 
     } catch (error) {
         console.error('❌ Failed to get push token:', error);
-        console.error('   Error details:', error.message);
-        return { token: null, error: error.message, userMessage: 'Failed to configure notifications' };
+        return { token: null, error: error.message, userMessage: `Error: ${error.message}` };
     }
 }
 

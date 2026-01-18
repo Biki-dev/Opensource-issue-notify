@@ -59,7 +59,7 @@ const EditLabelsScreen = ({ route, navigation }) => {
                 { labels: selectedLabels },
                 { headers: { Authorization: `Bearer ${userToken}` } }
             );
-            updateUnreadCount();
+            await updateUnreadCount();
             navigation.goBack();
         } catch (e) {
             console.log(e);

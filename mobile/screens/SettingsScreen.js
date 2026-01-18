@@ -240,9 +240,9 @@ const SettingsScreen = ({ navigation }) => {
                 {/* Developer Settings - GitHub Token */}
                 <SectionHeader title="Developer Settings" icon={Code2} />
                 <Card className="px-6 py-2 mb-8">
-                    <TouchableOpacity 
+                    <TouchableOpacity
                         onPress={() => navigation.navigate('GitHubTokenSettings')}
-                        className="flex-row items-center justify-between py-4"
+                        className="flex-row items-center justify-between py-4 border-b border-border/50"
                     >
                         <View className="flex-row items-center flex-1">
                             <View className="w-10 h-10 rounded-full bg-brand/10 items-center justify-center mr-4">
@@ -251,13 +251,58 @@ const SettingsScreen = ({ navigation }) => {
                             <View className="flex-1">
                                 <Text className="text-base font-inter-medium text-primary">Personal Access Token</Text>
                                 <Text className="text-xs text-muted font-inter-medium mt-0.5">
-                                    {tokenStatus?.hasToken 
-                                        ? `✓ Active • ${tokenStatus.checkFrequency} checks` 
+                                    {tokenStatus?.hasToken
+                                        ? `✓ Active • ${tokenStatus.checkFrequency} checks`
                                         : 'Add for faster updates & private repos'}
                                 </Text>
                             </View>
                         </View>
                         <ChevronRight size={20} color="#94A3B8" fill="none" />
+                    </TouchableOpacity>
+
+                    {/* Notification Diagnostics */}
+                    <TouchableOpacity
+                        onPress={async () => {
+                            try {
+                                const res = await axios.get(`${BASE_URL}/auth/debug/push-status`, {
+                                    headers: { Authorization: `Bearer ${userToken}` }
+                                });
+                                Alert.alert(
+                                    'Notification Diagnostics',
+                                    `Status: ${res.data.status}\n\nToken: ${res.data.token || 'None'}\n\nSystem: ${res.data.deviceInfo?.platform || 'Unknown'}`,
+                                    [
+                                        { text: 'Close' },
+                                        {
+                                            text: 'Send Test Push',
+                                            onPress: async () => {
+                                                try {
+                                                    const testRes = await axios.post(`${BASE_URL}/auth/debug/test-push`, {}, {
+                                                        headers: { Authorization: `Bearer ${userToken}` }
+                                                    });
+                                                    Alert.alert('Success', 'Test notification sent! Check your tray.');
+                                                } catch (err) {
+                                                    Alert.alert('Test Failed', err.response?.data?.message || err.message);
+                                                }
+                                            }
+                                        }
+                                    ]
+                                );
+                            } catch (err) {
+                                Alert.alert('Error', 'Could not reach diagnostic server.');
+                            }
+                        }}
+                        className="flex-row items-center justify-between py-4"
+                    >
+                        <View className="flex-row items-center flex-1">
+                            <View className="w-10 h-10 rounded-full bg-accent/10 items-center justify-center mr-4">
+                                <Shield size={20} color="#8B5CF6" fill="none" />
+                            </View>
+                            <View className="flex-1">
+                                <Text className="text-base font-inter-medium text-primary">Notification Debug</Text>
+                                <Text className="text-xs text-muted font-inter-medium mt-0.5">Verify device push status</Text>
+                            </View>
+                        </View>
+                        <GitBranch size={20} color="#94A3B8" fill="none" />
                     </TouchableOpacity>
                 </Card>
 
