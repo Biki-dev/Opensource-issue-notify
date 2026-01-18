@@ -27,14 +27,14 @@ const sendPushNotification = async (userId, notification) => {
         }
         
         if (!user.expoPushToken) {
-            console.log(`⏭️  Skipping push for user ${userId}: no push token registered`);
-            console.log(`   💡 Device info: ${JSON.stringify(user.deviceInfo || 'none')}`);
+            console.warn(`⚠️  No push token registered for user ${userId}`);
+            console.log(`   Device info: ${JSON.stringify(user.deviceInfo || 'not set')}`);
             return { success: false, reason: 'no_token' };
         }
 
         // Validate token format
         if (!Expo.isExpoPushToken(user.expoPushToken)) {
-            console.error(`❌ Invalid Expo push token for user ${userId}: ${user.expoPushToken}`);
+            console.error(`❌ Invalid Expo push token format for user ${userId}: ${user.expoPushToken}`);
             return { success: false, reason: 'invalid_token' };
         }
 
@@ -42,30 +42,41 @@ const sendPushNotification = async (userId, notification) => {
         const message = {
             to: user.expoPushToken,
             sound: 'default',
-            title: '🔔 New Issue Matched',
+            title: '🔔 New Issue Matched!',
             body: notification.issueTitle,
             data: {
                 type: 'new_issue',
-                notificationId: notification._id,
+                notificationId: notification._id?.toString(),
                 issueUrl: notification.issueUrl,
                 repositoryName: `${notification.repository.owner}/${notification.repository.name}`,
                 labels: notification.matchedLabels
             },
-            badge: 1, // Show badge on app icon
+            badge: 1,
             priority: 'high'
         };
+
+        console.log(`📤 Sending push notification to user ${userId}...`);
+        console.log(`   Token: ${user.expoPushToken.substring(0, 30)}...`);
+        console.log(`   Title: ${message.title}`);
+        console.log(`   Body: ${message.body}`);
 
         // Send notification
         const ticket = await expo.sendPushNotificationsAsync([message]);
         
-        console.log(`✅ Push notification sent to user ${userId} on ${user.deviceInfo?.platform || 'unknown'}`);
-        console.log(`   Token: ${user.expoPushToken.substring(0, 20)}...`);
+        if (ticket[0].status === 'error') {
+            console.error(`❌ Push ticket error for user ${userId}:`, ticket[0].message);
+            return { success: false, reason: 'ticket_error', error: ticket[0].message };
+        }
+
+        console.log(`✅ Push notification sent successfully!`);
+        console.log(`   Device: ${user.deviceInfo?.platform || 'unknown'} (${user.deviceInfo?.model || 'unknown model'})`);
         console.log(`   Ticket ID: ${ticket[0].id}`);
         
         return { success: true, ticket: ticket[0] };
 
     } catch (error) {
         console.error(`❌ Error sending push notification:`, error.message);
+        console.error(`   Stack: ${error.stack}`);
         return { success: false, error: error.message };
     }
 };

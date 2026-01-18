@@ -80,10 +80,15 @@ UserSchema.pre('save', async function () {
         try {
             // Only encrypt if it's not already encrypted (check for : separator)
             if (!this.personalGitHubToken.includes(':')) {
-                this.personalGitHubToken = encrypt(this.personalGitHubToken);
+                const encryptedToken = encrypt(this.personalGitHubToken);
+                if (!encryptedToken) {
+                    throw new Error('Encryption returned null or empty value');
+                }
+                this.personalGitHubToken = encryptedToken;
+                console.log('✅ Token encrypted and saved');
             }
         } catch (error) {
-            console.error('Token encryption error:', error.message);
+            console.error('❌ Token encryption error during save:', error.message);
             throw new Error('Failed to encrypt GitHub token. Ensure ENCRYPTION_KEY is configured.');
         }
     }

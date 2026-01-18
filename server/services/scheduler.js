@@ -195,7 +195,7 @@ const checkRepositoriesForTier = async (tierName, frequencyMinutes) => {
 
                                 // Send push notification (non-blocking)
                                 try {
-                                    await sendPushNotification(sub.user._id, {
+                                    const pushResult = await sendPushNotification(sub.user._id, {
                                         _id: notification._id,
                                         issueTitle: issue.title,
                                         issueUrl: issue.html_url,
@@ -205,8 +205,13 @@ const checkRepositoriesForTier = async (tierName, frequencyMinutes) => {
                                             name: repository.name
                                         }
                                     });
+                                    if (pushResult.success) {
+                                        console.log(`   ✅ Push delivered successfully`);
+                                    } else {
+                                        console.warn(`   ⚠️  Push failed: ${pushResult.reason}`);
+                                    }
                                 } catch (pushError) {
-                                    console.error(`⚠️ Push notification failed for user ${sub.user._id}:`, pushError.message);
+                                    console.error(`   ❌ Push error for user ${sub.user._id}:`, pushError.message);
                                 }                            
                             }
                         }
