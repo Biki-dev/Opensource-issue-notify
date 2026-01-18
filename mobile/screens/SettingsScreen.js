@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
 import { Card, Button, SwitchRow, SectionHeader, shadowStyles } from '../components/UI';
-import { Mail, ChevronRight, Bell, Shield, HelpCircle, LogOut, Edit3, Check, X, User, Lock, Globe, Smartphone, Clock, Github, Code2 } from 'lucide-react-native';
+import { Mail, ChevronRight, Bell, Shield, HelpCircle, LogOut, Edit3, Check, X, User, Lock, Globe, Smartphone, Clock, Github, Code2, GitBranch } from 'lucide-react-native';
 import { MotiView, AnimatePresence } from 'moti';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
