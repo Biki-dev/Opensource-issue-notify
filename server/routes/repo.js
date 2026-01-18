@@ -94,28 +94,47 @@ router.post('/subscribe', auth, async (req, res) => {
         // with all currently available issues that match their selected labels.
         if (isNewSubscription && Array.isArray(subscription.labels) && subscription.labels.length > 0) {
             try {
+                console.log(`📌 Seeding initial notifications for subscription to ${owner}/${repo}`);
+                
                 // Fetch open issues (limited page size to avoid huge responses)
                 const issuesRes = await axios.get(
                     `https://api.github.com/repos/${owner}/${repo}/issues?state=open&per_page=100`,
                     { headers }
                 );
                 const issues = issuesRes.data || [];
+                let createdCount = 0;
 
                 for (const issue of issues) {
                     const issueLabels = (issue.labels || []).map(l => l.name);
                     const matched = issueLabels.filter(label => subscription.labels.includes(label));
                     if (matched.length === 0) continue;
 
-                    await Notification.create({
-                        user: subscription.user,
-                        repository: repository._id,
-                        issueTitle: issue.title,
-                        issueUrl: issue.html_url,
-                        matchedLabels: matched
-                    });
+                    try {
+                        // Use updateOne with upsert to prevent duplicates
+                        const result = await Notification.updateOne(
+                            {
+                                user: subscription.user,
+                                repository: repository._id,
+                                issueUrl: issue.html_url
+                            },
+                            {
+                                $set: {
+                                    issueTitle: issue.title,
+                                    matchedLabels: matched,
+                                    isRead: false
+                                }
+                            },
+                            { upsert: true }
+                        );
+                        if (result.upsertedId) createdCount++;
+                    } catch (err) {
+                        console.warn(`   ⚠️  Could not create notification for issue #${issue.number}:`, err.message);
+                    }
                 }
+                
+                console.log(`   ✅ Seeded ${createdCount} initial notifications`);
             } catch (seedErr) {
-                console.error('Error seeding initial issues for subscription:', seedErr.message);
+                console.error('❌ Error seeding initial issues for subscription:', seedErr.message);
                 // Do not fail subscription creation if seeding fails
             }
         }

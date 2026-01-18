@@ -193,8 +193,11 @@ const checkRepositoriesForTier = async (tierName, frequencyMinutes) => {
 
                                 console.log(`✓ Notify user for issue #${issue.number}`);
                                 console.log(`  📬 Notification ID: ${notification._id}`);
-                                console.log(`  👤 User: ${sub.user._id}`);
+                                console.log(`  👤 User ID: ${sub.user._id}`);
+                                console.log(`  📧 User Email: ${sub.user.email || 'unknown'}`);
                                 console.log(`  📖 Issue: ${issue.title}`);
+                                console.log(`  🔔 Has Push Token: ${!!sub.user.expoPushToken}`);
+                                console.log(`  📱 Device: ${sub.user.deviceInfo?.platform || 'unknown'}`);
 
                                 // Send push notification (non-blocking)
                                 try {

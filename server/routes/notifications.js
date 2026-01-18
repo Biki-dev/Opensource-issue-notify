@@ -22,10 +22,21 @@ router.post('/mark-all-read', auth, async (req, res) => {
 // Get all notifications for current user
 router.get('/', auth, async (req, res) => {
     try {
-        const notifications = await Notification.find({ user: req.user.id })
+        let notifications = await Notification.find({ user: req.user.id })
             .sort({ createdAt: -1 })
             .populate('repository', 'name owner ownerAvatarUrl')
             .lean();
+        
+        // Deduplicate by issueUrl (in case duplicates exist)
+        const seen = new Set();
+        notifications = notifications.filter(n => {
+            if (seen.has(n.issueUrl)) {
+                console.warn(`⚠️  Duplicate notification detected for ${n.issueUrl}, filtering out`);
+                return false;
+            }
+            seen.add(n.issueUrl);
+            return true;
+        });
         
         console.log(`📬 Fetching ${notifications.length} notifications for user ${req.user.id}`);
         res.json(notifications);

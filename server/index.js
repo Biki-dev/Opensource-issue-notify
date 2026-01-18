@@ -65,24 +65,39 @@ app.post('/api/debug/test-push/:userId', async (req, res) => {
         const User = require('./models/User');
         const { sendPushNotification } = require('./services/pushNotifications');
 
-        const user = await User.findById(userId).select('email expoPushToken deviceInfo');
+        const user = await User.findById(userId).select('email expoPushToken deviceInfo notificationsEnabled');
         if (!user) return res.status(404).json({ error: 'User not found' });
 
-        console.log(`📤 Sending test notification to ${user.email}...`);
+        console.log(`\n🧪🧪🧪 SENDING TEST NOTIFICATION TO USER: ${userId}`);
+        console.log(`   Email: ${user.email}`);
+        console.log(`   Has Token: ${!!user.expoPushToken}`);
+        console.log(`   Notifications Enabled: ${user.notificationsEnabled}`);
+        console.log(`   Device: ${user.deviceInfo?.platform || 'unknown'}\n`);
 
         const result = await sendPushNotification(userId, {
             _id: 'test-' + Date.now(),
-            issueTitle: '🧪 Test Notification',
+            issueTitle: '🧪 TEST NOTIFICATION',
             issueUrl: 'https://github.com/test/test/issues/1',
-            matchedLabels: ['bug', 'test'],
+            matchedLabels: ['test'],
             repository: {
                 owner: 'test',
                 name: 'test'
             }
         });
 
-        res.json({ message: 'Test notification sent', result });
+        res.json({ 
+            message: 'Test notification sent', 
+            result,
+            userInfo: {
+                email: user.email,
+                hasToken: !!user.expoPushToken,
+                token: user.expoPushToken ? user.expoPushToken.substring(0, 50) + '...' : null,
+                deviceInfo: user.deviceInfo,
+                notificationsEnabled: user.notificationsEnabled
+            }
+        });
     } catch (error) {
+        console.error('Test push error:', error);
         res.status(500).json({ error: error.message });
     }
 });

@@ -325,14 +325,16 @@ router.post('/register-push-token', auth, async (req, res) => {
             return res.status(404).json({ message: 'User not found' });
         }
         
-        console.log(`✅ Push token registered for user ${req.user.id}`);
-        console.log(`   Token: ${expoPushToken.substring(0, 20)}...`);
-        console.log(`   Device: ${deviceInfo?.platform || 'unknown'}`);
+        console.log(`✅ PUSH TOKEN REGISTERED FOR USER ${req.user.id}`);
+        console.log(`   📱 Full Token: ${expoPushToken}`);
+        console.log(`   Platform: ${deviceInfo?.platform || 'unknown'}`);
+        console.log(`   Model: ${deviceInfo?.model || 'unknown'}`);
         
         res.json({ 
             message: 'Push token registered successfully',
             user,
-            tokenRegistered: true
+            tokenRegistered: true,
+            token: expoPushToken
         });
     } catch (error) {
         console.error(`❌ Error registering push token for user ${req.user.id}:`, error.message);
