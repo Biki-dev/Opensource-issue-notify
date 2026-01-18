@@ -1,9 +1,11 @@
 import React, { createContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
+import { Platform } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
 import { cancelAllRequests } from '../utils/requestManager';
+import { registerForPushNotificationsAsync } from '../utils/notifications';
 
 export const AuthContext = createContext();
 
@@ -16,6 +18,33 @@ export const AuthProvider = ({ children }) => {
     const [unreadCount, setUnreadCount] = useState(0);
 
     const BASE_URL ='https://opensource-issue-notify-production-e468.up.railway.app/api';
+    
+    // Register push token with backend
+    const registerPushToken = async (token) => {
+        try {
+            const pushToken = await registerForPushNotificationsAsync();
+            if (pushToken) {
+                try {
+                    await axios.post(
+                        `${BASE_URL}/auth/register-push-token`,
+                        { 
+                            expoPushToken: pushToken,
+                            deviceInfo: {
+                                platform: Platform.OS
+                            }
+                        },
+                        { headers: { Authorization: `Bearer ${token}` } }
+                    );
+                    console.log('✅ Push token registered with backend');
+                } catch (error) {
+                    console.error('❌ Failed to register push token:', error.message);
+                }
+            }
+        } catch (error) {
+            console.error('❌ Error registering push token:', error.message);
+        }
+    };
+
     const updateUnreadCount = async (token) => {
         try {
             const res = await axios.get(`${BASE_URL}/notifications`, {
@@ -44,6 +73,9 @@ export const AuthProvider = ({ children }) => {
             // Update unread count
             updateUnreadCount(token);
 
+            // Register push token
+            registerPushToken(token);
+
             return res.data;
         } catch (e) {
             console.log("Login Error", e);
@@ -66,6 +98,9 @@ export const AuthProvider = ({ children }) => {
 
             // Update unread count
             updateUnreadCount(token);
+
+            // Register push token
+            registerPushToken(token);
 
             return res.data;
         } catch (e) {
@@ -106,6 +141,9 @@ export const AuthProvider = ({ children }) => {
 
                 // Update unread count
                 updateUnreadCount(token);
+
+                // Register push token
+                registerPushToken(token);
 
                 return res.data;
             } else {
@@ -162,7 +200,13 @@ export const AuthProvider = ({ children }) => {
         try {
             let token = await AsyncStorage.getItem('userToken');
             setUserToken(token);
-            if (token) updateUnreadCount(token);
+            
+            if (token) {
+                updateUnreadCount(token);
+                
+                // Register for push notifications for freshly authenticated users
+                registerPushToken(token);
+            }
         } catch (e) {
             console.log(`isLoggedIn error ${e}`);
         }

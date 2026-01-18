@@ -23,6 +23,7 @@ import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold } from '@expo-goog
 import { Montserrat_700Bold } from '@expo-google-fonts/montserrat';
 import { JetBrainsMono_400Regular } from '@expo-google-fonts/jetbrains-mono';
 import { PlayfairDisplay_500Medium } from '@expo-google-fonts/playfair-display';
+import { setupNotificationListeners } from './utils/notifications';
 
 // Import global.css for nativewind
 import './global.css';
@@ -216,10 +217,19 @@ const LoadingScreen = () => {
 const AppNav = () => {
     const { userToken, isLoading } = useContext(AuthContext);
     const [hasSeenOnboarding, setHasSeenOnboarding] = useState(null);
-
+    const [navReady, setNavReady] = useState(false);
+    const navigationRef = React.useRef();
     useEffect(() => {
         checkOnboarding();
     }, []);
+
+    // Setup notification listeners when both navigation is ready and userToken exists
+    useEffect(() => {
+        if (navReady && userToken && navigationRef.current) {
+            const cleanup = setupNotificationListeners(navigationRef.current);
+            return cleanup;
+        }
+    }, [navReady, userToken]);
 
     // Re-check onboarding status when userToken changes
     useEffect(() => {
@@ -253,7 +263,7 @@ const AppNav = () => {
     }
 
     return (
-        <NavigationContainer>
+        <NavigationContainer ref={navigationRef} onReady={() => setNavReady(true)}>
             <Stack.Navigator screenOptions={{ headerShown: false, animation: 'slide_from_right' }}>
                 {!hasSeenOnboarding ? (
                     <>

@@ -47,6 +47,21 @@ const UserSchema = new mongoose.Schema({
         default: 'default'
     },
 
+     // Push notification token from Expo
+    expoPushToken: { 
+        type: String, 
+        default: null 
+    },
+
+     // Device info for debugging
+    deviceInfo: {
+        platform: String, // 'ios' or 'android'
+        model: String,
+        osVersion: String
+    },
+
+    // Timestamps
+
     createdAt: { type: Date, default: Date.now },
     lastProfileUpdate: { type: Date, default: Date.now },
     githubAccessToken: { type: String, select: false }, // Store token for periodic updates

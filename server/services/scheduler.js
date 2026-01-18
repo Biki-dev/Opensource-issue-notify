@@ -4,6 +4,7 @@ const { Repository, Subscription } = require('../models/Resources');
 const Notification = require('../models/Notification');
 const User = require('../models/User');
 const { getBestTokenForRepo } = require('../utils/githubHelpers');
+const { sendPushNotification } = require('./pushNotifications');
 /**
  * Check repositories for a specific tier
  */
@@ -163,7 +164,7 @@ const checkRepositoriesForTier = async (tierName, frequencyMinutes) => {
                             });
 
                             if (!exists) {
-                                await Notification.create({
+                                const notification = await Notification.create({
                                     user: sub.user._id,
                                     repository: repository._id,
                                     issueTitle: issue.title,
@@ -171,7 +172,24 @@ const checkRepositoriesForTier = async (tierName, frequencyMinutes) => {
                                     matchedLabels: matchedLabels,
                                     isRead: false
                                 });
+
                                 console.log(`✓ Notify user for issue #${issue.number}`);
+
+                                // Send push notification (non-blocking)
+                                try {
+                                    await sendPushNotification(sub.user._id, {
+                                        _id: notification._id,
+                                        issueTitle: issue.title,
+                                        issueUrl: issue.html_url,
+                                        matchedLabels: matchedLabels,
+                                        repository: {
+                                            owner: repository.owner,
+                                            name: repository.name
+                                        }
+                                    });
+                                } catch (pushError) {
+                                    console.error(`⚠️ Push notification failed for user ${sub.user._id}:`, pushError.message);
+                                }                            
                             }
                         }
                     }

@@ -293,4 +293,29 @@ router.patch('/me', auth, async (req, res) => {
     }
 });
 
+// server/routes/auth.js
+
+router.post('/register-push-token', auth, async (req, res) => {
+    const { expoPushToken, deviceInfo } = req.body;
+    
+    try {
+        const user = await User.findByIdAndUpdate(
+            req.user.id,
+            { 
+                expoPushToken,
+                deviceInfo 
+            },
+            { new: true, select: '-password' }
+        );
+        
+        res.json({ 
+            message: 'Push token registered successfully',
+            user 
+        });
+    } catch (error) {
+        console.error('Error registering push token:', error);
+        res.status(500).json({ message: 'Failed to register push token' });
+    }
+});
+
 module.exports = router;
