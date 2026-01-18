@@ -105,6 +105,26 @@ export async function registerForPushNotificationsAsync() {
 /**
  * Handle notification when tapped and app launch from notification
  */
+/**
+ * Verify and request permissions (run on every app start)
+ */
+export async function verifyPermissions() {
+    const { status: existingStatus } = await Notifications.getPermissionsAsync();
+    let finalStatus = existingStatus;
+
+    if (existingStatus !== 'granted') {
+        const { status } = await Notifications.requestPermissionsAsync();
+        finalStatus = status;
+    }
+
+    if (finalStatus !== 'granted') {
+        console.warn('⚠️ Notification permissions not granted');
+        return false;
+    }
+
+    return true;
+}
+
 export function setupNotificationListeners(navigation) {
     // Handle notification tapped when app is running
     const responseListener = Notifications.addNotificationResponseReceivedListener(response => {

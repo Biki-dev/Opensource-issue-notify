@@ -60,7 +60,9 @@ const sendPushNotification = async (userId, notification, retries = 2) => {
                 },
                 badge: 1,
                 priority: 'high',
-                channelId: 'default' // ✅ Specify Android channel
+                vibrate: true, // ✅ Force vibration/heads-up
+                channelId: 'default',
+                categoryIdentifier: 'new_issue' // ✅ Link to custom actions
             };
 
             console.log(`   📤 Sending to Expo...`);

@@ -24,7 +24,7 @@ import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold } from '@expo-goog
 import { Montserrat_700Bold } from '@expo-google-fonts/montserrat';
 import { JetBrainsMono_400Regular } from '@expo-google-fonts/jetbrains-mono';
 import { PlayfairDisplay_500Medium } from '@expo-google-fonts/playfair-display';
-import { setupNotificationListeners } from './utils/notifications';
+import { setupNotificationListeners, verifyPermissions } from './utils/notifications';
 
 // Import global.css for nativewind
 import './global.css';
@@ -222,6 +222,7 @@ const AppNav = () => {
     const navigationRef = React.useRef();
     useEffect(() => {
         checkOnboarding();
+        verifyPermissions();
     }, []);
 
     // Setup notification listeners when both navigation is ready and userToken exists
