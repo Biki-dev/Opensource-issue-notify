@@ -33,6 +33,20 @@ SubscriptionSchema.index({ repository: 1, active: 1 });
 // Index for finding user's subscriptions
 SubscriptionSchema.index({ user: 1, active: 1 });
 
+// 🆕 VALIDATION HOOK: Ensure repository exists before saving
+SubscriptionSchema.pre('save', async function(next) {
+    // Validate repository exists before saving
+    if (this.isNew || this.isModified('repository')) {
+        const Repository = mongoose.model('Repository');
+        const repoExists = await Repository.exists({ _id: this.repository });
+        
+        if (!repoExists) {
+            throw new Error(`Repository ${this.repository} does not exist`);
+        }
+    }
+    next();
+});
+
 const Repository = mongoose.model('Repository', RepositorySchema);
 const Subscription = mongoose.model('Subscription', SubscriptionSchema);
 

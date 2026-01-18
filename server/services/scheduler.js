@@ -85,47 +85,65 @@ const checkRepositoriesForTier = async (tierName, frequencyMinutes) => {
                 console.warn(`⚠️ No token available for ${repository.owner}/${repository.name}`);
             }
 
-            let nextUrl = `https://api.github.com/repos/${repository.owner}/${repository.name}/issues?state=all&per_page=100&sort=created&direction=desc`;
-            let allIssues = [];
-            
             try {
-                // Fetch all paginated results
-                while (nextUrl) {
+                // 🆕 CRITICAL FIX: Limit pagination to prevent API abuse
+                const MAX_PAGES = 3; // Only fetch 3 pages (300 issues max)
+                const PER_PAGE = 100;
+                
+                let nextUrl = `https://api.github.com/repos/${repository.owner}/${repository.name}/issues?state=all&per_page=${PER_PAGE}&sort=created&direction=desc`;
+                let allIssues = [];
+                let pageCount = 0;
+                
+                while (nextUrl && pageCount < MAX_PAGES) {
                     const response = await axios.get(nextUrl, { headers });
                     const pageIssues = response.data;
 
-                    if (pageIssues.length === 0) {
+                    if (pageIssues.length === 0) break;
+
+                    // 🆕 OPTIMIZATION: Stop early if we see old issues
+                    const hasOldIssue = pageIssues.some(issue => 
+                        issue.number <= repository.latestIssueNumber
+                    );
+                    
+                    if (hasOldIssue) {
+                        // Only add new issues from this page
+                        const newIssues = pageIssues.filter(issue => 
+                            issue.number > repository.latestIssueNumber
+                        );
+                        allIssues = allIssues.concat(newIssues);
+                        console.log(`   ✓ Found boundary at page ${pageCount + 1}, stopping pagination`);
                         break;
                     }
 
-                    // Aggregate issues from this page
                     allIssues = allIssues.concat(pageIssues);
+                    pageCount++;
 
-                    // Log rate limit info if available
+                    // Log rate limit
                     const remaining = response.headers['x-ratelimit-remaining'];
                     if (remaining) {
-                        console.log(`   Rate limit remaining: ${remaining}`);
+                        console.log(`   📊 Page ${pageCount}/${MAX_PAGES} | Rate limit: ${remaining}`);
                     }
 
-                    // Check for next page in Link header
+                    // Check for next page
                     const linkHeader = response.headers.link;
-                    nextUrl = null; // Default to no next page
+                    nextUrl = null;
 
                     if (linkHeader) {
-                        // Parse Link header for next page URL
-                        // Format: <url>; rel="next", <url>; rel="last"
                         const links = linkHeader.split(',');
                         for (const link of links) {
                             if (link.includes('rel="next"')) {
                                 const match = link.match(/<([^>]+)>/);
                                 if (match) {
                                     nextUrl = match[1];
-                                    console.log(`   📄 Fetching next page...`);
                                     break;
                                 }
                             }
                         }
                     }
+                }
+
+                if (pageCount >= MAX_PAGES && nextUrl) {
+                    console.warn(`⚠️  Stopped at ${MAX_PAGES} pages for ${repository.owner}/${repository.name}`);
                 }
 
                 const issues = allIssues;

@@ -4,6 +4,7 @@ const dotenv = require('dotenv');
 const mongoose = require('mongoose');
 const connectDB = require('./utils/db');
 const { startScheduler, checkIssues } = require('./services/scheduler');
+const { startCleanupJob } = require('./services/cleanup');
 
 dotenv.config();
 connectDB();
@@ -36,11 +37,32 @@ const PORT = process.env.PORT || 5000;
 const startServer = async () => {
     await connectDB();
 
+    // 🆕 CLEANUP: Remove orphaned subscriptions on startup
+    console.log('🧹 Running cleanup tasks...');
+    try {
+        const { Subscription } = require('./models/Resources');
+        
+        const allSubs = await Subscription.find({}).populate('repository');
+        const orphanedIds = allSubs
+            .filter(sub => !sub.repository)
+            .map(sub => sub._id);
+
+        if (orphanedIds.length > 0) {
+            const result = await Subscription.deleteMany({ _id: { $in: orphanedIds } });
+            console.log(`   ✅ Cleaned ${result.deletedCount} orphaned subscriptions`);
+        } else {
+            console.log('   ✅ No orphaned subscriptions found');
+        }
+    } catch (error) {
+        console.error('   ⚠️  Cleanup failed:', error.message);
+    }
+
     app.listen(PORT, '0.0.0.0', () => {
         console.log(`Server running on port ${PORT}`);
         console.log(`Local: http://localhost:${PORT}`);
         console.log(`Network: http://10.36.220.78:${PORT}`);
         startScheduler();
+        startCleanupJob(); // 🆕 Add this
     });
 };
 
