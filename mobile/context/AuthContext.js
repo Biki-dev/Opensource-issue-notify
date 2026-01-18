@@ -5,6 +5,7 @@ import { Platform } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
 import { cancelAllRequests } from '../utils/requestManager';
+import * as Notifications from 'expo-notifications';
 import { registerForPushNotificationsAsync } from '../utils/notifications';
 
 export const AuthContext = createContext();
