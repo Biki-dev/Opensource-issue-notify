@@ -296,21 +296,24 @@ router.patch('/me', auth, async (req, res) => {
 
 // server/routes/auth.js
 
+// Register Expo push token for push notifications
 router.post('/register-push-token', auth, async (req, res) => {
     const { expoPushToken, deviceInfo } = req.body;
     
     try {
+        // Validate token is provided
         if (!expoPushToken) {
-            console.warn(`⚠️  No token provided for user ${req.user.id}`);
             return res.status(400).json({ message: 'expoPushToken is required' });
         }
 
         // Validate token format
         if (!Expo.isExpoPushToken(expoPushToken)) {
-            console.warn(`⚠️  Invalid token format for user ${req.user.id}: ${expoPushToken.substring(0, 30)}`);
-            return res.status(400).json({ message: 'Invalid Expo push token format. Must start with ExponentPushToken[' });
+            return res.status(400).json({ 
+                message: 'Invalid Expo push token format' 
+            });
         }
 
+        // Save push token to user
         const user = await User.findByIdAndUpdate(
             req.user.id,
             { 
@@ -321,23 +324,17 @@ router.post('/register-push-token', auth, async (req, res) => {
         );
         
         if (!user) {
-            console.error(`❌ User not found: ${req.user.id}`);
             return res.status(404).json({ message: 'User not found' });
         }
         
-        console.log(`✅ PUSH TOKEN REGISTERED FOR USER ${req.user.id}`);
-        console.log(`   📱 Full Token: ${expoPushToken}`);
-        console.log(`   Platform: ${deviceInfo?.platform || 'unknown'}`);
-        console.log(`   Model: ${deviceInfo?.model || 'unknown'}`);
+        console.log(`✅ Push token registered for user ${req.user.id} (${deviceInfo?.platform || 'unknown'})`);
         
         res.json({ 
             message: 'Push token registered successfully',
-            user,
-            tokenRegistered: true,
-            token: expoPushToken
+            success: true
         });
     } catch (error) {
-        console.error(`❌ Error registering push token for user ${req.user.id}:`, error.message);
+        console.error(`Error registering push token:`, error.message);
         res.status(500).json({ message: 'Failed to register push token', error: error.message });
     }
 });
