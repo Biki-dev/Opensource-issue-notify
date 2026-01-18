@@ -23,7 +23,9 @@ const getBestTokenForRepo = async (subscriptions) => {
                         userId: user._id
                     };
                 } catch (error) {
-                    console.error('❌ Error decrypting personal token:', error.message);
+                    console.warn(`⚠️  Token decryption failed for user ${sub.user} - marking invalid`);
+                    // Mark token as invalid to skip in future
+                    await User.findByIdAndUpdate(sub.user, { tokenIsValid: false, rateLimitTier: 'default' }).catch(() => {});
                     // Fall through to next priority
                 }
             }

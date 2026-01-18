@@ -27,7 +27,7 @@ const checkRepositoriesForTier = async (tierName, frequencyMinutes) => {
                     ]
                 }
             })
-            .populate('user', 'notificationsEnabled personalGitHubToken tokenIsValid rateLimitTier');
+            .populate('user', 'notificationsEnabled personalGitHubToken tokenIsValid rateLimitTier expoPushToken deviceInfo');
 
         // Additional safety checks
         const tierSubscriptions = activeSubscriptions.filter(sub => {
@@ -192,6 +192,9 @@ const checkRepositoriesForTier = async (tierName, frequencyMinutes) => {
                                 });
 
                                 console.log(`✓ Notify user for issue #${issue.number}`);
+                                console.log(`  📬 Notification ID: ${notification._id}`);
+                                console.log(`  👤 User: ${sub.user._id}`);
+                                console.log(`  📖 Issue: ${issue.title}`);
 
                                 // Send push notification (non-blocking)
                                 try {

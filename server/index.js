@@ -58,6 +58,35 @@ app.get('/api/debug/push-tokens', async (req, res) => {
     }
 });
 
+// 🆕 TEST: Send test push notification
+app.post('/api/debug/test-push/:userId', async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const User = require('./models/User');
+        const { sendPushNotification } = require('./services/pushNotifications');
+
+        const user = await User.findById(userId).select('email expoPushToken deviceInfo');
+        if (!user) return res.status(404).json({ error: 'User not found' });
+
+        console.log(`📤 Sending test notification to ${user.email}...`);
+
+        const result = await sendPushNotification(userId, {
+            _id: 'test-' + Date.now(),
+            issueTitle: '🧪 Test Notification',
+            issueUrl: 'https://github.com/test/test/issues/1',
+            matchedLabels: ['bug', 'test'],
+            repository: {
+                owner: 'test',
+                name: 'test'
+            }
+        });
+
+        res.json({ message: 'Test notification sent', result });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 const PORT = process.env.PORT || 5000;
 
 const startServer = async () => {

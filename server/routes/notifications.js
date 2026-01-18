@@ -24,9 +24,13 @@ router.get('/', auth, async (req, res) => {
     try {
         const notifications = await Notification.find({ user: req.user.id })
             .sort({ createdAt: -1 })
-            .populate('repository', 'name owner ownerAvatarUrl');
+            .populate('repository', 'name owner ownerAvatarUrl')
+            .lean();
+        
+        console.log(`📬 Fetching ${notifications.length} notifications for user ${req.user.id}`);
         res.json(notifications);
     } catch (error) {
+        console.error('Get notifications error:', error);
         res.status(500).json({ message: 'Server Error' });
     }
 });
