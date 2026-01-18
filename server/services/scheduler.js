@@ -27,7 +27,7 @@ const checkRepositoriesForTier = async (tierName, frequencyMinutes) => {
                     ]
                 }
             })
-            .populate('user', 'notificationsEnabled personalGitHubToken tokenIsValid rateLimitTier expoPushToken deviceInfo');
+            .populate('user', 'email notificationsEnabled personalGitHubToken tokenIsValid rateLimitTier expoPushToken deviceInfo');
 
         // Additional safety checks
         const tierSubscriptions = activeSubscriptions.filter(sub => {
@@ -198,9 +198,23 @@ const checkRepositoriesForTier = async (tierName, frequencyMinutes) => {
                                 console.log(`  📖 Issue: ${issue.title}`);
                                 console.log(`  🔔 Has Push Token: ${!!sub.user.expoPushToken}`);
                                 console.log(`  📱 Device: ${sub.user.deviceInfo?.platform || 'unknown'}`);
+                                
+                                // 🔍 DEBUG: Log populated user data
+                                if (sub.user && sub.user._id) {
+                                    console.log(`  🔍 DEBUG - User populated:`, {
+                                        userId: sub.user._id.toString(),
+                                        hasExpoToken: !!sub.user.expoPushToken,
+                                        expoTokenValue: sub.user.expoPushToken ? `${sub.user.expoPushToken.substring(0, 30)}...` : 'null/undefined',
+                                        notificationsEnabled: sub.user.notificationsEnabled,
+                                        rateLimitTier: sub.user.rateLimitTier
+                                    });
+                                } else {
+                                    console.error(`  ❌ DEBUG - User NOT populated properly!`);
+                                }
 
                                 // Send push notification (non-blocking)
                                 try {
+                                    console.log(`  📤 About to call sendPushNotification for user: ${sub.user._id}`);
                                     const pushResult = await sendPushNotification(sub.user._id, {
                                         _id: notification._id,
                                         issueTitle: issue.title,

@@ -14,18 +14,21 @@ const expo = new Expo();
 const sendPushNotification = async (userId, notification) => {
     try {
         console.log(`\n📤📤📤 ATTEMPTING PUSH NOTIFICATION FOR USER: ${userId}`);
+        console.log(`   🔍 User ID type: ${typeof userId}, value: ${userId}`);
         
         // Get user's push token
         const user = await User.findById(userId).select('expoPushToken notificationsEnabled deviceInfo email');
         
         if (!user) {
             console.log(`❌ USER NOT FOUND: ${userId}`);
+            console.log(`   🔍 Attempted to find user with ID: ${userId}`);
             return { success: false, reason: 'user_not_found' };
         }
 
         console.log(`   👤 User Email: ${user.email}`);
         console.log(`   🔔 Notifications Enabled: ${user.notificationsEnabled}`);
         console.log(`   📱 Has Push Token: ${!!user.expoPushToken}`);
+        console.log(`   🔍 Push Token Value: ${user.expoPushToken || 'null/undefined'}`);
         
         if (!user.notificationsEnabled) {
             console.log(`⏭️  SKIPPED: User has notifications disabled`);
