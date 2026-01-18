@@ -3,6 +3,7 @@ import { View, TouchableOpacity, Text, useWindowDimensions, Platform, Image } fr
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import * as Notifications from 'expo-notifications';
 import { AuthProvider, AuthContext } from './context/AuthContext';
 import { StatusBar } from 'expo-status-bar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -298,6 +299,23 @@ export default function App() {
         JetBrainsMono_400Regular,
         PlayfairDisplay_500Medium,
     });
+
+    // Request notification permissions early
+    useEffect(() => {
+        const requestNotificationPermissions = async () => {
+            try {
+                const { status } = await Notifications.getPermissionsAsync();
+                if (status !== 'granted') {
+                    console.log('📢 Requesting notification permissions...');
+                    await Notifications.requestPermissionsAsync();
+                }
+            } catch (error) {
+                console.log('Permission request error:', error.message);
+            }
+        };
+        
+        requestNotificationPermissions();
+    }, []);
 
     if (!fontsLoaded) {
         return <LoadingScreen />;

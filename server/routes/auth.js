@@ -1,6 +1,7 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const axios = require('axios');
+const { Expo } = require('expo-server-sdk');
 const User = require('../models/User');
 const auth = require('../middleware/auth');
 const router = express.Router();
@@ -299,22 +300,70 @@ router.post('/register-push-token', auth, async (req, res) => {
     const { expoPushToken, deviceInfo } = req.body;
     
     try {
+        if (!expoPushToken) {
+            console.warn(`⚠️  No token provided for user ${req.user.id}`);
+            return res.status(400).json({ message: 'expoPushToken is required' });
+        }
+
+        // Validate token format
+        if (!Expo.isExpoPushToken(expoPushToken)) {
+            console.warn(`⚠️  Invalid token format for user ${req.user.id}: ${expoPushToken.substring(0, 30)}`);
+            return res.status(400).json({ message: 'Invalid Expo push token format. Must start with ExponentPushToken[' });
+        }
+
         const user = await User.findByIdAndUpdate(
             req.user.id,
             { 
                 expoPushToken,
                 deviceInfo 
             },
-            { new: true, select: '-password' }
+            { new: true, select: '-password -personalGitHubToken' }
         );
+        
+        if (!user) {
+            console.error(`❌ User not found: ${req.user.id}`);
+            return res.status(404).json({ message: 'User not found' });
+        }
+        
+        console.log(`✅ Push token registered for user ${req.user.id}`);
+        console.log(`   Token: ${expoPushToken.substring(0, 20)}...`);
+        console.log(`   Device: ${deviceInfo?.platform || 'unknown'}`);
         
         res.json({ 
             message: 'Push token registered successfully',
-            user 
+            user,
+            tokenRegistered: true
         });
     } catch (error) {
-        console.error('Error registering push token:', error);
-        res.status(500).json({ message: 'Failed to register push token' });
+        console.error(`❌ Error registering push token for user ${req.user.id}:`, error.message);
+        res.status(500).json({ message: 'Failed to register push token', error: error.message });
+    }
+});
+
+// 🆕 DEBUG: Check if user has push token registered
+router.get('/debug/push-status', auth, async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id).select('expoPushToken deviceInfo notificationsEnabled');
+        
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        const { Expo } = require('expo-server-sdk');
+        const hasValidToken = user.expoPushToken && Expo.isExpoPushToken(user.expoPushToken);
+        
+        res.json({
+            userId: req.user.id,
+            hasToken: !!user.expoPushToken,
+            token: user.expoPushToken ? user.expoPushToken.substring(0, 30) + '...' : null,
+            hasValidToken,
+            notificationsEnabled: user.notificationsEnabled,
+            deviceInfo: user.deviceInfo,
+            status: hasValidToken ? '✅ Ready to receive push notifications' : '❌ Not ready'
+        });
+    } catch (error) {
+        console.error('Debug error:', error);
+        res.status(500).json({ message: 'Debug failed', error: error.message });
     }
 });
 

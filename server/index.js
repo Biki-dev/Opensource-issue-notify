@@ -32,6 +32,32 @@ app.post('/api/debug/check', async (req, res) => {
     res.json({ message: 'Check triggered' });
 });
 
+// Debug: Check push token registration status
+app.get('/api/debug/push-tokens', async (req, res) => {
+    try {
+        const User = require('./models/User');
+        const users = await User.find({}, 'email expoPushToken deviceInfo notificationsEnabled').limit(10);
+        
+        const { Expo } = require('expo-server-sdk');
+        const status = users.map(u => ({
+            email: u.email,
+            hasToken: !!u.expoPushToken,
+            tokenValid: u.expoPushToken ? Expo.isExpoPushToken(u.expoPushToken) : false,
+            token: u.expoPushToken ? u.expoPushToken.substring(0, 20) + '...' : 'none',
+            notificationsEnabled: u.notificationsEnabled,
+            device: u.deviceInfo?.platform || 'unknown'
+        }));
+        
+        res.json({
+            message: 'Push token status for latest 10 users',
+            count: users.length,
+            status
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 const PORT = process.env.PORT || 5000;
 
 const startServer = async () => {

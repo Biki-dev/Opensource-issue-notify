@@ -22,10 +22,14 @@ export const AuthProvider = ({ children }) => {
     // Register push token with backend
     const registerPushToken = async (token) => {
         try {
+            console.log('🔔 Starting push token registration...');
             const pushToken = await registerForPushNotificationsAsync();
+            console.log('🔔 Push token result:', pushToken ? 'Got token' : 'No token');
+            
             if (pushToken) {
                 try {
-                    await axios.post(
+                    console.log('🔔 Sending token to backend...');
+                    const response = await axios.post(
                         `${BASE_URL}/auth/register-push-token`,
                         { 
                             expoPushToken: pushToken,
@@ -36,12 +40,15 @@ export const AuthProvider = ({ children }) => {
                         { headers: { Authorization: `Bearer ${token}` } }
                     );
                     console.log('✅ Push token registered with backend');
+                    console.log('✅ Response:', response.data?.message);
                 } catch (error) {
-                    console.error('❌ Failed to register push token:', error.message);
+                    console.error('❌ Failed to register push token:', error.response?.data?.message || error.message);
                 }
+            } else {
+                console.warn('⚠️  No push token generated - may not have permissions or device issue');
             }
         } catch (error) {
-            console.error('❌ Error registering push token:', error.message);
+            console.error('❌ Error in registerPushToken:', error.message);
         }
     };
 
