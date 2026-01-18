@@ -13,7 +13,10 @@ const checkRepositoriesForTier = async (tierName, frequencyMinutes) => {
 
     try {
         // Find subscriptions that belong to this tier
-        const activeSubscriptions = await Subscription.find({ active: true })
+        // IMPORTANT: Only fetch ACTIVE subscriptions
+        const activeSubscriptions = await Subscription.find({ 
+            active: true  // ✅ This filters out logged-out users
+        })
             .populate({
                 path: 'repository',
                 match: { 
@@ -25,12 +28,25 @@ const checkRepositoriesForTier = async (tierName, frequencyMinutes) => {
             })
             .populate('user', 'notificationsEnabled personalGitHubToken tokenIsValid rateLimitTier');
 
-        // Filter by tier and valid users
+        // Additional safety checks
         const tierSubscriptions = activeSubscriptions.filter(sub => {
-            if (!sub.repository || !sub.user?.notificationsEnabled) return false;
+            // Skip if repository doesn't exist (was deleted)
+            if (!sub.repository) {
+                console.warn(`⚠️  Subscription ${sub._id} has no repository, skipping...`);
+                return false;
+            }
             
-            // Skip if user has deactivated (no active subscriptions should exist for deleted users)
-            if (!sub.user) return false;
+            // Skip if user doesn't exist (was deleted)
+            if (!sub.user) {
+                console.warn(`⚠️  Subscription ${sub._id} has no user, skipping...`);
+                return false;
+            }
+            
+            // Skip if user has notifications disabled
+            if (!sub.user.notificationsEnabled) {
+                console.log(`ℹ️  User ${sub.user._id} has notifications disabled, skipping...`);
+                return false;
+            }
             
             // Check if user tier matches
             if (tierName === 'personal' && sub.user.rateLimitTier !== 'personal') return false;

@@ -118,28 +118,45 @@ export const AuthProvider = ({ children }) => {
     };
 
     const logout = async () => {
-        try {
-            // Cancel all active API requests immediately
-            cancelAllRequests();
+    try {
+        console.log('🚪 Starting logout process...');
+        
+        // Cancel all active API requests immediately
+        cancelAllRequests();
+        console.log('   ✓ Cancelled active requests');
 
-            // Call backend logout endpoint to deactivate subscriptions
-            if (userToken) {
-                await axios.post(`${BASE_URL}/auth/logout`, {}, {
-                    headers: { Authorization: `Bearer ${userToken}` }
-                }).catch(err => {
-                    console.log('Backend logout failed (user already logged out?):', err.message);
-                });
+        // Call backend logout endpoint to deactivate subscriptions
+        if (userToken) {
+            try {
+                const response = await axios.post(
+                    `${BASE_URL}/auth/logout`, 
+                    {}, 
+                    {
+                        headers: { Authorization: `Bearer ${userToken}` },
+                        timeout: 5000 // 5 second timeout
+                    }
+                );
+                console.log('   ✓ Backend logout:', response.data);
+            } catch (err) {
+                // Don't fail logout if backend call fails
+                console.log('   ⚠️  Backend logout failed (continuing anyway):', err.message);
             }
-        } catch (e) {
-            console.log('Logout error:', e);
-        } finally {
-            // Clear local state regardless of backend call
-            setUserToken(null);
-            setUnreadCount(0);
-            await AsyncStorage.removeItem('userToken');
-            await AsyncStorage.removeItem('hasSeenOnboarding');
         }
-    };
+    } catch (e) {
+        console.log('Logout error:', e.message);
+    } finally {
+        // Clear local state regardless of backend call success
+        console.log('   ✓ Clearing local state...');
+        setUserToken(null);
+        setUnreadCount(0);
+        await AsyncStorage.removeItem('userToken');
+        
+        // DON'T remove onboarding status - user already saw it
+        // await AsyncStorage.removeItem('hasSeenOnboarding'); // ❌ REMOVE THIS LINE
+        
+        console.log('✅ Logout complete');
+    }
+};
 
     const isLoggedIn = async () => {
         try {

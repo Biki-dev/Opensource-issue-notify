@@ -79,24 +79,45 @@ router.post('/login', async (req, res) => {
 router.post('/logout', auth, async (req, res) => {
     try {
         const { Subscription } = require('../models/Resources');
+        const Notification = require('../models/Notification');
         
-        // Deactivate all subscriptions for this user
-        await Subscription.updateMany(
+        console.log(`🚪 Logout initiated for user: ${req.user.email}`);
+        
+        // 1. Deactivate all subscriptions
+        const deactivated = await Subscription.updateMany(
             { user: req.user.id },
-            { active: false },
-            { new: true }
+            { active: false }
         );
+        console.log(`   ✓ Deactivated ${deactivated.modifiedCount} subscriptions`);
 
-        // Clear personal token on logout for security
+        // 2. Mark all notifications as read (cleanup)
+        const markedRead = await Notification.updateMany(
+            { user: req.user.id, isRead: false },
+            { isRead: true }
+        );
+        console.log(`   ✓ Marked ${markedRead.modifiedCount} notifications as read`);
+
+        // 3. Clear personal token on logout for security
+        // This ensures the token is removed from database immediately
         await User.findByIdAndUpdate(
             req.user.id,
-            { personalGitHubToken: null },
-            { new: true }
+            { 
+                personalGitHubToken: null,
+                tokenIsValid: false,
+                rateLimitTier: 'default' // Reset to default tier
+            }
         );
+        console.log(`   ✓ Cleared personal GitHub token`);
 
-        res.json({ message: 'Logged out successfully. Subscriptions paused.' });
+        console.log(`✅ Logout complete for user: ${req.user.email}`);
+        
+        res.json({ 
+            message: 'Logged out successfully',
+            subscriptionsPaused: deactivated.modifiedCount,
+            notificationsCleared: markedRead.modifiedCount
+        });
     } catch (error) {
-        console.error('Logout Error:', error);
+        console.error('❌ Logout Error:', error.message);
         res.status(500).json({ message: 'Server error during logout' });
     }
 });
