@@ -242,10 +242,10 @@ const startScheduler = () => {
         checkRepositoriesForTier('personal', 30);
     });
 
-    // Default tier: Every 60 minutes
-    cron.schedule('0 * * * *', () => {
-        console.log('🔍 Default Tier Check (60min)');
-        checkRepositoriesForTier('default', 60);
+    // Default tier: Every 5 minutes (testing)
+    cron.schedule('*/5 * * * *', () => {
+        console.log('🔍 Default Tier Check (5min)');
+        checkRepositoriesForTier('default', 5);
     });
 
     // Premium tier: Every 15 minutes (future feature)
