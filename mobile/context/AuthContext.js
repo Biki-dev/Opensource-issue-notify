@@ -6,6 +6,7 @@ import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
 import { cancelAllRequests } from '../utils/requestManager';
 import * as Notifications from 'expo-notifications';
+import * as Device from 'expo-device';
 import { registerForPushNotificationsAsync } from '../utils/notifications';
 
 export const AuthContext = createContext();
@@ -46,9 +47,10 @@ export const AuthProvider = ({ children }) => {
                     );
                     console.log('✅ [AUTH] Push token registered with backend successfully');
                 } catch (error) {
-                    console.error('❌ [AUTH] Backend registration failed:', error.response?.data?.message || error.message);
+                    const serverMessage = error.response?.data?.message || error.message;
+                    console.error('❌ [AUTH] Backend registration failed:', serverMessage);
                     if (Platform.OS !== 'web') {
-                        Alert.alert('Server Error', 'Failed to save notification token on server.');
+                        Alert.alert('Server Error', `Backend rejected token: ${serverMessage}`);
                     }
                 }
             } else {
