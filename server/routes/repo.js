@@ -70,7 +70,7 @@ router.post('/subscribe', auth, async (req, res) => {
                 name: repo,
                 ownerAvatarUrl,
                 latestIssueNumber: latestNum,
-                lastChecked: new Date()
+                lastChecked: null // ✅ Set to null so scheduler picks it up immediately
             });
         } else if (!repository.ownerAvatarUrl) {
             // Update existing repo if avatar is missing
@@ -95,7 +95,7 @@ router.post('/subscribe', auth, async (req, res) => {
         if (isNewSubscription && Array.isArray(subscription.labels) && subscription.labels.length > 0) {
             try {
                 console.log(`📌 Seeding initial notifications for subscription to ${owner}/${repo}`);
-                
+
                 // Fetch open issues (limited page size to avoid huge responses)
                 const issuesRes = await axios.get(
                     `https://api.github.com/repos/${owner}/${repo}/issues?state=open&per_page=100`,
@@ -131,7 +131,7 @@ router.post('/subscribe', auth, async (req, res) => {
                         console.warn(`   ⚠️  Could not create notification for issue #${issue.number}:`, err.message);
                     }
                 }
-                
+
                 console.log(`   ✅ Seeded ${createdCount} initial notifications`);
             } catch (seedErr) {
                 console.error('❌ Error seeding initial issues for subscription:', seedErr.message);

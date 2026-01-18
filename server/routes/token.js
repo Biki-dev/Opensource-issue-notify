@@ -11,17 +11,17 @@ const router = express.Router();
  */
 router.post('/github-token', auth, async (req, res) => {
     const { token } = req.body;
-    
+
     if (!token) {
-        return res.status(400).json({ 
-            message: 'Token is required' 
+        return res.status(400).json({
+            message: 'Token is required'
         });
     }
 
     // Validate token format (ghp_ for fine-grained, github_pat_ for classic)
     if (!token.startsWith('ghp_') && !token.startsWith('github_pat_')) {
-        return res.status(400).json({ 
-            message: 'Invalid GitHub token format. Please use a personal access token.' 
+        return res.status(400).json({
+            message: 'Invalid GitHub token format. Please use a personal access token.'
         });
     }
 
@@ -32,8 +32,8 @@ router.post('/github-token', auth, async (req, res) => {
         const tokenVerification = await verifyToken(token);
         if (!tokenVerification.valid) {
             console.log(`❌ Token verification failed for user ${req.user.id}`);
-            return res.status(400).json({ 
-                message: 'Invalid GitHub token. Please check and try again.' 
+            return res.status(400).json({
+                message: 'Invalid GitHub token. Please check and try again.'
             });
         }
 
@@ -41,27 +41,29 @@ router.post('/github-token', auth, async (req, res) => {
         const rateLimit = await getRateLimitInfo(token);
         if (!rateLimit) {
             console.log(`❌ Could not fetch rate limit info for user ${req.user.id}`);
-            return res.status(500).json({ 
-                message: 'Failed to verify rate limit' 
+            return res.status(500).json({
+                message: 'Failed to verify rate limit'
             });
         }
 
         console.log(`✓ Token verified for user ${req.user.id}, storing...`);
 
         // Update user with token
-        const user = await User.findByIdAndUpdate(
-            req.user.id,
-            {
-                personalGitHubToken: token,
-                tokenAddedAt: new Date(),
-                tokenLastVerified: new Date(),
-                tokenIsValid: true,
-                rateLimitTier: 'personal' // Upgrade to 30min checks
-            },
-            { new: true, select: '-personalGitHubToken -password' }
-        );
+        // Use standard find + save to ensure pre-save encryption hooks run
+        const user = await User.findById(req.user.id);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
 
-        console.log(`✅ Token stored successfully for user ${req.user.id}`);
+        user.personalGitHubToken = token;
+        user.tokenAddedAt = new Date();
+        user.tokenLastVerified = new Date();
+        user.tokenIsValid = true;
+        user.rateLimitTier = 'personal'; // Upgrade to 30min checks
+
+        await user.save();
+
+        console.log(`✅ Token stored and encrypted successfully for user ${req.user.id}`);
 
         res.json({
             message: 'GitHub token added successfully',
@@ -98,7 +100,7 @@ router.delete('/github-token', auth, async (req, res) => {
             rateLimitTier: 'default' // Downgrade to 60min checks
         });
 
-        res.json({ 
+        res.json({
             message: 'GitHub token removed',
             downgrade: {
                 checkFrequency: '60 minutes',

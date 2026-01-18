@@ -31,9 +31,11 @@ const checkRepositoriesForTier = async (tierName, frequencyMinutes) => {
 
         // Additional safety checks
         const tierSubscriptions = activeSubscriptions.filter(sub => {
-            // Skip if repository doesn't exist (was deleted)
+            // Check if repository exists in population
             if (!sub.repository) {
-                console.warn(`⚠️  Subscription ${sub._id} has no repository, skipping...`);
+                // This happens if:
+                // 1. Repo document was deleted from DB
+                // 2. Repo document didn't match the 'match' filter (lastChecked too recent)
                 return false;
             }
 
@@ -45,7 +47,6 @@ const checkRepositoriesForTier = async (tierName, frequencyMinutes) => {
 
             // Skip if user has notifications disabled
             if (!sub.user.notificationsEnabled) {
-                console.log(`ℹ️  User ${sub.user._id} has notifications disabled, skipping...`);
                 return false;
             }
 
@@ -58,7 +59,6 @@ const checkRepositoriesForTier = async (tierName, frequencyMinutes) => {
         });
 
         if (tierSubscriptions.length === 0) {
-            console.log(`✓ No ${tierName} tier repos to check`);
             return;
         }
 
@@ -261,30 +261,30 @@ const checkRepositoriesForTier = async (tierName, frequencyMinutes) => {
  * Start the tiered scheduler
  */
 const startScheduler = () => {
-    // Personal tier: Every 30 minutes
-    cron.schedule('*/30 * * * *', () => {
-        console.log('🔍 Personal Tier Check (30min)');
-        checkRepositoriesForTier('personal', 30);
+    // Personal tier: Every 1 minute (Testing)
+    cron.schedule('* * * * *', () => {
+        console.log('🔍 Personal Tier Check (1min)');
+        checkRepositoriesForTier('personal', 1);
     });
 
-    // Default tier: Every 5 minutes (testing)
-    cron.schedule('*/5 * * * *', () => {
-        console.log('🔍 Default Tier Check (5min)');
-        checkRepositoriesForTier('default', 5);
+    // Default tier: Every 1 minute (Testing)
+    cron.schedule('* * * * *', () => {
+        console.log('🔍 Default Tier Check (1min)');
+        checkRepositoriesForTier('default', 1);
     });
 
-    // Premium tier: Every 15 minutes (future feature)
-    cron.schedule('*/15 * * * *', () => {
-        console.log('🔍 Premium Tier Check (15min)');
-        checkRepositoriesForTier('premium', 15);
+    // Premium tier: Every 1 minute (Testing)
+    cron.schedule('* * * * *', () => {
+        console.log('🔍 Premium Tier Check (1min)');
+        checkRepositoriesForTier('premium', 1);
     });
 
     // Run initial checks after 10 seconds
     setTimeout(() => {
         console.log('⏳ Running initial checks...');
-        checkRepositoriesForTier('default', 60);
-        checkRepositoriesForTier('personal', 30);
-        checkRepositoriesForTier('premium', 15);
+        checkRepositoriesForTier('default', 1);
+        checkRepositoriesForTier('personal', 1);
+        checkRepositoriesForTier('premium', 1);
     }, 10000);
 
     console.log('📅 Multi-Tier Scheduler Started');
