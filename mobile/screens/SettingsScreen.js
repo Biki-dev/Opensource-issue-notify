@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
 import { Card, Button, SwitchRow, SectionHeader, shadowStyles } from '../components/UI';
-import { Mail, ChevronRight, Bell, Shield, HelpCircle, LogOut, Edit3, Check, X, User, Lock, Globe, Smartphone, Clock, Github } from 'lucide-react-native';
+import { Mail, ChevronRight, Bell, Shield, HelpCircle, LogOut, Edit3, Check, X, User, Lock, Globe, Smartphone, Clock, Github, Code2 } from 'lucide-react-native';
 import { MotiView, AnimatePresence } from 'moti';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -13,19 +13,22 @@ const SettingsScreen = ({ navigation }) => {
     const { userToken, BASE_URL, logout, unreadCount, updateUnreadCount } = useContext(AuthContext);
     const [profile, setProfile] = useState(null);
     const [subscriptions, setSubscriptions] = useState([]);
+    const [tokenStatus, setTokenStatus] = useState(null);
     const [isEditing, setIsEditing] = useState(false);
     const [editName, setEditName] = useState('');
     const [saveLoading, setSaveLoading] = useState(false);
 
     const fetchData = async () => {
         try {
-            const [profileRes, subsRes] = await Promise.all([
+            const [profileRes, subsRes, tokenRes] = await Promise.all([
                 axios.get(`${BASE_URL}/auth/me`, { headers: { Authorization: `Bearer ${userToken}` } }),
                 axios.get(`${BASE_URL}/repos`, { headers: { Authorization: `Bearer ${userToken}` } }),
+                axios.get(`${BASE_URL}/user/token/github-token/status`, { headers: { Authorization: `Bearer ${userToken}` } }).catch(() => null),
             ]);
             setProfile(profileRes.data);
             setEditName(profileRes.data.name);
             setSubscriptions(subsRes.data || []);
+            if (tokenRes) setTokenStatus(tokenRes.data);
             updateUnreadCount();
         } catch (e) {
             console.log(e);
@@ -33,9 +36,11 @@ const SettingsScreen = ({ navigation }) => {
     };
 
     useEffect(() => {
-        fetchData();
+        const unsubscribe = navigation.addListener('focus', () => {
+            fetchData();
+        });
+        return unsubscribe;
     }, []);
-
     const toggleNotifications = async () => {
         try {
             const updated = await axios.patch(
@@ -227,6 +232,30 @@ const SettingsScreen = ({ navigation }) => {
                                 <HelpCircle size={20} color="#6366F1" fill="none" />
                             </View>
                             <Text className="text-base font-inter-medium text-primary">Privacy Policy</Text>
+                        </View>
+                        <ChevronRight size={20} color="#94A3B8" fill="none" />
+                    </TouchableOpacity>
+                </Card>
+
+                {/* Developer Settings - GitHub Token */}
+                <SectionHeader title="Developer Settings" icon={Code2} />
+                <Card className="px-6 py-2 mb-8">
+                    <TouchableOpacity 
+                        onPress={() => navigation.navigate('GitHubTokenSettings')}
+                        className="flex-row items-center justify-between py-4"
+                    >
+                        <View className="flex-row items-center flex-1">
+                            <View className="w-10 h-10 rounded-full bg-brand/10 items-center justify-center mr-4">
+                                <Github size={20} color="#6366F1" fill="none" />
+                            </View>
+                            <View className="flex-1">
+                                <Text className="text-base font-inter-medium text-primary">Personal Access Token</Text>
+                                <Text className="text-xs text-muted font-inter-medium mt-0.5">
+                                    {tokenStatus?.hasToken 
+                                        ? `✓ Active • ${tokenStatus.checkFrequency} checks` 
+                                        : 'Add for faster updates & private repos'}
+                                </Text>
+                            </View>
                         </View>
                         <ChevronRight size={20} color="#94A3B8" fill="none" />
                     </TouchableOpacity>

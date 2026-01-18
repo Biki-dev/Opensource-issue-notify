@@ -10,4 +10,19 @@ const NotificationSchema = new mongoose.Schema({
     createdAt: { type: Date, default: Date.now }
 });
 
+// Add indexes for better query performance
+NotificationSchema.index({ user: 1, isRead: 1 });
+NotificationSchema.index({ user: 1, createdAt: -1 });
+// Compound unique index to prevent duplicate notifications
+NotificationSchema.index({ user: 1, repository: 1, issueUrl: 1 }, { unique: true });
+
+// TTL index for auto-deletion of read notifications after 30 days
+NotificationSchema.index(
+    { createdAt: 1 }, 
+    { 
+        expireAfterSeconds: 2592000, // 30 days
+        partialFilterExpression: { isRead: true }
+    }
+);
+
 module.exports = mongoose.model('Notification', NotificationSchema);

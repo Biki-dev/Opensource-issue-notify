@@ -11,6 +11,10 @@ const RepositorySchema = new mongoose.Schema({
     createdAt: { type: Date, default: Date.now }
 });
 
+// Add indexes for better query performance
+RepositorySchema.index({ owner: 1, name: 1 });
+RepositorySchema.index({ lastChecked: 1 });
+
 // Subscription Schema: Links User to Repo with specific Labels
 const SubscriptionSchema = new mongoose.Schema({
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
@@ -24,6 +28,10 @@ const SubscriptionSchema = new mongoose.Schema({
 
 // Compound index to prevent duplicate subscriptions for same user/repo
 SubscriptionSchema.index({ user: 1, repository: 1 }, { unique: true });
+// Index for finding active subscriptions by repo
+SubscriptionSchema.index({ repository: 1, active: 1 });
+// Index for finding user's subscriptions
+SubscriptionSchema.index({ user: 1, active: 1 });
 
 const Repository = mongoose.model('Repository', RepositorySchema);
 const Subscription = mongoose.model('Subscription', SubscriptionSchema);

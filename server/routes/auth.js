@@ -75,6 +75,32 @@ router.post('/login', async (req, res) => {
     }
 });
 
+// Logout - Deactivate user subscriptions
+router.post('/logout', auth, async (req, res) => {
+    try {
+        const { Subscription } = require('../models/Resources');
+        
+        // Deactivate all subscriptions for this user
+        await Subscription.updateMany(
+            { user: req.user.id },
+            { active: false },
+            { new: true }
+        );
+
+        // Clear personal token on logout for security
+        await User.findByIdAndUpdate(
+            req.user.id,
+            { personalGitHubToken: null },
+            { new: true }
+        );
+
+        res.json({ message: 'Logged out successfully. Subscriptions paused.' });
+    } catch (error) {
+        console.error('Logout Error:', error);
+        res.status(500).json({ message: 'Server error during logout' });
+    }
+});
+
 // GitHub OAuth Login/Signup
 router.post('/github', async (req, res) => {
     const { code, redirectUri } = req.body;

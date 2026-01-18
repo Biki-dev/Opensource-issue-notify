@@ -15,6 +15,7 @@ import SettingsScreen from './screens/SettingsScreen';
 import AddRepoScreen from './screens/AddRepoScreen';
 import NotificationsScreen from './screens/NotificationsScreen';
 import EditLabelsScreen from './screens/EditLabelsScreen';
+import GitHubTokenSettings from './screens/GitHubTokenSettings';
 import { Home, Bell, CreditCard, Settings } from 'lucide-react-native';
 import { MotiView } from 'moti';
 import { useFonts, Poppins_600SemiBold, Poppins_700Bold } from '@expo-google-fonts/poppins';
@@ -266,6 +267,7 @@ const AppNav = () => {
                         <Stack.Screen name="Main" component={AppTabs} />
                         <Stack.Screen name="AddRepo" component={AddRepoScreen} options={{ presentation: 'modal' }} />
                         <Stack.Screen name="EditLabels" component={EditLabelsScreen} options={{ presentation: 'modal' }} />
+                        <Stack.Screen name="GitHubTokenSettings" component={GitHubTokenSettings} options={{ presentation: 'modal' }} />
                         <Stack.Screen name="Notifications" component={NotificationsScreen} />
                     </>
                 )}

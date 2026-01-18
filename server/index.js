@@ -22,15 +22,8 @@ app.use((req, res, next) => {
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/repos', require('./routes/repo'));
 app.use('/api/notifications', require('./routes/notifications'));
-
-// Health Check
-app.get('/api/health', (req, res) => {
-    res.json({
-        status: 'ok',
-        mongodb: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
-        timestamp: new Date().toISOString()
-    });
-});
+app.use('/api/user/token', require('./routes/token'));
+app.use('/api/health', require('./routes/health'));
 
 // Manual Trigger for Debugging
 app.post('/api/debug/check', async (req, res) => {
@@ -52,3 +45,4 @@ const startServer = async () => {
 };
 
 startServer();
+

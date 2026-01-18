@@ -2,92 +2,218 @@ const cron = require('node-cron');
 const axios = require('axios');
 const { Repository, Subscription } = require('../models/Resources');
 const Notification = require('../models/Notification');
+const User = require('../models/User');
+const { getBestTokenForRepo } = require('../utils/githubHelpers');
+/**
+ * Check repositories for a specific tier
+ */
+const checkRepositoriesForTier = async (tierName, frequencyMinutes) => {
+    const now = new Date();
+    const cutoffTime = new Date(now - frequencyMinutes * 60 * 1000);
 
-const checkIssues = async () => {
-    console.log('Running Scheduled Check...');
     try {
-        // Only check repositories that have at least one ACTIVE subscription.
-        const activeRepoIds = await Subscription.distinct('repository', { active: true });
-        if (!activeRepoIds || activeRepoIds.length === 0) {
-            console.log('No active subscriptions found. Skipping check.');
+        // Find subscriptions that belong to this tier
+        const activeSubscriptions = await Subscription.find({ active: true })
+            .populate({
+                path: 'repository',
+                match: { 
+                    $or: [
+                        { lastChecked: { $lt: cutoffTime } },
+                        { lastChecked: null }
+                    ]
+                }
+            })
+            .populate('user', 'notificationsEnabled personalGitHubToken tokenIsValid rateLimitTier');
+
+        // Filter by tier and valid users
+        const tierSubscriptions = activeSubscriptions.filter(sub => {
+            if (!sub.repository || !sub.user?.notificationsEnabled) return false;
+            
+            // Skip if user has deactivated (no active subscriptions should exist for deleted users)
+            if (!sub.user) return false;
+            
+            // Check if user tier matches
+            if (tierName === 'personal' && sub.user.rateLimitTier !== 'personal') return false;
+            if (tierName === 'premium' && sub.user.rateLimitTier !== 'premium') return false;
+            if (tierName === 'default' && sub.user.rateLimitTier !== 'default') return false;
+            
+            return true;
+        });
+
+        if (tierSubscriptions.length === 0) {
+            console.log(`✓ No ${tierName} tier repos to check`);
             return;
         }
 
-        const repositories = await Repository.find({ _id: { $in: activeRepoIds } });
-        for (const repo of repositories) {
-            // Optimization: if no active subscriptions, skip?
-            // For now, check all.
+        console.log(`🔍 Checking ${tierSubscriptions.length} ${tierName} tier repos...`);
 
-            const headers = process.env.GITHUB_TOKEN ? { Authorization: `token ${process.env.GITHUB_TOKEN}` } : {};
+        // Group by repository
+        const repoSubscriptionsMap = new Map();
+        for (const sub of tierSubscriptions) {
+            const repoId = sub.repository._id.toString();
+            if (!repoSubscriptionsMap.has(repoId)) {
+                repoSubscriptionsMap.set(repoId, {
+                    repository: sub.repository,
+                    subscriptions: []
+                });
+            }
+            repoSubscriptionsMap.get(repoId).subscriptions.push(sub);
+        }
 
-            // Fetch issues created since last check
-            // Actually, querying by issue number is safer than time if we track latest number.
-            // But GitHub API "since" parameter is time-based. "state=open"
-            // Let's use `since` timestamp if available, else just check recent.
+        // Process each repository
+        for (const [repoId, { repository, subscriptions }] of repoSubscriptionsMap.entries()) {
+            const headers = await getBestTokenForRepo(subscriptions);
+            
+            if (!headers.Authorization && headers.source === 'none') {
+                console.warn(`⚠️ No token available for ${repository.owner}/${repository.name}`);
+            }
 
-            const sinceQuery = repo.lastChecked ? `&since=${repo.lastChecked.toISOString()}` : '';
-            const url = `https://api.github.com/repos/${repo.owner}/${repo.name}/issues?state=all&per_page=50${sinceQuery}`;
-
+            let nextUrl = `https://api.github.com/repos/${repository.owner}/${repository.name}/issues?state=all&per_page=100&sort=created&direction=desc`;
+            let allIssues = [];
+            
             try {
-                const response = await axios.get(url, { headers });
-                const issues = response.data;
+                // Fetch all paginated results
+                while (nextUrl) {
+                    const response = await axios.get(nextUrl, { headers });
+                    const pageIssues = response.data;
 
-                if (issues.length === 0) {
-                    console.log(`No new issues for ${repo.owner}/${repo.name}`);
-                    continue;
-                }
+                    if (pageIssues.length === 0) {
+                        break;
+                    }
 
-                // Get all subscriptions for this repo
-                const subscriptions = await Subscription.find({ repository: repo._id, active: true });
-                if (subscriptions.length === 0) continue;
+                    // Aggregate issues from this page
+                    allIssues = allIssues.concat(pageIssues);
 
-                // Optimize: Map labels to users
-                // Issue: { labels: [{name: 'bug'}] }
-                // Sub: { labels: ['bug'] }
+                    // Log rate limit info if available
+                    const remaining = response.headers['x-ratelimit-remaining'];
+                    if (remaining) {
+                        console.log(`   Rate limit remaining: ${remaining}`);
+                    }
 
-                let maxIssueNumber = repo.latestIssueNumber;
+                    // Check for next page in Link header
+                    const linkHeader = response.headers.link;
+                    nextUrl = null; // Default to no next page
 
-                for (const issue of issues) {
-                    if (issue.number <= repo.latestIssueNumber) continue; // Skip old ones if API returns them
-                    if (issue.number > maxIssueNumber) maxIssueNumber = issue.number;
-
-                    const issueLabels = issue.labels.map(l => l.name);
-
-                    for (const sub of subscriptions) {
-                        const matched = issueLabels.filter(label => sub.labels.includes(label));
-                        if (matched.length > 0) {
-                            // Create Notification
-                            await Notification.create({
-                                user: sub.user,
-                                repository: repo._id,
-                                issueTitle: issue.title,
-                                issueUrl: issue.html_url,
-                                matchedLabels: matched
-                            });
-                            console.log(`Notify user ${sub.user} for issue ${issue.number}`);
+                    if (linkHeader) {
+                        // Parse Link header for next page URL
+                        // Format: <url>; rel="next", <url>; rel="last"
+                        const links = linkHeader.split(',');
+                        for (const link of links) {
+                            if (link.includes('rel="next"')) {
+                                const match = link.match(/<([^>]+)>/);
+                                if (match) {
+                                    nextUrl = match[1];
+                                    console.log(`   📄 Fetching next page...`);
+                                    break;
+                                }
+                            }
                         }
                     }
                 }
 
-                // Update Repo State
-                repo.lastChecked = new Date();
-                repo.latestIssueNumber = maxIssueNumber;
-                await repo.save();
+                const issues = allIssues;
+
+                if (issues.length === 0) {
+                    repository.lastChecked = new Date();
+                    await repository.save();
+                    continue;
+                }
+
+                let maxIssueNumber = repository.latestIssueNumber || 0;
+
+                // Process in chronological order
+                for (const issue of issues.reverse()) {
+                    // CRITICAL: Skip already processed issues
+                    if (issue.number <= repository.latestIssueNumber) continue;
+                    
+                    // CRITICAL: Skip pull requests
+                    if (issue.pull_request) continue;
+
+                    const issueLabels = (issue.labels || []).map(l => l.name);
+                    if (issue.number > maxIssueNumber) maxIssueNumber = issue.number;
+
+                    // Create notifications for matching subscriptions
+                    for (const sub of subscriptions) {
+                        const matchedLabels = issueLabels.filter(label => 
+                            sub.labels.includes(label)
+                        );
+
+                        if (matchedLabels.length > 0) {
+                            // CRITICAL: Prevent duplicates
+                            const exists = await Notification.findOne({
+                                user: sub.user._id,
+                                repository: repository._id,
+                                issueUrl: issue.html_url
+                            });
+
+                            if (!exists) {
+                                await Notification.create({
+                                    user: sub.user._id,
+                                    repository: repository._id,
+                                    issueTitle: issue.title,
+                                    issueUrl: issue.html_url,
+                                    matchedLabels: matchedLabels,
+                                    isRead: false
+                                });
+                                console.log(`✓ Notify user for issue #${issue.number}`);
+                            }
+                        }
+                    }
+                }
+
+                repository.lastChecked = new Date();
+                await repository.save();
 
             } catch (err) {
-                console.error(`Error fetching ${repo.owner}/${repo.name}: ${err.message}`);
+                if (err.response?.status === 403) {
+                    console.error('   Rate limit exceeded');
+                }
             }
         }
     } catch (error) {
-        console.error('Cron Job Error:', error);
+        console.error(`❌ Tier Check Error (${tierName}):`, error.message);
     }
 };
 
-// Schedule: Run every 60 minutes
+/**
+ * Start the tiered scheduler
+ */
 const startScheduler = () => {
-    cron.schedule('0 * * * *', checkIssues);
-    // cron.schedule('* * * * *', checkIssues); // Debug: every minute
-    console.log('Issue Checker Scheduler Started (Every 60 mins)');
+    // Personal tier: Every 30 minutes
+    cron.schedule('*/30 * * * *', () => {
+        console.log('🔍 Personal Tier Check (30min)');
+        checkRepositoriesForTier('personal', 30);
+    });
+
+    // Default tier: Every 60 minutes
+    cron.schedule('0 * * * *', () => {
+        console.log('🔍 Default Tier Check (60min)');
+        checkRepositoriesForTier('default', 60);
+    });
+
+    // Premium tier: Every 15 minutes (future feature)
+    cron.schedule('*/15 * * * *', () => {
+        console.log('🔍 Premium Tier Check (15min)');
+        checkRepositoriesForTier('premium', 15);
+    });
+
+    // Run initial checks after 10 seconds
+    setTimeout(() => {
+        console.log('⏳ Running initial checks...');
+        checkRepositoriesForTier('default', 60);
+        checkRepositoriesForTier('personal', 30);
+        checkRepositoriesForTier('premium', 15);
+    }, 10000);
+
+    console.log('📅 Multi-Tier Scheduler Started');
+};
+
+// Legacy function for backwards compatibility
+const checkIssues = async () => {
+    console.log('🔍 Manual check triggered...');
+    await checkRepositoriesForTier('default', 60);
+    await checkRepositoriesForTier('personal', 30);
+    await checkRepositoriesForTier('premium', 15);
 };
 
 module.exports = { startScheduler, checkIssues };

@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
+import { cancelAllRequests } from '../utils/requestManager';
 
 export const AuthContext = createContext();
 
@@ -117,9 +118,27 @@ export const AuthProvider = ({ children }) => {
     };
 
     const logout = async () => {
-        setUserToken(null);
-        setUnreadCount(0);
-        await AsyncStorage.removeItem('userToken');
+        try {
+            // Cancel all active API requests immediately
+            cancelAllRequests();
+
+            // Call backend logout endpoint to deactivate subscriptions
+            if (userToken) {
+                await axios.post(`${BASE_URL}/auth/logout`, {}, {
+                    headers: { Authorization: `Bearer ${userToken}` }
+                }).catch(err => {
+                    console.log('Backend logout failed (user already logged out?):', err.message);
+                });
+            }
+        } catch (e) {
+            console.log('Logout error:', e);
+        } finally {
+            // Clear local state regardless of backend call
+            setUserToken(null);
+            setUnreadCount(0);
+            await AsyncStorage.removeItem('userToken');
+            await AsyncStorage.removeItem('hasSeenOnboarding');
+        }
     };
 
     const isLoggedIn = async () => {
