@@ -51,8 +51,8 @@ export async function registerForPushNotificationsAsync() {
         console.log('📱 Device.isDevice:', Device.isDevice);
 
         if (!Device.isDevice) {
-            console.warn('⚠️ Simulator detected');
-            return { token: null, error: 'Simulator', userMessage: 'Push notifications require a physical device' };
+            console.warn('⚠️ Simulator detected - proceeding anyway for testing');
+            // We won't return here so we can try to get a token anyway
         }
 
         if (Platform.OS === 'android') {

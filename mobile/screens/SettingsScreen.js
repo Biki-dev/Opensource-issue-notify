@@ -260,7 +260,7 @@ const SettingsScreen = ({ navigation }) => {
                         <ChevronRight size={20} color="#94A3B8" fill="none" />
                     </TouchableOpacity>
 
-                    {/* Notification Diagnostics */}
+                    {/* Notification Diagnostics - Commented out but available for future debugging
                     <TouchableOpacity
                         onPress={async () => {
                             try {
@@ -304,6 +304,7 @@ const SettingsScreen = ({ navigation }) => {
                         </View>
                         <GitBranch size={20} color="#94A3B8" fill="none" />
                     </TouchableOpacity>
+                    */}
                 </Card>
 
                 {/* Logout Button */}
