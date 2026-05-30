@@ -4,6 +4,7 @@ const { Repository, Subscription } = require('../models/Resources');
 const Notification = require('../models/Notification');
 const router = express.Router();
 const auth = require('../middleware/auth'); // Need to create middleware
+const { getBestTokenForRepo } = require('../utils/githubHelpers');
 
 // Helper to extract owner/repo
 const parseGitHubUrl = (url) => {
@@ -153,6 +154,120 @@ router.get('/', auth, async (req, res) => {
         const subs = await Subscription.find({ user: req.user.id }).populate('repository');
         res.json(subs);
     } catch (error) {
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
+
+// GET ACTIVITY SUMMARY (weekly / monthly issue counts per subscribed repo)
+router.get('/activity', auth, async (req, res) => {
+    try {
+        const activeSubs = await Subscription.find({ user: req.user.id, active: true })
+            .populate('repository')
+            .sort({ createdAt: -1 });
+
+        const repoGroups = new Map();
+
+        for (const sub of activeSubs) {
+            if (!sub.repository) continue;
+
+            const repoId = sub.repository._id.toString();
+            if (!repoGroups.has(repoId)) {
+                repoGroups.set(repoId, {
+                    repository: sub.repository,
+                    subscriptions: []
+                });
+            }
+
+            repoGroups.get(repoId).subscriptions.push(sub);
+        }
+
+        const monthCutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+        const weekCutoff = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+        const activity = [];
+
+        for (const { repository, subscriptions } of repoGroups.values()) {
+            try {
+                const headers = await getBestTokenForRepo(subscriptions);
+                const MAX_PAGES = 5;
+                const PER_PAGE = 100;
+
+                let nextUrl = `https://api.github.com/repos/${repository.owner}/${repository.name}/issues?state=all&per_page=${PER_PAGE}&sort=created&direction=desc`;
+                let pageCount = 0;
+                let weekCount = 0;
+                let monthCount = 0;
+
+                while (nextUrl && pageCount < MAX_PAGES) {
+                    const response = await axios.get(nextUrl, { headers });
+                    const issues = response.data || [];
+
+                    if (issues.length === 0) break;
+
+                    let stopPagination = false;
+
+                    for (const issue of issues) {
+                        if (issue.pull_request) continue;
+
+                        const createdAt = new Date(issue.created_at);
+                        if (createdAt < monthCutoff) {
+                            stopPagination = true;
+                            break;
+                        }
+
+                        monthCount += 1;
+                        if (createdAt >= weekCutoff) {
+                            weekCount += 1;
+                        }
+                    }
+
+                    if (stopPagination) break;
+
+                    pageCount += 1;
+
+                    const linkHeader = response.headers.link;
+                    nextUrl = null;
+
+                    if (linkHeader) {
+                        const links = linkHeader.split(',');
+                        for (const link of links) {
+                            if (link.includes('rel="next"')) {
+                                const match = link.match(/<([^>]+)>/);
+                                if (match) {
+                                    nextUrl = match[1];
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                activity.push({
+                    repoId: repository._id,
+                    owner: repository.owner,
+                    name: repository.name,
+                    ownerAvatarUrl: repository.ownerAvatarUrl,
+                    weekCount,
+                    monthCount,
+                    subscriptionCount: subscriptions.length
+                });
+            } catch (repoErr) {
+                console.warn(`⚠️ Failed to load activity for ${repository.owner}/${repository.name}:`, repoErr.message);
+                activity.push({
+                    repoId: repository._id,
+                    owner: repository.owner,
+                    name: repository.name,
+                    ownerAvatarUrl: repository.ownerAvatarUrl,
+                    weekCount: 0,
+                    monthCount: 0,
+                    subscriptionCount: subscriptions.length,
+                    error: true
+                });
+            }
+        }
+
+        res.json({ activity });
+    } catch (error) {
+        console.error('Get activity error:', error);
         res.status(500).json({ message: 'Server Error' });
     }
 });

@@ -8,31 +8,40 @@ import { GitBranch, ExternalLink, Bell, Trash2, Hash, Layers, ChevronRight, Gith
 import { MotiView } from 'moti';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
+import IssueActivityChart from '../components/IssueActivityChart';
 const DashboardScreen = ({ navigation }) => {
     const { userToken, BASE_URL, unreadCount, updateUnreadCount } = useContext(AuthContext);
     const [subs, setSubs] = useState([]);
     const [notifications, setNotifications] = useState([]);
+    const [activity, setActivity] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [activityLoading, setActivityLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+    const [activityPeriod, setActivityPeriod] = useState('weekly');
+    const [selectedRepo, setSelectedRepo] = useState('all');
 
     const fetchData = async () => {
         try {
-            const [subsRes, notifRes] = await Promise.all([
+            const [subsRes, notifRes, activityRes] = await Promise.all([
                 axios.get(`${BASE_URL}/repos`, { headers: { Authorization: `Bearer ${userToken}` } }),
                 axios.get(`${BASE_URL}/notifications`, { headers: { Authorization: `Bearer ${userToken}` } }),
+                axios.get(`${BASE_URL}/repos/activity`, { headers: { Authorization: `Bearer ${userToken}` } }),
             ]);
             setSubs(subsRes.data || []);
             setNotifications(notifRes.data || []);
+            setActivity(activityRes?.data?.activity || []);
             updateUnreadCount();
         } catch (error) {
             console.error(error);
         } finally {
             setLoading(false);
+            setActivityLoading(false);
             setRefreshing(false);
         }
     };
 
     useEffect(() => {
+        fetchData();
         const unsubscribe = navigation.addListener('focus', fetchData);
         return unsubscribe;
     }, [navigation]);
@@ -55,6 +64,11 @@ const DashboardScreen = ({ navigation }) => {
     };
 
     const totalLabels = subs.reduce((sum, s) => sum + (s.labels?.length || 0), 0);
+    const repoOptions = activity.map(item => ({
+        repoId: item.repoId,
+        owner: item.owner,
+        name: item.name,
+    }));
 
     const renderIssue = ({ item, index }) => (
         <MotiView
@@ -162,62 +176,74 @@ const DashboardScreen = ({ navigation }) => {
                     <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#6366F1" />
                 }
                 ListFooterComponent={loading ? <ListSkeleton count={2} containerStyle={{ paddingHorizontal: 24, marginTop: 10 }} /> : null}
-                ListHeaderComponent={
-                    <View className="mt-4 mb-2">
-                        {/* Hero Stats Card */}
-                        <MotiView
-                            from={{ opacity: 0, scale: 0.9 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            transition={{ type: 'timing', duration: 400, delay: 200 }}
-                        >
+                ListHeaderComponent={() => (
+                    <View>
+                        <View className="mt-4 mb-2">
+                            {/* Hero Stats Card */}
+                            <MotiView
+                                from={{ opacity: 0, scale: 0.9 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                transition={{ type: 'timing', duration: 400, delay: 200 }}
+                            >
 
-                            <Card className="p-0 overflow-hidden mb-8" containerStyle={{
-                                backgroundColor: "transparent",
-                                borderWidth: 0,
-                                shadowColor: "transparent",   // iOS shadow
-                                shadowOpacity: 0,
-                                shadowRadius: 0,
-                                shadowOffset: { width: 0, height: 0 },
-                                elevation: 0,                 // Android shadow
-                            }}>
-                                <LinearGradient
-                                    colors={['#6366F1', '#8B5CF6']}
-                                    start={{ x: 0, y: 0 }}
-                                    end={{ x: 1, y: 1 }}
-                                    style={{ borderRadius: 24 }}
-                                >
-                                    <View className="p-6 flex-row justify-between items-center">
-                                        <View className="flex-1 items-center border-r border-white/20">
-                                            <Text className="text-3xl font-poppins-bold text-white">{subs.length}</Text>
-                                            <Text className="text-[10px] uppercase font-poppins-bold text-white/70">Repos</Text>
-                                        </View>
-                                        <View className="flex-1 items-center border-r border-white/20">
-                                            <Text className="text-3xl font-poppins-bold text-white">{notifications.length}</Text>
-                                            <Text className="text-[10px] uppercase font-poppins-bold text-white/70">Issues</Text>
-                                        </View>
-                                        <View className="flex-1 items-center">
-                                            <Text className="text-3xl font-poppins-bold text-white">{totalLabels}</Text>
-                                            <Text className="text-[10px] uppercase font-poppins-bold text-white/70">Labels</Text>
-                                        </View>
-                                    </View>
-                                    <TouchableOpacity
-                                        onPress={() => navigation.navigate('SubscriptionsTab')}
-                                        className="bg-white/10 py-3 flex-row items-center justify-center"
+                                <Card className="p-0 overflow-hidden mb-8" containerStyle={{
+                                    backgroundColor: "transparent",
+                                    borderWidth: 0,
+                                    shadowColor: "transparent",
+                                    shadowOpacity: 0,
+                                    shadowRadius: 0,
+                                    shadowOffset: { width: 0, height: 0 },
+                                    elevation: 0,
+                                }}>
+                                    <LinearGradient
+                                        colors={['#6366F1', '#8B5CF6']}
+                                        start={{ x: 0, y: 0 }}
+                                        end={{ x: 1, y: 1 }}
+                                        style={{ borderRadius: 24 }}
                                     >
-                                        <Text className="text-white font-inter-semibold text-xs">Manage Subscriptions</Text>
-                                        <ChevronRight size={14} color="white" className="ml-1" />
-                                    </TouchableOpacity>
-                                </LinearGradient>
-                            </Card>
-                        </MotiView>
+                                        <View className="p-6 flex-row justify-between items-center">
+                                            <View className="flex-1 items-center border-r border-white/20">
+                                                <Text className="text-3xl font-poppins-bold text-white">{subs.length}</Text>
+                                                <Text className="text-[10px] uppercase font-poppins-bold text-white/70">Repos</Text>
+                                            </View>
+                                            <View className="flex-1 items-center border-r border-white/20">
+                                                <Text className="text-3xl font-poppins-bold text-white">{notifications.length}</Text>
+                                                <Text className="text-[10px] uppercase font-poppins-bold text-white/70">Issues</Text>
+                                            </View>
+                                            <View className="flex-1 items-center">
+                                                <Text className="text-3xl font-poppins-bold text-white">{totalLabels}</Text>
+                                                <Text className="text-[10px] uppercase font-poppins-bold text-white/70">Labels</Text>
+                                            </View>
+                                        </View>
+                                        <TouchableOpacity
+                                            onPress={() => navigation.navigate('SubscriptionsTab')}
+                                            className="bg-white/10 py-3 flex-row items-center justify-center"
+                                        >
+                                            <Text className="text-white font-inter-semibold text-xs">Manage Subscriptions</Text>
+                                            <ChevronRight size={14} color="white" className="ml-1" />
+                                        </TouchableOpacity>
+                                    </LinearGradient>
+                                </Card>
+                            </MotiView>
 
-                        <SectionHeader
-                            title="Recent Issues"
-                            icon={Layers}
-                            action={<Text className="text-xs text-muted font-inter-medium">{loading ? "..." : notifications.length} total</Text>}
-                        />
+                            <IssueActivityChart
+                                data={activity}
+                                loading={activityLoading}
+                                period={activityPeriod}
+                                setPeriod={setActivityPeriod}
+                                selectedRepo={selectedRepo}
+                                setSelectedRepo={setSelectedRepo}
+                                repoOptions={repoOptions}
+                            />
+
+                            <SectionHeader
+                                title="Recent Issues"
+                                icon={Layers}
+                                action={<Text className="text-xs text-muted font-inter-medium">{loading ? "..." : notifications.length} total</Text>}
+                            />
+                        </View>
                     </View>
-                }
+                )}
                 ListEmptyComponent={!loading && (
                     <MotiView
                         from={{ opacity: 0, scale: 0.9 }}
