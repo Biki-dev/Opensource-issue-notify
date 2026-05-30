@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const mongoose = require('mongoose');
+const jwt = require('jsonwebtoken');
 const connectDB = require('./utils/db');
 const { startScheduler, checkIssues } = require('./services/scheduler');
 const { startCleanupJob } = require('./services/cleanup');
@@ -42,6 +43,44 @@ app.post('/api/debug/check', async (req, res) => {
 app.get('/api/debug/push-tokens', async (req, res) => {
     try {
         const User = require('./models/User');
+        const token = req.headers.authorization?.startsWith('Bearer ')
+            ? req.headers.authorization.split(' ')[1]
+            : null;
+
+        let currentUser = null;
+        if (token) {
+            try {
+                const decoded = jwt.verify(token, process.env.JWT_SECRET);
+                currentUser = await User.findById(decoded.id, 'email expoPushTokens expoPushToken deviceInfo notificationsEnabled');
+            } catch (_) {
+                currentUser = null;
+            }
+        }
+
+        if (req.query.me === '1') {
+            if (!currentUser) {
+                return res.status(401).json({
+                    message: 'Provide a valid Bearer token to inspect the current user'
+                });
+            }
+
+            const { Expo } = require('expo-server-sdk');
+            const currentTokens = mergeExpoPushTokens(currentUser.expoPushTokens, currentUser.expoPushToken);
+
+            return res.json({
+                message: 'Push token status for current user',
+                currentUser: {
+                    email: currentUser.email,
+                    hasToken: currentTokens.length > 0,
+                    tokenCount: currentTokens.length,
+                    tokenValid: currentTokens.some(token => Expo.isExpoPushToken(token)),
+                    token: currentTokens[0] ? currentTokens[0].substring(0, 20) + '...' : 'none',
+                    notificationsEnabled: currentUser.notificationsEnabled,
+                    device: currentUser.deviceInfo?.platform || 'unknown'
+                }
+            });
+        }
+
         const users = await User.find({}, 'email expoPushTokens expoPushToken deviceInfo notificationsEnabled').limit(10);
         
         const { Expo } = require('expo-server-sdk');
@@ -57,6 +96,11 @@ app.get('/api/debug/push-tokens', async (req, res) => {
         
         res.json({
             message: 'Push token status for latest 10 users',
+            currentUser: currentUser ? {
+                email: currentUser.email,
+                id: currentUser._id,
+                hasToken: mergeExpoPushTokens(currentUser.expoPushTokens, currentUser.expoPushToken).length > 0
+            } : null,
             count: users.length,
             status
         });
