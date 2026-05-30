@@ -19,11 +19,13 @@ const parseGitHubUrl = (url) => {
 const getGitHubHeaderCandidates = async (userId) => {
     const candidates = [];
     const seen = new Set();
+    let hasAuthCandidate = false;
 
     const pushCandidate = (token) => {
         const normalized = (token || '').trim();
         if (!normalized || seen.has(normalized)) return;
         seen.add(normalized);
+        hasAuthCandidate = true;
         candidates.push({ Authorization: `token ${normalized}` });
     };
 
@@ -51,8 +53,10 @@ const getGitHubHeaderCandidates = async (userId) => {
 
     pushCandidate(process.env.GITHUB_TOKEN);
 
-    // Always keep an anonymous fallback so public repos still work if a token is invalid.
-    candidates.push({});
+    if (!hasAuthCandidate) {
+        // Only fall back to anonymous requests when no token is configured at all.
+        candidates.push({});
+    }
 
     return candidates;
 };
@@ -304,8 +308,9 @@ router.get('/activity', auth, async (req, res) => {
                     candidateHeaders.push({ Authorization: headers.Authorization });
                 }
 
-                // Global/user token can become invalid; anonymous fallback still works for public repos.
-                candidateHeaders.push({});
+                if (candidateHeaders.length === 0) {
+                    candidateHeaders.push({});
+                }
 
                 const fetchActivityPage = async (url) => {
                     let lastError;
