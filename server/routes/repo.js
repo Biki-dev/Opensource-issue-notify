@@ -112,7 +112,12 @@ router.post('/preview', auth, async (req, res) => {
             labels: labelsRes.data.map(l => ({ name: l.name, color: l.color, description: l.description }))
         });
     } catch (error) {
-        console.error('Preview fetch failed:', error.message);
+        console.error('Preview fetch failed:', {
+            message: error.message,
+            status: error?.response?.status,
+            githubMessage: error?.response?.data?.message || null,
+            githubErrors: error?.response?.data?.errors || null
+        });
         const status = error?.response?.status;
         if (status === 404) {
             return res.status(404).json({ message: 'Repository not found or private' });
