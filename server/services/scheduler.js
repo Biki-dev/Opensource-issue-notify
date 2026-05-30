@@ -261,6 +261,7 @@ const checkRepositoriesForTier = async (tierName, frequencyMinutes) => {
                     }
                 }
 
+                repository.latestIssueNumber = maxIssueNumber;
                 repository.lastChecked = new Date();
                 await repository.save();
 
