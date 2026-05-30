@@ -27,7 +27,7 @@ const checkRepositoriesForTier = async (tierName, frequencyMinutes) => {
                     ]
                 }
             })
-            .populate('user', 'email notificationsEnabled personalGitHubToken tokenIsValid rateLimitTier expoPushToken deviceInfo');
+            .populate('user');
 
         // Additional safety checks
         const tierSubscriptions = activeSubscriptions.filter(sub => {

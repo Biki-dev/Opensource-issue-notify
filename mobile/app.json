@@ -1,19 +1,10 @@
 {
   "expo": {
-    "scheme": "IssueWatch",
+    "scheme": "issuewatch",
     "name": "IssueWatch",
     "slug": "IssueWatch",
     "version": "1.0.0",
     "orientation": "portrait",
-    "android": {
-      "package": "com.biki.IssueWatch",
-      "googleServicesFile": "./google-services.json",
-      "display": "standalone",
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/logo.png",
-        "backgroundColor": "#FFFFFF"
-      }
-    },
     "icon": "./assets/logo.png",
     "splash": {
       "image": "./assets/logo.png",
@@ -24,7 +15,8 @@
       "**/*"
     ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.biki.IssueWatch"
     },
     "plugins": [
       "expo-font",
@@ -47,6 +39,9 @@
       "eas": {
         "projectId": "d01a75e4-4cba-4431-8de8-e190e6c6fb9c"
       }
+    },
+    "android": {
+      "package": "com.biki.IssueWatch"
     }
   }
 }
