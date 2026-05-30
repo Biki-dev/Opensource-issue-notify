@@ -31,9 +31,14 @@ router.post('/github-token', auth, async (req, res) => {
         // Verify token is valid
         const tokenVerification = await verifyToken(token);
         if (!tokenVerification.valid) {
+            const isAuthFailure = tokenVerification.status === 401 || tokenVerification.status === 403;
+            const friendlyMessage = isAuthFailure
+                ? 'GitHub rejected this token. Make sure you pasted a personal access token from GitHub Settings, not your app login token.'
+                : (tokenVerification.githubMessage || 'Invalid GitHub token. Please check and try again.');
+
             console.log(`❌ Token verification failed for user ${req.user.id}: ${tokenVerification.githubMessage || tokenVerification.error}`);
             return res.status(400).json({
-                message: tokenVerification.githubMessage || 'Invalid GitHub token. Please check and try again.'
+                message: friendlyMessage
             });
         }
 

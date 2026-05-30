@@ -1,6 +1,16 @@
 const axios = require('axios');
 const User = require('../models/User');
 
+const makeGitHubAuthHeaders = (token) => {
+    const trimmed = (token || '').trim();
+    if (!trimmed) return [];
+
+    return [
+        { Authorization: `Bearer ${trimmed}` },
+        { Authorization: `token ${trimmed}` }
+    ];
+};
+
 /**
  * Get best GitHub token for API request.
  * Priority: personal token → OAuth token → global env token → none
@@ -77,36 +87,46 @@ const makeGitHubRequest = async (url, headers = {}, retries = 1) => {
  * Verify a GitHub personal access token.
  */
 const verifyToken = async (token) => {
-    try {
-        const response = await axios.get('https://api.github.com/user', {
-            headers: { Authorization: `Bearer ${token.trim()}` },
-            timeout: 10000
-        });
-        return { valid: true, user: response.data };
-    } catch (error) {
-        return {
-            valid: false,
-            error: error.message,
-            githubMessage: error?.response?.data?.message || null,
-            status: error?.response?.status || null
-        };
+    let lastError;
+
+    for (const headers of makeGitHubAuthHeaders(token)) {
+        try {
+            const response = await axios.get('https://api.github.com/user', {
+                headers,
+                timeout: 10000
+            });
+            return { valid: true, user: response.data };
+        } catch (error) {
+            lastError = error;
+        }
     }
+
+    return {
+        valid: false,
+        error: lastError?.message || 'Token verification failed',
+        githubMessage: lastError?.response?.data?.message || null,
+        status: lastError?.response?.status || null
+    };
 };
 
 /**
  * Get rate limit info for a token.
  */
 const getRateLimitInfo = async (token) => {
-    try {
-        const response = await axios.get('https://api.github.com/rate_limit', {
-            headers: { Authorization: `Bearer ${token.trim()}` },
-            timeout: 10000
-        });
-        return response.data.rate;
-    } catch (error) {
-        console.error('Error getting rate limit info:', error.message);
-        return null;
+    for (const headers of makeGitHubAuthHeaders(token)) {
+        try {
+            const response = await axios.get('https://api.github.com/rate_limit', {
+                headers,
+                timeout: 10000
+            });
+            return response.data.rate;
+        } catch (error) {
+            // Try the alternate auth scheme before giving up.
+        }
     }
+
+    console.error('Error getting rate limit info: unable to authenticate with GitHub token');
+    return null;
 };
 
 /**
