@@ -244,6 +244,22 @@ const verifyPushReceipts = async (ticketIds) => {
     }
 };
 
+const getPushReceipts = async (ticketIds) => {
+    if (!Array.isArray(ticketIds) || ticketIds.length === 0) {
+        return {};
+    }
+
+    const receiptMap = {};
+    const receiptIdChunks = expo.chunkPushNotificationReceiptIds(ticketIds);
+
+    for (const chunk of receiptIdChunks) {
+        const receipts = await expo.getPushNotificationReceiptsAsync(chunk);
+        Object.assign(receiptMap, receipts);
+    }
+
+    return receiptMap;
+};
+
 /**
  * Start scheduled receipt verification
  */
@@ -281,5 +297,6 @@ const startPushReceiptVerificationJob = () => {
 module.exports = {
     sendPushNotification,
     verifyPushReceipts,
+    getPushReceipts,
     startPushReceiptVerificationJob
 };

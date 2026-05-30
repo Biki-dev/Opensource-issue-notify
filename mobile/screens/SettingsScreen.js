@@ -8,6 +8,7 @@ import { Mail, ChevronRight, Bell, Shield, HelpCircle, LogOut, Edit3, Check, X, 
 import { MotiView, AnimatePresence } from 'moti';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as Notifications from 'expo-notifications';
 
 const SettingsScreen = ({ navigation }) => {
     const { userToken, BASE_URL, logout, unreadCount, updateUnreadCount, registerPushToken } = useContext(AuthContext);
@@ -74,12 +75,43 @@ const SettingsScreen = ({ navigation }) => {
                 {},
                 { headers: { Authorization: `Bearer ${userToken}` } }
             );
-            Alert.alert('Test Sent', res.data?.message || 'Notification sent. Check your device tray.');
+
+            const receiptEntries = Object.entries(res.data?.receipts || {});
+            const failedReceipt = receiptEntries.find(([, receipt]) => receipt?.status === 'error');
+
+            if (failedReceipt) {
+                const [, receipt] = failedReceipt;
+                const reason = receipt?.details?.error || receipt?.message || 'Unknown delivery error';
+                Alert.alert('Delivery Failed', `Expo receipt error: ${reason}`);
+                return;
+            }
+
+            Alert.alert(
+                'Test Sent',
+                'Push accepted by Expo. If you do not see it, lock the app/background it and check Android notification settings for IssueWatch.'
+            );
         } catch (error) {
             const message = error.response?.data?.reason === 'no_token'
                 ? 'No push token found. Use Re-register Push Token first on this device.'
                 : (error.response?.data?.message || error.message || 'Test push failed');
             Alert.alert('Test Failed', message);
+        }
+    };
+
+    const handleLocalNotificationTest = async () => {
+        try {
+            await Notifications.scheduleNotificationAsync({
+                content: {
+                    title: 'Local Notification Test',
+                    body: 'If you can see this, device notification display is working.',
+                    sound: 'default'
+                },
+                trigger: null
+            });
+
+            Alert.alert('Local Test Triggered', 'A local notification was fired immediately.');
+        } catch (error) {
+            Alert.alert('Local Test Failed', error.message || 'Unable to trigger local notification');
         }
     };
 
@@ -281,6 +313,24 @@ const SettingsScreen = ({ navigation }) => {
                                 <Text className="text-base font-inter-medium text-primary">Send Test Notification</Text>
                                 <Text className="text-xs text-muted font-inter-medium mt-0.5">
                                     Validates push delivery on this device
+                                </Text>
+                            </View>
+                        </View>
+                        <ChevronRight size={20} color="#94A3B8" fill="none" />
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        onPress={handleLocalNotificationTest}
+                        className="flex-row items-center justify-between py-4 border-t border-border/50"
+                    >
+                        <View className="flex-row items-center flex-1">
+                            <View className="w-10 h-10 rounded-full bg-amber-100 items-center justify-center mr-4">
+                                <Bell size={20} color="#D97706" fill="none" />
+                            </View>
+                            <View className="flex-1">
+                                <Text className="text-base font-inter-medium text-primary">Send Local Notification Test</Text>
+                                <Text className="text-xs text-muted font-inter-medium mt-0.5">
+                                    Checks if Android can display notifications at all
                                 </Text>
                             </View>
                         </View>

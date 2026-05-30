@@ -400,7 +400,7 @@ router.get('/debug/push-status', auth, async (req, res) => {
 router.post('/debug/test-push', auth, async (req, res) => {
     try {
         console.log(`🧪 Received test-push request for user: ${req.user.email}`);
-        const { sendPushNotification } = require('../services/pushNotifications');
+        const { sendPushNotification, getPushReceipts } = require('../services/pushNotifications');
 
         const result = await sendPushNotification(req.user.id, {
             issueTitle: '🧪 System Test: Push notifications are working!',
@@ -413,7 +413,23 @@ router.post('/debug/test-push', auth, async (req, res) => {
         });
 
         if (result.success) {
-            res.json({ message: 'Test notification sent to Expo!', result });
+            const ticketIds = (result.tickets || [])
+                .map(ticket => ticket.ticketId)
+                .filter(Boolean);
+
+            let receipts = {};
+            if (ticketIds.length > 0) {
+                // Receipt processing is async on Expo's side; short delay improves debug usefulness.
+                await new Promise(resolve => setTimeout(resolve, 1500));
+                receipts = await getPushReceipts(ticketIds).catch(() => ({}));
+            }
+
+            res.json({
+                message: 'Test notification sent to Expo!',
+                result,
+                ticketIds,
+                receipts
+            });
         } else {
             res.status(400).json({ message: 'Expo rejected the notification', reason: result.reason, error: result.error });
         }
