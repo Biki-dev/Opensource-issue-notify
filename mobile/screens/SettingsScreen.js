@@ -10,7 +10,7 @@ import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 
 const SettingsScreen = ({ navigation }) => {
-    const { userToken, BASE_URL, logout, unreadCount, updateUnreadCount } = useContext(AuthContext);
+    const { userToken, BASE_URL, logout, unreadCount, updateUnreadCount, registerPushToken } = useContext(AuthContext);
     const [profile, setProfile] = useState(null);
     const [subscriptions, setSubscriptions] = useState([]);
     const [tokenStatus, setTokenStatus] = useState(null);
@@ -51,6 +51,35 @@ const SettingsScreen = ({ navigation }) => {
             setProfile(updated.data);
         } catch (e) {
             console.log(e);
+        }
+    };
+
+    const handleRegisterPush = async () => {
+        try {
+            const result = await registerPushToken(userToken);
+            if (result?.success) {
+                Alert.alert('Success', 'Push token registered on server.');
+                return;
+            }
+            Alert.alert('Push Setup Failed', result?.error || 'Could not register push token.');
+        } catch (error) {
+            Alert.alert('Push Setup Failed', error.message || 'Unknown error');
+        }
+    };
+
+    const handleTestPush = async () => {
+        try {
+            const res = await axios.post(
+                `${BASE_URL}/auth/debug/test-push`,
+                {},
+                { headers: { Authorization: `Bearer ${userToken}` } }
+            );
+            Alert.alert('Test Sent', res.data?.message || 'Notification sent. Check your device tray.');
+        } catch (error) {
+            const message = error.response?.data?.reason === 'no_token'
+                ? 'No push token found. Use Re-register Push Token first on this device.'
+                : (error.response?.data?.message || error.message || 'Test push failed');
+            Alert.alert('Test Failed', message);
         }
     };
 
@@ -221,6 +250,42 @@ const SettingsScreen = ({ navigation }) => {
                         onValueChange={toggleNotifications}
                         icon={Bell}
                     />
+
+                    <TouchableOpacity
+                        onPress={handleRegisterPush}
+                        className="flex-row items-center justify-between py-4 border-t border-border/50"
+                    >
+                        <View className="flex-row items-center flex-1">
+                            <View className="w-10 h-10 rounded-full bg-brand/10 items-center justify-center mr-4">
+                                <Smartphone size={20} color="#6366F1" fill="none" />
+                            </View>
+                            <View className="flex-1">
+                                <Text className="text-base font-inter-medium text-primary">Re-register Push Token</Text>
+                                <Text className="text-xs text-muted font-inter-medium mt-0.5">
+                                    Use this on your external phone device
+                                </Text>
+                            </View>
+                        </View>
+                        <ChevronRight size={20} color="#94A3B8" fill="none" />
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        onPress={handleTestPush}
+                        className="flex-row items-center justify-between py-4 border-t border-border/50"
+                    >
+                        <View className="flex-row items-center flex-1">
+                            <View className="w-10 h-10 rounded-full bg-success/10 items-center justify-center mr-4">
+                                <Bell size={20} color="#16A34A" fill="none" />
+                            </View>
+                            <View className="flex-1">
+                                <Text className="text-base font-inter-medium text-primary">Send Test Notification</Text>
+                                <Text className="text-xs text-muted font-inter-medium mt-0.5">
+                                    Validates push delivery on this device
+                                </Text>
+                            </View>
+                        </View>
+                        <ChevronRight size={20} color="#94A3B8" fill="none" />
+                    </TouchableOpacity>
                 </Card>
 
                 {/* Privacy Section */}

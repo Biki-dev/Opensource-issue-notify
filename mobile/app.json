@@ -36,12 +36,14 @@
       "androidCollapsedTitle": "#{unread_notifications} new issues"
     },
     "extra": {
+      "apiUrl": "https://opensource-issue-notify.onrender.com/api",
       "eas": {
         "projectId": "d01a75e4-4cba-4431-8de8-e190e6c6fb9c"
       }
     },
     "android": {
-      "package": "com.biki.IssueWatch"
+      "package": "com.biki.IssueWatch",
+      "googleServicesFile": "./google-services.json"
     }
   }
 }

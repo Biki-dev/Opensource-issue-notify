@@ -1,6 +1,7 @@
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import { Platform } from 'react-native';
+import Constants from 'expo-constants';
 
 // Configure how notifications are handled when app is in foreground, background, or closed
 Notifications.setNotificationHandler({
@@ -85,7 +86,19 @@ export async function registerForPushNotificationsAsync() {
             };
         }
 
-        const projectId = 'd01a75e4-4cba-4431-8de8-e190e6c6fb9c';
+        const projectId =
+            Constants.expoConfig?.extra?.eas?.projectId ||
+            Constants.easConfig?.projectId ||
+            'd01a75e4-4cba-4431-8de8-e190e6c6fb9c';
+
+        if (!projectId) {
+            return {
+                token: null,
+                error: 'Missing EAS projectId',
+                userMessage: 'Push setup is missing project configuration.'
+            };
+        }
+
         const tokenResponse = await Notifications.getExpoPushTokenAsync({ projectId });
         const token = tokenResponse.data;
 

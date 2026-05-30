@@ -22,22 +22,38 @@ const getApiBaseUrl = () => {
         return explicitUrl.replace(/\/$/, '');
     }
 
+    const hostCandidates = [
+        Constants.expoConfig?.hostUri,
+        Constants.expoConfig?.debuggerHost,
+        Constants.manifest2?.extra?.expoGo?.debuggerHost,
+        Constants.manifest?.debuggerHost
+    ];
+
+    const resolvedHost = hostCandidates
+        .find(Boolean)
+        ?.split(':')[0];
+
     if (Platform.OS === 'android') {
-        if (__DEV__) {
-            return 'http://localhost:5000/api';
+        if (__DEV__ && resolvedHost) {
+            return `http://${resolvedHost}:5000/api`;
         }
 
-        const hostUri = Constants.expoConfig?.hostUri || Constants.expoConfig?.debuggerHost || '';
-        const host = hostUri.split(':')[0];
-
-        if (host) {
-            return `http://${host}:5000/api`;
+        if (!Device.isDevice) {
+            return 'http://10.0.2.2:5000/api';
         }
 
-        return 'http://10.0.2.2:5000/api';
+        if (resolvedHost) {
+            return `http://${resolvedHost}:5000/api`;
+        }
+
+        return 'https://opensource-issue-notify.onrender.com/api';
     }
 
-    return 'http://localhost:5000/api';
+    if (__DEV__ && resolvedHost) {
+        return `http://${resolvedHost}:5000/api`;
+    }
+
+    return 'https://opensource-issue-notify.onrender.com/api';
 };
 
 export const AuthProvider = ({ children }) => {
@@ -262,7 +278,8 @@ export const AuthProvider = ({ children }) => {
             userToken,
             BASE_URL,
             unreadCount,
-            updateUnreadCount
+            updateUnreadCount,
+            registerPushToken
         }}>
             {children}
         </AuthContext.Provider>
