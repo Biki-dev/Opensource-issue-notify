@@ -99,14 +99,14 @@ router.post('/logout', auth, async (req, res) => {
         console.log(`   ✓ Marked ${markedRead.modifiedCount} notifications as read`);
 
         // 3. Clear personal token on logout for security
-        // This ensures the token is removed from database immediately
+        // Keep the Expo push token so the device can still receive notifications
+        // even if re-registration fails on the next login.
         await User.findByIdAndUpdate(
             req.user.id,
             {
                 personalGitHubToken: null,
                 tokenIsValid: false,
-                rateLimitTier: 'default', // Reset to default tier
-                expoPushToken: null // ✅ Clear push token on logout
+                rateLimitTier: 'default' // Reset to default tier
             }
         );
         console.log(`   ✓ Cleared personal GitHub token`);
