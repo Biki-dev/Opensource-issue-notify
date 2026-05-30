@@ -1,5 +1,5 @@
 import React, { useContext, useState } from 'react';
-import { View, Text, Alert, ScrollView, TouchableOpacity, KeyboardAvoidingView, Platform, Image } from 'react-native';
+import { View, Text, Alert, ScrollView, TouchableOpacity, KeyboardAvoidingView, Platform, Image, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
@@ -15,6 +15,14 @@ const AddRepoScreen = ({ navigation }) => {
     const [loading, setLoading] = useState(false);
     const [repoData, setRepoData] = useState(null);
     const [selectedLabels, setSelectedLabels] = useState([]);
+    const [keywordInput, setKeywordInput] = useState('');
+
+    const parseKeywords = (value) =>
+        value
+            .split(/[\n,]/)
+            .map(keyword => keyword.trim())
+            .filter(Boolean)
+            .filter((keyword, index, array) => array.indexOf(keyword) === index);
 
     const handlePreview = async () => {
         const trimmedUrl = url.trim();
@@ -45,7 +53,7 @@ const AddRepoScreen = ({ navigation }) => {
         setLoading(true);
         try {
             await axios.post(`${BASE_URL}/repos/subscribe`,
-                { url: url.trim(), labels: selectedLabels },
+                { url: url.trim(), labels: selectedLabels, keywords: parseKeywords(keywordInput) },
                 { headers: { Authorization: `Bearer ${userToken}` } }
             );
             navigation.goBack();
@@ -173,6 +181,26 @@ const AddRepoScreen = ({ navigation }) => {
                                             <View className="bg-brand/10 px-3 py-1 rounded-full border border-brand/10">
                                                 <Text className="text-brand text-xs font-poppins-bold">{selectedLabels.length} Selected</Text>
                                             </View>
+                                        </View>
+
+                                        <View className="mb-6">
+                                            <Text className="text-xs text-muted font-inter-bold mb-2 uppercase tracking-wider">
+                                                Keyword Filters
+                                            </Text>
+                                            <View className="bg-slate-50 rounded-xl border border-border px-4 py-3">
+                                                <TextInput
+                                                    className="text-primary font-inter-medium text-sm"
+                                                    placeholder="sqlite, memory leak"
+                                                    placeholderTextColor="#94A3B8"
+                                                    value={keywordInput}
+                                                    onChangeText={setKeywordInput}
+                                                    autoCapitalize="none"
+                                                    autoCorrect={false}
+                                                />
+                                            </View>
+                                            <Text className="text-[11px] text-muted font-inter-medium mt-2 leading-4">
+                                                Optional. Issues must match at least one selected label and one keyword in the title or body.
+                                            </Text>
                                         </View>
 
                                         <View className="flex-row flex-wrap">

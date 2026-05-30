@@ -5,6 +5,7 @@ const Notification = require('../models/Notification');
 const User = require('../models/User');
 const { getBestTokenForRepo } = require('../utils/githubHelpers');
 const { sendPushNotification } = require('./pushNotifications');
+const { issueMatchesSubscription, toLowercaseList } = require('../utils/subscriptionMatching');
 /**
  * Check repositories for a specific tier
  */
@@ -204,13 +205,16 @@ const checkRepositoriesForTier = async (tierName, frequencyMinutes) => {
                     // CRITICAL: Skip pull requests
                     if (issue.pull_request) continue;
 
-                    const issueLabels = (issue.labels || []).map(l => l.name);
                     if (issue.number > maxIssueNumber) maxIssueNumber = issue.number;
 
                     // Create notifications for matching subscriptions
                     for (const sub of subscriptions) {
+                        if (!issueMatchesSubscription(issue, sub)) continue;
+
+                        const issueLabels = (issue.labels || []).map(l => l.name).filter(Boolean);
+                        const subscriptionLabelSet = new Set(toLowercaseList(sub.labels));
                         const matchedLabels = issueLabels.filter(label =>
-                            sub.labels.includes(label)
+                            subscriptionLabelSet.has(label.toLowerCase())
                         );
 
                         if (matchedLabels.length > 0) {

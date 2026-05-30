@@ -20,6 +20,7 @@ const SubscriptionSchema = new mongoose.Schema({
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     repository: { type: mongoose.Schema.Types.ObjectId, ref: 'Repository', required: true },
     labels: [{ type: String }], // e.g. ['bug', 'enhancement']
+    keywords: [{ type: String }], // e.g. ['sqlite', 'memory leak']
     active: { type: Boolean, default: true },
     muted: { type: Boolean, default: false },
     // Controls whether this subscription appears in UI lists like Repository Privacy

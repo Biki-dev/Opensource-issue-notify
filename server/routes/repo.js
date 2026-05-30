@@ -5,6 +5,7 @@ const Notification = require('../models/Notification');
 const router = express.Router();
 const auth = require('../middleware/auth'); // Need to create middleware
 const { getBestTokenForRepo } = require('../utils/githubHelpers');
+const { normalizeStringList, issueMatchesSubscription, toLowercaseList } = require('../utils/subscriptionMatching');
 
 // Helper to extract owner/repo
 const parseGitHubUrl = (url) => {
@@ -45,7 +46,7 @@ router.post('/preview', auth, async (req, res) => {
 
 // SUBSCRIBE: Save Subscription
 router.post('/subscribe', auth, async (req, res) => {
-    const { url, labels } = req.body;
+    const { url, labels, keywords } = req.body;
     const parsed = parseGitHubUrl(url);
     if (!parsed) return res.status(400).json({ message: 'Invalid URL' });
 
@@ -83,11 +84,13 @@ router.post('/subscribe', auth, async (req, res) => {
         // Check if this is a brand new subscription for this user/repo
         const existingSub = await Subscription.findOne({ user: req.user.id, repository: repository._id });
         const isNewSubscription = !existingSub;
+        const normalizedLabels = normalizeStringList(labels);
+        const normalizedKeywords = normalizeStringList(keywords);
 
         // Create or update Subscription
         const subscription = await Subscription.findOneAndUpdate(
             { user: req.user.id, repository: repository._id },
-            { labels: labels, active: true },
+            { labels: normalizedLabels, keywords: normalizedKeywords, active: true },
             { upsert: true, new: true, setDefaultsOnInsert: true }
         );
 
@@ -106,9 +109,11 @@ router.post('/subscribe', auth, async (req, res) => {
                 let createdCount = 0;
 
                 for (const issue of issues) {
-                    const issueLabels = (issue.labels || []).map(l => l.name);
-                    const matched = issueLabels.filter(label => subscription.labels.includes(label));
-                    if (matched.length === 0) continue;
+                    if (!issueMatchesSubscription(issue, subscription)) continue;
+
+                    const issueLabels = (issue.labels || []).map(l => l.name).filter(Boolean);
+                    const subscriptionLabelSet = new Set(toLowercaseList(subscription.labels));
+                    const matched = issueLabels.filter(label => subscriptionLabelSet.has(label.toLowerCase()));
 
                     try {
                         // Use updateOne with upsert to prevent duplicates
@@ -275,7 +280,7 @@ router.get('/activity', auth, async (req, res) => {
 // UPDATE SUBSCRIPTION (labels / active / visibility)
 router.patch('/:id', auth, async (req, res) => {
     try {
-        const allowed = ['labels', 'active', 'visible', 'muted'];
+        const allowed = ['labels', 'keywords', 'active', 'visible', 'muted'];
         const updates = {};
         for (const key of allowed) {
             if (Object.prototype.hasOwnProperty.call(req.body, key)) {
@@ -287,7 +292,19 @@ router.patch('/:id', auth, async (req, res) => {
             return res.status(400).json({ message: 'labels must be an array of strings' });
         }
 
-        const labelsBeingUpdated = Array.isArray(updates.labels);
+        if (updates.keywords && !Array.isArray(updates.keywords)) {
+            return res.status(400).json({ message: 'keywords must be an array of strings' });
+        }
+
+        if (Array.isArray(updates.labels)) {
+            updates.labels = normalizeStringList(updates.labels);
+        }
+
+        if (Array.isArray(updates.keywords)) {
+            updates.keywords = normalizeStringList(updates.keywords);
+        }
+
+        const criteriaBeingUpdated = Array.isArray(updates.labels) || Array.isArray(updates.keywords);
 
         const sub = await Subscription.findOneAndUpdate(
             { _id: req.params.id, user: req.user.id },
@@ -297,8 +314,8 @@ router.patch('/:id', auth, async (req, res) => {
 
         if (!sub) return res.status(404).json({ message: 'Subscription not found' });
 
-        // If labels were changed, refresh notifications for this repo & user
-        if (labelsBeingUpdated && sub.repository) {
+        // If labels or keywords were changed, refresh notifications for this repo & user
+        if (criteriaBeingUpdated && sub.repository) {
             try {
                 // Remove old notifications for this repo + user (old label matches)
                 await Notification.deleteMany({ user: req.user.id, repository: sub.repository._id });
@@ -322,9 +339,11 @@ router.patch('/:id', auth, async (req, res) => {
                         for (const issue of issues) {
                             if (issue.pull_request) continue; // Skip PRs
 
-                            const issueLabels = (issue.labels || []).map(l => l.name);
-                            const matched = issueLabels.filter(label => sub.labels.includes(label));
-                            if (matched.length === 0) continue;
+                            if (!issueMatchesSubscription(issue, sub)) continue;
+
+                            const issueLabels = (issue.labels || []).map(l => l.name).filter(Boolean);
+                            const subscriptionLabelSet = new Set(toLowercaseList(sub.labels));
+                            const matched = issueLabels.filter(label => subscriptionLabelSet.has(label.toLowerCase()));
 
                             newNotifs.push({
                                 user: req.user.id,
