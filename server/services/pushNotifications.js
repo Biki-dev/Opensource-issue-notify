@@ -1,5 +1,8 @@
 const { Expo } = require('expo-server-sdk');
+const cron = require('node-cron');
+const mongoose = require('mongoose');
 const User = require('../models/User');
+const Notification = require('../models/Notification');
 
 // Create Expo SDK client
 const expo = new Expo();
@@ -88,6 +91,18 @@ const sendPushNotification = async (userId, notification, retries = 2) => {
             if (ticket.status === 'ok') {
                 console.log(`   ✅ Push notification sent successfully!`);
                 console.log(`   📮 Ticket ID: ${ticket.id}`);
+
+                if (notification?._id && mongoose.isValidObjectId(notification._id)) {
+                    await Notification.findByIdAndUpdate(notification._id, {
+                        pushTicketId: ticket.id || null,
+                        pushTicketStatus: 'pending',
+                        pushTicketError: null,
+                        pushTicketCheckedAt: null
+                    }).catch(error => {
+                        console.warn(`   ⚠️ Failed to store push ticket metadata: ${error.message}`);
+                    });
+                }
+
                 return { success: true, ticket };
             }
 
@@ -115,12 +130,91 @@ const sendPushNotification = async (userId, notification, retries = 2) => {
  * @param {string[]} ticketIds 
  */
 const verifyPushReceipts = async (ticketIds) => {
-    // Placeholder for receipt verification logic
-    // In a real app, you would store ticketIDs and check them later using expo.getPushNotificationReceiptsAsync
-    console.log('ℹ️ verifyPushReceipts called with:', ticketIds);
+    if (!ticketIds || ticketIds.length === 0) {
+        return;
+    }
+
+    try {
+        const receiptIdChunks = expo.chunkPushNotificationReceiptIds(ticketIds);
+
+        for (const chunk of receiptIdChunks) {
+            const receipts = await expo.getPushNotificationReceiptsAsync(chunk);
+
+            for (const [ticketId, receipt] of Object.entries(receipts)) {
+                const notification = await Notification.findOne({
+                    pushTicketId: ticketId,
+                    pushTicketStatus: 'pending'
+                }).select('user pushTicketId');
+
+                if (!notification) {
+                    continue;
+                }
+
+                if (receipt.status === 'ok') {
+                    await Notification.findByIdAndUpdate(notification._id, {
+                        pushTicketStatus: 'ok',
+                        pushTicketError: null,
+                        pushTicketCheckedAt: new Date()
+                    });
+                    continue;
+                }
+
+                const receiptError = receipt.details?.error || receipt.message || 'Unknown receipt error';
+
+                await Notification.findByIdAndUpdate(notification._id, {
+                    pushTicketStatus: 'error',
+                    pushTicketError: receiptError,
+                    pushTicketCheckedAt: new Date()
+                });
+
+                if (receipt.details?.error === 'DeviceNotRegistered') {
+                    console.error(`   ⚠️ Receipt says device is not registered, clearing token for user ${notification.user}`);
+                    await User.findByIdAndUpdate(notification.user, { expoPushToken: null });
+                } else {
+                    console.error(`   ❌ Push receipt error for ${ticketId}: ${receiptError}`);
+                }
+            }
+        }
+    } catch (error) {
+        console.error('❌ Receipt verification failed:', error.message);
+    }
+};
+
+/**
+ * Start scheduled receipt verification
+ */
+const startPushReceiptVerificationJob = () => {
+    cron.schedule('*/15 * * * *', async () => {
+        console.log('🧾 Checking push notification receipts...');
+
+        try {
+            const pendingNotifications = await Notification.find({
+                pushTicketStatus: 'pending',
+                pushTicketId: { $ne: null }
+            })
+                .select('pushTicketId')
+                .limit(300);
+
+            const ticketIds = pendingNotifications
+                .map(notification => notification.pushTicketId)
+                .filter(Boolean);
+
+            if (ticketIds.length === 0) {
+                console.log('   ✅ No pending push receipts to verify');
+                return;
+            }
+
+            await verifyPushReceipts(ticketIds);
+        } catch (error) {
+            console.error('❌ Receipt job failed:', error.message);
+        }
+    });
+
+    console.log('📅 Push receipt verification job scheduled (every 15 minutes)');
 };
 
 module.exports = {
     sendPushNotification,
-    verifyPushReceipts
+    verifyPushReceipts,
+    startPushReceiptVerificationJob
 };

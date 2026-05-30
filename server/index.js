@@ -5,6 +5,7 @@ const mongoose = require('mongoose');
 const connectDB = require('./utils/db');
 const { startScheduler, checkIssues } = require('./services/scheduler');
 const { startCleanupJob } = require('./services/cleanup');
+const { startPushReceiptVerificationJob } = require('./services/pushNotifications');
 
 dotenv.config();
 connectDB();
@@ -133,6 +134,7 @@ const startServer = async () => {
         console.log(`Network: http://10.36.220.78:${PORT}`);
         startScheduler();
         startCleanupJob(); // 🆕 Add this
+        startPushReceiptVerificationJob();
     });
 };
 
