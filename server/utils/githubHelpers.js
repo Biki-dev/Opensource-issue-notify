@@ -1,112 +1,86 @@
 const axios = require('axios');
 const User = require('../models/User');
 
-const buildGitHubAuthHeader = (token) => ({ Authorization: `Bearer ${token}` });
-
 /**
- * Get best GitHub token for API request
- * Priority: User's personal token > User's OAuth token > Global token
+ * Get best GitHub token for API request.
+ * Priority: personal token → OAuth token → global env token → none
  */
 const getBestTokenForRepo = async (subscriptions) => {
     try {
-        // Try each subscription's user for a personal token
         for (const sub of subscriptions) {
-            const user = await User.findById(sub.user)
+            const userId = sub.user?._id || sub.user;
+            const user = await User.findById(userId)
                 .select('personalGitHubToken tokenIsValid githubAccessToken authMethod');
 
-            // Priority 1: Personal token (best rate limits)
             if (user?.personalGitHubToken && user?.tokenIsValid !== false) {
                 try {
-                    // Decrypt the token before using it
-                    const decryptedToken = user.getPersonalGitHubToken();
-                    return { 
-                        Authorization: buildGitHubAuthHeader(decryptedToken).Authorization,
-                        source: 'personal',
-                        userId: user._id
-                    };
+                    const token = user.getPersonalGitHubToken();
+                    if (token) return { Authorization: `Bearer ${token}`, source: 'personal', userId: user._id };
                 } catch (error) {
-                    console.warn(`⚠️  Token decryption failed for user ${sub.user} - marking invalid`);
-                    // Mark token as invalid to skip in future
-                    await User.findByIdAndUpdate(sub.user, { tokenIsValid: false, rateLimitTier: 'default' }).catch(() => {});
-                    // Fall through to next priority
+                    console.warn(`⚠️  Personal token decryption failed for user ${userId} — marking invalid`);
+                    await User.findByIdAndUpdate(userId, { tokenIsValid: false, rateLimitTier: 'default' }).catch(() => {});
                 }
             }
 
-            // Priority 2: OAuth token from GitHub login
-            const githubAccessToken = user?.getGithubAccessToken?.();
-
-            if (user?.authMethod === 'github' && githubAccessToken) {
-                return { 
-                    Authorization: buildGitHubAuthHeader(githubAccessToken).Authorization,
-                    source: 'oauth',
-                    userId: user._id
-                };
+            if (user?.authMethod === 'github') {
+                try {
+                    const token = user.getGithubAccessToken?.();
+                    if (token) return { Authorization: `Bearer ${token}`, source: 'oauth', userId: user._id };
+                } catch (_) {}
             }
         }
 
-        // Priority 3: Global fallback token
         if (process.env.GITHUB_TOKEN) {
-            return { 
-                Authorization: buildGitHubAuthHeader(process.env.GITHUB_TOKEN).Authorization,
-                source: 'global',
-                userId: null
-            };
+            return { Authorization: `Bearer ${process.env.GITHUB_TOKEN}`, source: 'global', userId: null };
         }
 
-        // No token (60 req/hour limit)
         return { source: 'none', userId: null };
-
     } catch (error) {
         console.error('❌ Error getting token:', error.message);
-        return process.env.GITHUB_TOKEN 
-            ? { Authorization: buildGitHubAuthHeader(process.env.GITHUB_TOKEN).Authorization, source: 'global' }
-            : { source: 'none' };
+        if (process.env.GITHUB_TOKEN) {
+            return { Authorization: `Bearer ${process.env.GITHUB_TOKEN}`, source: 'global' };
+        }
+        return { source: 'none' };
     }
 };
 
 /**
- * Make GitHub API request with rate limit handling
+ * Make GitHub API request with rate limit handling and optional retry.
  */
 const makeGitHubRequest = async (url, headers = {}, retries = 1) => {
     try {
         const response = await axios.get(url, { headers });
-        
-        // Log if rate limit is low
         const remaining = response.headers['x-ratelimit-remaining'];
         if (remaining && parseInt(remaining) < 100) {
             console.warn(`⚠️ Rate limit low: ${remaining} remaining`);
         }
-        
         return response;
     } catch (error) {
-        // Handle 403 rate limit
-        if (error.response?.status === 403 && 
-            error.response.headers['x-ratelimit-remaining'] === '0') {
-            
+        if (
+            error.response?.status === 403 &&
+            error.response.headers['x-ratelimit-remaining'] === '0'
+        ) {
             const resetTime = parseInt(error.response.headers['x-ratelimit-reset']) * 1000;
             const waitTime = resetTime - Date.now();
-            
-            console.error(`❌ Rate limit exceeded. Resets in ${Math.ceil(waitTime/60000)}min`);
-            
-            // Retry after reset (if retries available and wait < 1 hour)
+            console.error(`❌ Rate limit exceeded. Resets in ${Math.ceil(waitTime / 60000)}min`);
             if (retries > 0 && waitTime < 3600000) {
-                console.log(`⏳ Waiting ${Math.ceil(waitTime/1000)}s before retry...`);
+                console.log(`⏳ Waiting ${Math.ceil(waitTime / 1000)}s before retry...`);
                 await new Promise(r => setTimeout(r, waitTime + 1000));
                 return makeGitHubRequest(url, headers, retries - 1);
             }
         }
-        
         throw error;
     }
 };
 
 /**
- * Verify GitHub token is valid
+ * Verify a GitHub personal access token.
  */
 const verifyToken = async (token) => {
     try {
         const response = await axios.get('https://api.github.com/user', {
-            headers: buildGitHubAuthHeader(token.trim())
+            headers: { Authorization: `Bearer ${token.trim()}` },
+            timeout: 10000
         });
         return { valid: true, user: response.data };
     } catch (error) {
@@ -120,12 +94,13 @@ const verifyToken = async (token) => {
 };
 
 /**
- * Get rate limit info for a token
+ * Get rate limit info for a token.
  */
 const getRateLimitInfo = async (token) => {
     try {
         const response = await axios.get('https://api.github.com/rate_limit', {
-            headers: buildGitHubAuthHeader(token.trim())
+            headers: { Authorization: `Bearer ${token.trim()}` },
+            timeout: 10000
         });
         return response.data.rate;
     } catch (error) {
@@ -135,29 +110,20 @@ const getRateLimitInfo = async (token) => {
 };
 
 /**
- * Check if user should get faster checks based on their token tier
+ * Check check frequency in minutes for a user.
  */
 const getCheckFrequencyForUser = async (userId) => {
     try {
-        const user = await User.findById(userId)
-            .select('rateLimitTier personalGitHubToken tokenIsValid');
-
-        // Personal token = 30min checks
+        const user = await User.findById(userId).select('rateLimitTier personalGitHubToken tokenIsValid');
         if (user?.personalGitHubToken && user?.tokenIsValid !== false) {
             try {
-                // Verify token can be decrypted
                 user.getPersonalGitHubToken();
-                return 30; // minutes
-            } catch (error) {
-                console.error('Token decryption failed, using default tier:', error.message);
-                return 60;
-            }
+                return 30;
+            } catch (_) {}
         }
-
-        // Default = 60min checks
         return 60;
-    } catch (error) {
-        return 60; // Default fallback
+    } catch (_) {
+        return 60;
     }
 };
 
