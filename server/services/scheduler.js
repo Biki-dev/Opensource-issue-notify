@@ -9,7 +9,8 @@ const { issueMatchesSubscription, toLowercaseList } = require('../utils/subscrip
 /**
  * Check repositories for a specific tier
  */
-const checkRepositoriesForTier = async (tierName, frequencyMinutes) => {
+const checkRepositoriesForTier = async (tierName, frequencyMinutes, options = {}) => {
+    const { skipRateLimitSleep = false, requestTimeoutMs = 15000 } = options;
     const now = new Date();
     const cutoffTime = new Date(now - frequencyMinutes * 60 * 1000);
 
@@ -120,16 +121,21 @@ const checkRepositoriesForTier = async (tierName, frequencyMinutes) => {
 
                 // Add rate limit helper
                 const checkWithRateLimit = async (url, headers) => {
-                    const response = await axios.get(url, { headers });
+                    const response = await axios.get(url, {
+                        headers,
+                        timeout: requestTimeoutMs
+                    });
                     const remaining = parseInt(response.headers['x-ratelimit-remaining']);
 
                     if (remaining < 10) {
                         const resetTime = parseInt(response.headers['x-ratelimit-reset']) * 1000;
                         const waitTime = resetTime - Date.now();
                         const waitMin = Math.ceil(waitTime / 60000);
-                        if (waitMin > 0) {
+                        if (waitMin > 0 && !skipRateLimitSleep) {
                             console.warn(`   ⚠️ Rate limit low (${remaining}), waiting ${waitMin}min`);
                             await new Promise(r => setTimeout(r, waitTime + 1000));
+                        } else if (waitMin > 0) {
+                            console.warn(`   ⚠️ Rate limit low (${remaining}), skipping wait in manual check`);
                         }
                     }
                     return response;
@@ -323,9 +329,9 @@ const startScheduler = () => {
 // Legacy function for backwards compatibility
 const checkIssues = async () => {
     console.log('🔍 Manual check triggered...');
-    await checkRepositoriesForTier('default', 60);
-    await checkRepositoriesForTier('personal', 30);
-    await checkRepositoriesForTier('premium', 15);
+    await checkRepositoriesForTier('default', 60, { skipRateLimitSleep: true });
+    await checkRepositoriesForTier('personal', 30, { skipRateLimitSleep: true });
+    await checkRepositoriesForTier('premium', 15, { skipRateLimitSleep: true });
 };
 
 module.exports = { startScheduler, checkIssues };

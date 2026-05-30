@@ -32,8 +32,10 @@ app.use('/api/health', require('./routes/health'));
 
 // Manual Trigger for Debugging
 app.post('/api/debug/check', async (req, res) => {
-    await checkIssues();
     res.json({ message: 'Check triggered' });
+    checkIssues().catch(error => {
+        console.error('Debug check failed:', error.message);
+    });
 });
 
 // Debug: Check push token registration status
