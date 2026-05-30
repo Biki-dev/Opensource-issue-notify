@@ -71,14 +71,21 @@ const checkRepositoriesForTier = async (tierName, frequencyMinutes) => {
             if (!repoSubscriptionsMap.has(repoId)) {
                 repoSubscriptionsMap.set(repoId, {
                     repository: sub.repository,
-                    subscriptions: []
+                    subscriptions: [],
+                    labelSet: new Set()
                 });
             }
-            repoSubscriptionsMap.get(repoId).subscriptions.push(sub);
+            const repoEntry = repoSubscriptionsMap.get(repoId);
+            repoEntry.subscriptions.push(sub);
+            for (const label of sub.labels || []) {
+                if (label) {
+                    repoEntry.labelSet.add(label);
+                }
+            }
         }
 
         // Process each repository
-        for (const [repoId, { repository, subscriptions }] of repoSubscriptionsMap.entries()) {
+        for (const [repoId, { repository, subscriptions, labelSet }] of repoSubscriptionsMap.entries()) {
             const headers = await getBestTokenForRepo(subscriptions);
 
             if (!headers.Authorization && headers.source === 'none') {
@@ -89,8 +96,19 @@ const checkRepositoriesForTier = async (tierName, frequencyMinutes) => {
                 // 🆕 CRITICAL FIX: Limit pagination to prevent API abuse
                 const MAX_PAGES = 3; // Only fetch 3 pages (300 issues max)
                 const PER_PAGE = 100;
+                const apiLabels = Array.from(labelSet);
+                const queryParams = new URLSearchParams({
+                    state: 'all',
+                    per_page: String(PER_PAGE),
+                    sort: 'created',
+                    direction: 'desc'
+                });
 
-                let nextUrl = `https://api.github.com/repos/${repository.owner}/${repository.name}/issues?state=all&per_page=${PER_PAGE}&sort=created&direction=desc`;
+                if (apiLabels.length > 0) {
+                    queryParams.set('labels', apiLabels.join(','));
+                }
+
+                let nextUrl = `https://api.github.com/repos/${repository.owner}/${repository.name}/issues?${queryParams.toString()}`;
                 let allIssues = [];
                 let pageCount = 0;
 
