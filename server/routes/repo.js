@@ -24,7 +24,7 @@ const getGitHubHeaderCandidates = async (userId) => {
         const normalized = (token || '').trim();
         if (!normalized || seen.has(normalized)) return;
         seen.add(normalized);
-        candidates.push({ Authorization: `token ${normalized}` });
+        candidates.push({ Authorization: `Bearer ${normalized}` });
     };
 
     if (userId) {
@@ -70,7 +70,15 @@ const getGitHubRequestConfig = (headers = {}) => ({
 
 const fetchRepoDataWithFallback = async (owner, repo, headerCandidates) => {
     let lastError;
-    let sawAuthError = false;
+
+    if (headerCandidates.length === 0) {
+        console.log('🔑 Preview GitHub auth source: anonymous');
+        const [repoRes, labelsRes] = await Promise.all([
+            axios.get(`https://api.github.com/repos/${owner}/${repo}`, getGitHubRequestConfig()),
+            axios.get(`https://api.github.com/repos/${owner}/${repo}/labels`, getGitHubRequestConfig())
+        ]);
+        return { repoRes, labelsRes };
+    }
 
     for (const headers of headerCandidates) {
         try {
@@ -82,24 +90,7 @@ const fetchRepoDataWithFallback = async (owner, repo, headerCandidates) => {
             return { repoRes, labelsRes };
         } catch (error) {
             lastError = error;
-            if (isAuthOrRateLimitError(error)) {
-                sawAuthError = true;
-                continue;
-            }
             throw error;
-        }
-    }
-
-    if (sawAuthError) {
-        try {
-            console.log('🔑 Preview GitHub auth source: anonymous');
-            const [repoRes, labelsRes] = await Promise.all([
-                axios.get(`https://api.github.com/repos/${owner}/${repo}`, getGitHubRequestConfig()),
-                axios.get(`https://api.github.com/repos/${owner}/${repo}/labels`, getGitHubRequestConfig())
-            ]);
-            return { repoRes, labelsRes };
-        } catch (error) {
-            lastError = error;
         }
     }
 
@@ -158,15 +149,17 @@ router.post('/subscribe', auth, async (req, res) => {
 
         const fetchFromGitHub = async (path) => {
             let lastError;
+                    if (headerCandidates.length === 0) {
+                        console.log(`🔑 Repo fetch GitHub auth source: anonymous`);
+                        return axios.get(`https://api.github.com/repos/${owner}/${repo}${path}`, getGitHubRequestConfig());
+                    }
+
             for (const headers of headerCandidates) {
                 try {
                             console.log(`🔑 Repo fetch GitHub auth source: ${headers.Authorization ? 'authenticated' : 'anonymous'}`);
                     return await axios.get(`https://api.github.com/repos/${owner}/${repo}${path}`, getGitHubRequestConfig(headers));
                 } catch (error) {
                     lastError = error;
-                    if (isAuthOrRateLimitError(error)) {
-                        continue;
-                    }
                     throw error;
                 }
             }
@@ -318,26 +311,17 @@ router.get('/activity', auth, async (req, res) => {
 
                 const fetchActivityPage = async (url) => {
                     let lastError;
-                    let sawAuthError = false;
+
+                    if (candidateHeaders.length === 0) {
+                        return await axios.get(url, getGitHubRequestConfig());
+                    }
 
                     for (const requestHeaders of candidateHeaders) {
                         try {
                             return await axios.get(url, getGitHubRequestConfig(requestHeaders));
                         } catch (error) {
                             lastError = error;
-                            if (isAuthOrRateLimitError(error)) {
-                                sawAuthError = true;
-                                continue;
-                            }
                             throw error;
-                        }
-                    }
-
-                    if (sawAuthError) {
-                        try {
-                            return await axios.get(url, getGitHubRequestConfig());
-                        } catch (error) {
-                            lastError = error;
                         }
                     }
 
