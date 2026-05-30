@@ -2,6 +2,7 @@ const express = require('express');
 const axios = require('axios');
 const { Repository, Subscription } = require('../models/Resources');
 const Notification = require('../models/Notification');
+const User = require('../models/User');
 const router = express.Router();
 const auth = require('../middleware/auth'); // Need to create middleware
 const { getBestTokenForRepo } = require('../utils/githubHelpers');
@@ -15,6 +16,74 @@ const parseGitHubUrl = (url) => {
     return { owner: match[1], repo: match[2].replace('.git', '') };
 };
 
+const getGitHubHeaderCandidates = async (userId) => {
+    const candidates = [];
+    const seen = new Set();
+
+    const pushCandidate = (token) => {
+        const normalized = (token || '').trim();
+        if (!normalized || seen.has(normalized)) return;
+        seen.add(normalized);
+        candidates.push({ Authorization: `token ${normalized}` });
+    };
+
+    if (userId) {
+        const user = await User.findById(userId)
+            .select('personalGitHubToken githubAccessToken tokenIsValid authMethod');
+
+        if (user?.personalGitHubToken && user?.tokenIsValid !== false) {
+            try {
+                pushCandidate(user.getPersonalGitHubToken());
+            } catch (error) {
+                console.warn(`⚠️ Personal token decryption failed for user ${userId}:`, error.message);
+                await User.findByIdAndUpdate(userId, { tokenIsValid: false, rateLimitTier: 'default' }).catch(() => {});
+            }
+        }
+
+        if (user?.authMethod === 'github') {
+            try {
+                pushCandidate(user.getGithubAccessToken?.());
+            } catch (error) {
+                console.warn(`⚠️ OAuth token decryption failed for user ${userId}:`, error.message);
+            }
+        }
+    }
+
+    pushCandidate(process.env.GITHUB_TOKEN);
+
+    // Always keep an anonymous fallback so public repos still work if a token is invalid.
+    candidates.push({});
+
+    return candidates;
+};
+
+const isAuthOrRateLimitError = (error) => {
+    const status = error?.response?.status;
+    return status === 401 || status === 403;
+};
+
+const fetchRepoDataWithFallback = async (owner, repo, headerCandidates) => {
+    let lastError;
+
+    for (const headers of headerCandidates) {
+        try {
+            const [repoRes, labelsRes] = await Promise.all([
+                axios.get(`https://api.github.com/repos/${owner}/${repo}`, { headers }),
+                axios.get(`https://api.github.com/repos/${owner}/${repo}/labels`, { headers })
+            ]);
+            return { repoRes, labelsRes };
+        } catch (error) {
+            lastError = error;
+            if (isAuthOrRateLimitError(error)) {
+                continue;
+            }
+            throw error;
+        }
+    }
+
+    throw lastError;
+};
+
 // PREVIEW: Fetch Repo details + Labels
 router.post('/preview', auth, async (req, res) => {
     const { url } = req.body;
@@ -23,13 +92,8 @@ router.post('/preview', auth, async (req, res) => {
 
     try {
         const { owner, repo } = parsed;
-        const headers = process.env.GITHUB_TOKEN ? { Authorization: `token ${process.env.GITHUB_TOKEN}` } : {};
-
-        // Parallel fetch for details and labels
-        const [repoRes, labelsRes] = await Promise.all([
-            axios.get(`https://api.github.com/repos/${owner}/${repo}`, { headers }),
-            axios.get(`https://api.github.com/repos/${owner}/${repo}/labels`, { headers })
-        ]);
+        const headerCandidates = await getGitHubHeaderCandidates(req.user?.id);
+        const { repoRes, labelsRes } = await fetchRepoDataWithFallback(owner, repo, headerCandidates);
 
         res.json({
             owner: repoRes.data.owner.login,
@@ -39,8 +103,15 @@ router.post('/preview', auth, async (req, res) => {
             labels: labelsRes.data.map(l => ({ name: l.name, color: l.color, description: l.description }))
         });
     } catch (error) {
-        console.error(error.message);
-        res.status(404).json({ message: 'Repository not found or private' });
+        console.error('Preview fetch failed:', error.message);
+        const status = error?.response?.status;
+        if (status === 404) {
+            return res.status(404).json({ message: 'Repository not found or private' });
+        }
+        if (status === 401 || status === 403) {
+            return res.status(503).json({ message: 'GitHub API authentication failed. Please try again shortly.' });
+        }
+        res.status(500).json({ message: 'Failed to preview repository' });
     }
 });
 
@@ -52,15 +123,31 @@ router.post('/subscribe', auth, async (req, res) => {
 
     try {
         const { owner, repo } = parsed;
-        const headers = process.env.GITHUB_TOKEN ? { Authorization: `token ${process.env.GITHUB_TOKEN}` } : {};
+        const headerCandidates = await getGitHubHeaderCandidates(req.user?.id);
+
+        const fetchFromGitHub = async (path) => {
+            let lastError;
+            for (const headers of headerCandidates) {
+                try {
+                    return await axios.get(`https://api.github.com/repos/${owner}/${repo}${path}`, { headers });
+                } catch (error) {
+                    lastError = error;
+                    if (isAuthOrRateLimitError(error)) {
+                        continue;
+                    }
+                    throw error;
+                }
+            }
+            throw lastError;
+        };
 
         // Find or Create Repository
         let repository = await Repository.findOne({ githubUrl: url });
         if (!repository) {
             // Parallel fetch for repository details and latest issue
             const [repoInfoRes, issuesRes] = await Promise.all([
-                axios.get(`https://api.github.com/repos/${owner}/${repo}`, { headers }),
-                axios.get(`https://api.github.com/repos/${owner}/${repo}/issues?per_page=1`, { headers })
+                fetchFromGitHub(''),
+                fetchFromGitHub('/issues?per_page=1')
             ]);
 
             const latestNum = issuesRes.data.length > 0 ? issuesRes.data[0].number : 0;
@@ -76,7 +163,7 @@ router.post('/subscribe', auth, async (req, res) => {
             });
         } else if (!repository.ownerAvatarUrl) {
             // Update existing repo if avatar is missing
-            const repoInfoRes = await axios.get(`https://api.github.com/repos/${owner}/${repo}`, { headers });
+            const repoInfoRes = await fetchFromGitHub('');
             repository.ownerAvatarUrl = repoInfoRes.data.owner.avatar_url;
             await repository.save();
         }
@@ -101,10 +188,7 @@ router.post('/subscribe', auth, async (req, res) => {
                 console.log(`📌 Seeding initial notifications for subscription to ${owner}/${repo}`);
 
                 // Fetch open issues (limited page size to avoid huge responses)
-                const issuesRes = await axios.get(
-                    `https://api.github.com/repos/${owner}/${repo}/issues?state=open&per_page=100`,
-                    { headers }
-                );
+                const issuesRes = await fetchFromGitHub('/issues?state=open&per_page=100');
                 const issues = issuesRes.data || [];
                 let createdCount = 0;
 

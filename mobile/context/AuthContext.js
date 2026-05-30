@@ -2,6 +2,7 @@ import React, { createContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { Alert, Platform } from 'react-native';
+import Constants from 'expo-constants';
 import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
 import { cancelAllRequests } from '../utils/requestManager';
@@ -14,12 +15,37 @@ export const AuthContext = createContext();
 // Required for GitHub OAuth flow
 WebBrowser.maybeCompleteAuthSession();
 
+const getApiBaseUrl = () => {
+    const explicitUrl = process.env.EXPO_PUBLIC_API_URL || Constants.expoConfig?.extra?.apiUrl;
+
+    if (explicitUrl) {
+        return explicitUrl.replace(/\/$/, '');
+    }
+
+    if (Platform.OS === 'android') {
+        if (__DEV__) {
+            return 'http://localhost:5000/api';
+        }
+
+        const hostUri = Constants.expoConfig?.hostUri || Constants.expoConfig?.debuggerHost || '';
+        const host = hostUri.split(':')[0];
+
+        if (host) {
+            return `http://${host}:5000/api`;
+        }
+
+        return 'http://10.0.2.2:5000/api';
+    }
+
+    return 'http://localhost:5000/api';
+};
+
 export const AuthProvider = ({ children }) => {
     const [userToken, setUserToken] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [unreadCount, setUnreadCount] = useState(0);
 
-    const BASE_URL = 'https://opensource-issue-notify-production-e468.up.railway.app/api';
+    const BASE_URL = getApiBaseUrl();
 
     const getPushTokenCacheKey = (authToken) => `expoPushToken:${authToken}`;
 
