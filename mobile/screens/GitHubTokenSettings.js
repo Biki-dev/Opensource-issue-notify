@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, ScrollView, TextInput, Alert, Linking } f
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
-import { Button, Card, shadowStyles } from '../components/UI';
+import { Button, Card, Skeleton, shadowStyles } from '../components/UI';
 import { ArrowLeft, Github, Key, CheckCircle, AlertTriangle, ExternalLink, Lock, Zap, Eye, Clock } from 'lucide-react-native';
 import { MotiView } from 'moti';
 import { StatusBar } from 'expo-status-bar';
@@ -12,11 +12,16 @@ const GitHubTokenSettings = ({ navigation }) => {
     const { userToken, BASE_URL } = useContext(AuthContext);
     const [token, setToken] = useState('');
     const [status, setStatus] = useState(null);
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
     const [showToken, setShowToken] = useState(false);
 
     useEffect(() => {
-        fetchTokenStatus();
+        const loadTokenStatus = async () => {
+            setLoading(true);
+            await fetchTokenStatus();
+        };
+
+        loadTokenStatus();
     }, []);
 
     const fetchTokenStatus = async () => {
@@ -27,8 +32,61 @@ const GitHubTokenSettings = ({ navigation }) => {
             setStatus(res.data);
         } catch (e) {
             console.log('Error fetching token status:', e);
+        } finally {
+            setLoading(false);
         }
     };
+
+    const StatusCardSkeleton = () => (
+        <MotiView
+            from={{ opacity: 0, translateY: 20 }}
+            animate={{ opacity: 1, translateY: 0 }}
+        >
+            <Card className="p-6 mb-6 border-2 border-brand/20">
+                <View className="flex-row items-center mb-4">
+                    <Skeleton width={48} height={48} radius={16} className="mr-3" />
+                    <View className="flex-1">
+                        <Skeleton width="36%" height={14} radius={6} className="mb-2" />
+                        <Skeleton width="54%" height={10} radius={5} />
+                    </View>
+                </View>
+
+                <View className="flex-row flex-wrap">
+                    <View className="w-1/2 pr-2 mb-3">
+                        <View className="flex-row items-center mb-2">
+                            <Skeleton width={14} height={14} radius={7} className="mr-2" />
+                            <Skeleton width="48%" height={10} radius={4} />
+                        </View>
+                        <Skeleton width="68%" height={14} radius={5} />
+                    </View>
+
+                    <View className="w-1/2 pl-2 mb-3">
+                        <View className="flex-row items-center mb-2">
+                            <Skeleton width={14} height={14} radius={7} className="mr-2" />
+                            <Skeleton width="42%" height={10} radius={4} />
+                        </View>
+                        <Skeleton width="58%" height={14} radius={5} />
+                    </View>
+
+                    <View className="w-1/2 pr-2">
+                        <View className="flex-row items-center mb-2">
+                            <Skeleton width={14} height={14} radius={7} className="mr-2" />
+                            <Skeleton width="36%" height={10} radius={4} />
+                        </View>
+                        <Skeleton width="46%" height={14} radius={5} />
+                    </View>
+
+                    <View className="w-1/2 pl-2">
+                        <View className="flex-row items-center mb-2">
+                            <Skeleton width={14} height={14} radius={7} className="mr-2" />
+                            <Skeleton width="34%" height={10} radius={4} />
+                        </View>
+                        <Skeleton width="42%" height={14} radius={5} />
+                    </View>
+                </View>
+            </Card>
+        </MotiView>
+    );
 
     const handleAddToken = async () => {
         if (!token.trim()) {
@@ -102,7 +160,9 @@ const GitHubTokenSettings = ({ navigation }) => {
 
             <ScrollView contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 40 }}>
                 {/* Status Card */}
-                {status && (
+                {loading ? (
+                    <StatusCardSkeleton />
+                ) : status && (
                     <MotiView
                         from={{ opacity: 0, translateY: 20 }}
                         animate={{ opacity: 1, translateY: 0 }}
