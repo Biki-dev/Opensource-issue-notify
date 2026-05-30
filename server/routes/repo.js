@@ -19,13 +19,11 @@ const parseGitHubUrl = (url) => {
 const getGitHubHeaderCandidates = async (userId) => {
     const candidates = [];
     const seen = new Set();
-    let hasAuthCandidate = false;
 
     const pushCandidate = (token) => {
         const normalized = (token || '').trim();
         if (!normalized || seen.has(normalized)) return;
         seen.add(normalized);
-        hasAuthCandidate = true;
         candidates.push({ Authorization: `token ${normalized}` });
     };
 
@@ -53,11 +51,6 @@ const getGitHubHeaderCandidates = async (userId) => {
 
     pushCandidate(process.env.GITHUB_TOKEN);
 
-    if (!hasAuthCandidate) {
-        // Only fall back to anonymous requests when no token is configured at all.
-        candidates.push({});
-    }
-
     return candidates;
 };
 
@@ -77,6 +70,7 @@ const getGitHubRequestConfig = (headers = {}) => ({
 
 const fetchRepoDataWithFallback = async (owner, repo, headerCandidates) => {
     let lastError;
+    let sawAuthError = false;
 
     for (const headers of headerCandidates) {
         try {
@@ -89,9 +83,23 @@ const fetchRepoDataWithFallback = async (owner, repo, headerCandidates) => {
         } catch (error) {
             lastError = error;
             if (isAuthOrRateLimitError(error)) {
+                sawAuthError = true;
                 continue;
             }
             throw error;
+        }
+    }
+
+    if (sawAuthError) {
+        try {
+            console.log('🔑 Preview GitHub auth source: anonymous');
+            const [repoRes, labelsRes] = await Promise.all([
+                axios.get(`https://api.github.com/repos/${owner}/${repo}`, getGitHubRequestConfig()),
+                axios.get(`https://api.github.com/repos/${owner}/${repo}/labels`, getGitHubRequestConfig())
+            ]);
+            return { repoRes, labelsRes };
+        } catch (error) {
+            lastError = error;
         }
     }
 
@@ -308,12 +316,9 @@ router.get('/activity', auth, async (req, res) => {
                     candidateHeaders.push({ Authorization: headers.Authorization });
                 }
 
-                if (candidateHeaders.length === 0) {
-                    candidateHeaders.push({});
-                }
-
                 const fetchActivityPage = async (url) => {
                     let lastError;
+                    let sawAuthError = false;
 
                     for (const requestHeaders of candidateHeaders) {
                         try {
@@ -321,9 +326,18 @@ router.get('/activity', auth, async (req, res) => {
                         } catch (error) {
                             lastError = error;
                             if (isAuthOrRateLimitError(error)) {
+                                sawAuthError = true;
                                 continue;
                             }
                             throw error;
+                        }
+                    }
+
+                    if (sawAuthError) {
+                        try {
+                            return await axios.get(url, getGitHubRequestConfig());
+                        } catch (error) {
+                            lastError = error;
                         }
                     }
 

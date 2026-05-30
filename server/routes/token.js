@@ -10,7 +10,7 @@ const router = express.Router();
  * POST /api/user/token/github-token
  */
 router.post('/github-token', auth, async (req, res) => {
-    const { token } = req.body;
+    const token = typeof req.body.token === 'string' ? req.body.token.trim() : '';
 
     if (!token) {
         return res.status(400).json({
@@ -31,9 +31,9 @@ router.post('/github-token', auth, async (req, res) => {
         // Verify token is valid
         const tokenVerification = await verifyToken(token);
         if (!tokenVerification.valid) {
-            console.log(`❌ Token verification failed for user ${req.user.id}`);
+            console.log(`❌ Token verification failed for user ${req.user.id}: ${tokenVerification.githubMessage || tokenVerification.error}`);
             return res.status(400).json({
-                message: 'Invalid GitHub token. Please check and try again.'
+                message: tokenVerification.githubMessage || 'Invalid GitHub token. Please check and try again.'
             });
         }
 

@@ -1,6 +1,8 @@
 const axios = require('axios');
 const User = require('../models/User');
 
+const buildGitHubAuthHeader = (token) => ({ Authorization: `Bearer ${token}` });
+
 /**
  * Get best GitHub token for API request
  * Priority: User's personal token > User's OAuth token > Global token
@@ -18,7 +20,7 @@ const getBestTokenForRepo = async (subscriptions) => {
                     // Decrypt the token before using it
                     const decryptedToken = user.getPersonalGitHubToken();
                     return { 
-                        Authorization: `token ${decryptedToken}`,
+                        Authorization: buildGitHubAuthHeader(decryptedToken).Authorization,
                         source: 'personal',
                         userId: user._id
                     };
@@ -35,7 +37,7 @@ const getBestTokenForRepo = async (subscriptions) => {
 
             if (user?.authMethod === 'github' && githubAccessToken) {
                 return { 
-                    Authorization: `token ${githubAccessToken}`,
+                    Authorization: buildGitHubAuthHeader(githubAccessToken).Authorization,
                     source: 'oauth',
                     userId: user._id
                 };
@@ -45,7 +47,7 @@ const getBestTokenForRepo = async (subscriptions) => {
         // Priority 3: Global fallback token
         if (process.env.GITHUB_TOKEN) {
             return { 
-                Authorization: `token ${process.env.GITHUB_TOKEN}`,
+                Authorization: buildGitHubAuthHeader(process.env.GITHUB_TOKEN).Authorization,
                 source: 'global',
                 userId: null
             };
@@ -57,7 +59,7 @@ const getBestTokenForRepo = async (subscriptions) => {
     } catch (error) {
         console.error('❌ Error getting token:', error.message);
         return process.env.GITHUB_TOKEN 
-            ? { Authorization: `token ${process.env.GITHUB_TOKEN}`, source: 'global' }
+            ? { Authorization: buildGitHubAuthHeader(process.env.GITHUB_TOKEN).Authorization, source: 'global' }
             : { source: 'none' };
     }
 };
@@ -104,11 +106,16 @@ const makeGitHubRequest = async (url, headers = {}, retries = 1) => {
 const verifyToken = async (token) => {
     try {
         const response = await axios.get('https://api.github.com/user', {
-            headers: { Authorization: `token ${token}` }
+            headers: buildGitHubAuthHeader(token.trim())
         });
         return { valid: true, user: response.data };
     } catch (error) {
-        return { valid: false, error: error.message };
+        return {
+            valid: false,
+            error: error.message,
+            githubMessage: error?.response?.data?.message || null,
+            status: error?.response?.status || null
+        };
     }
 };
 
@@ -118,7 +125,7 @@ const verifyToken = async (token) => {
 const getRateLimitInfo = async (token) => {
     try {
         const response = await axios.get('https://api.github.com/rate_limit', {
-            headers: { Authorization: `token ${token}` }
+            headers: buildGitHubAuthHeader(token.trim())
         });
         return response.data.rate;
     } catch (error) {
