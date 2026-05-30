@@ -6,7 +6,8 @@ import Constants from 'expo-constants';
 // Configure how notifications are handled when app is in foreground, background, or closed
 Notifications.setNotificationHandler({
     handleNotification: async () => ({
-        shouldShowAlert: true,
+        shouldShowBanner: true,
+        shouldShowList: true,
         shouldPlaySound: true,
         shouldSetBadge: true,
     }),

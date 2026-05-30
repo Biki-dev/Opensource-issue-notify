@@ -278,6 +278,33 @@ router.get('/activity', auth, async (req, res) => {
         for (const { repository, subscriptions } of repoGroups.values()) {
             try {
                 const headers = await getBestTokenForRepo(subscriptions);
+                const candidateHeaders = [];
+
+                if (headers?.Authorization) {
+                    candidateHeaders.push({ Authorization: headers.Authorization });
+                }
+
+                // Global/user token can become invalid; anonymous fallback still works for public repos.
+                candidateHeaders.push({});
+
+                const fetchActivityPage = async (url) => {
+                    let lastError;
+
+                    for (const requestHeaders of candidateHeaders) {
+                        try {
+                            return await axios.get(url, { headers: requestHeaders });
+                        } catch (error) {
+                            lastError = error;
+                            if (isAuthOrRateLimitError(error)) {
+                                continue;
+                            }
+                            throw error;
+                        }
+                    }
+
+                    throw lastError;
+                };
+
                 const MAX_PAGES = 5;
                 const PER_PAGE = 100;
 
@@ -287,7 +314,7 @@ router.get('/activity', auth, async (req, res) => {
                 let monthCount = 0;
 
                 while (nextUrl && pageCount < MAX_PAGES) {
-                    const response = await axios.get(nextUrl, { headers });
+                    const response = await fetchActivityPage(nextUrl);
                     const issues = response.data || [];
 
                     if (issues.length === 0) break;
