@@ -92,6 +92,23 @@ UserSchema.pre('save', async function () {
             throw new Error('Failed to encrypt GitHub token. Ensure ENCRYPTION_KEY is configured.');
         }
     }
+
+    // Handle GitHub OAuth token encryption
+    if (this.githubAccessToken && this.isModified('githubAccessToken')) {
+        try {
+            if (!this.githubAccessToken.includes(':')) {
+                const encryptedToken = encrypt(this.githubAccessToken);
+                if (!encryptedToken) {
+                    throw new Error('Encryption returned null or empty value');
+                }
+                this.githubAccessToken = encryptedToken;
+                console.log('✅ GitHub OAuth token encrypted and saved');
+            }
+        } catch (error) {
+            console.error('❌ GitHub OAuth token encryption error during save:', error.message);
+            throw new Error('Failed to encrypt GitHub OAuth token. Ensure ENCRYPTION_KEY is configured.');
+        }
+    }
 });
 
 /**
@@ -106,6 +123,21 @@ UserSchema.methods.getPersonalGitHubToken = function () {
     } catch (error) {
         console.error('Token decryption error:', error.message);
         throw new Error('Failed to decrypt GitHub token. The encryption key may be invalid.');
+    }
+};
+
+/**
+ * Instance method: Get decrypted GitHub OAuth token
+ * @returns {string|null} Decrypted token or null if not set
+ */
+UserSchema.methods.getGithubAccessToken = function () {
+    if (!this.githubAccessToken) return null;
+
+    try {
+        return decrypt(this.githubAccessToken);
+    } catch (error) {
+        console.error('GitHub OAuth token decryption error:', error.message);
+        throw new Error('Failed to decrypt GitHub OAuth token. The encryption key may be invalid.');
     }
 };
 

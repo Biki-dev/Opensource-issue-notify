@@ -31,9 +31,11 @@ const getBestTokenForRepo = async (subscriptions) => {
             }
 
             // Priority 2: OAuth token from GitHub login
-            if (user?.authMethod === 'github' && user?.githubAccessToken) {
+            const githubAccessToken = user?.getGithubAccessToken?.();
+
+            if (user?.authMethod === 'github' && githubAccessToken) {
                 return { 
-                    Authorization: `token ${user.githubAccessToken}`,
+                    Authorization: `token ${githubAccessToken}`,
                     source: 'oauth',
                     userId: user._id
                 };

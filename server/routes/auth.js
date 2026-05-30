@@ -251,10 +251,12 @@ router.get('/me', auth, async (req, res) => {
 
             if (Date.now() - lastUpdate > sevenDays) {
                 const userWithToken = await User.findById(req.user._id).select('githubAccessToken');
-                if (userWithToken?.githubAccessToken) {
+                const githubAccessToken = userWithToken?.getGithubAccessToken?.();
+
+                if (githubAccessToken) {
                     try {
                         const ghRes = await axios.get('https://api.github.com/user', {
-                            headers: { Authorization: `Bearer ${userWithToken.githubAccessToken}` }
+                            headers: { Authorization: `Bearer ${githubAccessToken}` }
                         });
 
                         // Update if changed
