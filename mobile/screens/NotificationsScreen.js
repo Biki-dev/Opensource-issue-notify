@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { View, Text, FlatList, Linking, TouchableOpacity, RefreshControl, Alert, Platform, Image } from 'react-native';
+import { View, Text, FlatList, Linking, TouchableOpacity, RefreshControl, Alert, Platform, Image, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
@@ -13,15 +13,29 @@ const NotificationsScreen = ({ navigation }) => {
     const [notifs, setNotifs] = useState([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+    const [activeTab, setActiveTab] = useState('inbox');
+    const [selectedRepo, setSelectedRepo] = useState('all');
 
     const fetchNotifs = async () => {
         try {
+            const params = {
+                view: activeTab,
+                days: 30
+            };
+
+            if (selectedRepo !== 'all') {
+                params.repository = selectedRepo;
+            }
+
             const res = await axios.get(`${BASE_URL}/notifications`, {
+                params,
                 headers: { Authorization: `Bearer ${userToken}` }
             });
-            const unread = (res.data || []).filter(n => !n.isRead);
-            setNotifs(unread);
-            updateUnreadCount();
+            setNotifs(res.data || []);
+
+            if (activeTab === 'inbox') {
+                updateUnreadCount();
+            }
         } catch (e) {
             console.log(e);
         } finally {
@@ -33,18 +47,25 @@ const NotificationsScreen = ({ navigation }) => {
     useEffect(() => {
         const unsubscribe = navigation.addListener('focus', fetchNotifs);
         return unsubscribe;
-    }, [navigation, userToken]);
+    }, [navigation, userToken, activeTab, selectedRepo]);
 
-    const handleOpenNotification = async (item) => {
+    useEffect(() => {
+        setLoading(true);
+        fetchNotifs();
+    }, [activeTab, selectedRepo]);
+
+    const handleOpenNotification = async (item, markAsRead = true) => {
         try {
             Linking.openURL(item.issueUrl);
-            await axios.patch(`${BASE_URL}/notifications/${item._id}`, {
-                isRead: true,
-            }, {
-                headers: { Authorization: `Bearer ${userToken}` }
-            });
-            setNotifs((prev) => prev.filter((n) => n._id !== item._id));
-            updateUnreadCount();
+            if (markAsRead) {
+                await axios.patch(`${BASE_URL}/notifications/${item._id}`, {
+                    isRead: true,
+                }, {
+                    headers: { Authorization: `Bearer ${userToken}` }
+                });
+                setNotifs((prev) => prev.filter((n) => n._id !== item._id));
+                updateUnreadCount();
+            }
         } catch (e) {
             console.log(e);
         }
@@ -80,6 +101,9 @@ const NotificationsScreen = ({ navigation }) => {
         fetchNotifs();
     };
 
+    const repoOptions = Array.from(new Map(notifs.map((notif) => [notif.repository?._id || notif.repository?.name, notif.repository])).values())
+        .filter(Boolean);
+
     const renderItem = ({ item, index }) => {
         const timeAgo = (date) => {
             const seconds = Math.floor((new Date() - new Date(date)) / 1000);
@@ -96,7 +120,7 @@ const NotificationsScreen = ({ navigation }) => {
                 transition={{ type: 'timing', duration: 250, delay: index * 30 }}
             >
                 <TouchableOpacity
-                    onPress={() => handleOpenNotification(item)}
+                    onPress={() => handleOpenNotification(item, activeTab === 'inbox')}
                     activeOpacity={0.7}
                     className="mb-3"
                 >
@@ -153,28 +177,30 @@ const NotificationsScreen = ({ navigation }) => {
                             </View>
 
                             {/* Right: Actions */}
-                            <TouchableOpacity
-                                onPress={(e) => {
-                                    e.stopPropagation();
-                                    if (Platform.OS === 'web') {
-                                        if (window.confirm('Dismiss notification?')) {
-                                            handleDelete(item._id);
+                            {activeTab === 'inbox' && (
+                                <TouchableOpacity
+                                    onPress={(e) => {
+                                        e.stopPropagation();
+                                        if (Platform.OS === 'web') {
+                                            if (window.confirm('Dismiss notification?')) {
+                                                handleDelete(item._id);
+                                            }
+                                        } else {
+                                            Alert.alert(
+                                                'Dismiss',
+                                                'Remove from Inbox?',
+                                                [
+                                                    { text: 'Cancel', style: 'cancel' },
+                                                    { text: 'Yes', onPress: () => handleDelete(item._id) }
+                                                ]
+                                            );
                                         }
-                                    } else {
-                                        Alert.alert(
-                                            'Dismiss',
-                                            'Remove from Inbox?',
-                                            [
-                                                { text: 'Cancel', style: 'cancel' },
-                                                { text: 'Yes', onPress: () => handleDelete(item._id) }
-                                            ]
-                                        );
-                                    }
-                                }}
-                                className="w-7 h-7 rounded-lg bg-slate-50 items-center justify-center ml-2"
-                            >
-                                <Trash2 size={14} color="#94A3B8" fill="none" />
-                            </TouchableOpacity>
+                                    }}
+                                    className="w-7 h-7 rounded-lg bg-slate-50 items-center justify-center ml-2"
+                                >
+                                    <Trash2 size={14} color="#94A3B8" fill="none" />
+                                </TouchableOpacity>
+                            )}
                         </View>
                     </View>
                 </TouchableOpacity>
@@ -202,13 +228,13 @@ const NotificationsScreen = ({ navigation }) => {
                             <View className="flex-row items-center mt-1">
                                 <View className="w-2 h-2 rounded-full bg-brand mr-2" />
                                 <Text className="text-muted text-xs font-inter-semibold uppercase tracking-wider">
-                                    {notifs.length} Unread
+                                    {activeTab === 'inbox' ? `${notifs.length} Unread` : `${notifs.length} Read`}
                                 </Text>
                             </View>
                         </View>
                     </View>
 
-                    {notifs.length > 0 && (
+                    {activeTab === 'inbox' && notifs.length > 0 && (
                         <TouchableOpacity
                             onPress={handleMarkAllRead}
                             className="w-12 h-12 bg-[#ECFDF5] items-center justify-center rounded-2xl border border-[#D1FAE5]"
@@ -217,6 +243,60 @@ const NotificationsScreen = ({ navigation }) => {
                         </TouchableOpacity>
                     )}
                 </View>
+
+                <View className="flex-row bg-slate-100 rounded-2xl p-1 mb-3">
+                    <TouchableOpacity
+                        onPress={() => {
+                            setActiveTab('inbox');
+                            setSelectedRepo('all');
+                        }}
+                        className={`flex-1 py-3 rounded-2xl items-center ${activeTab === 'inbox' ? 'bg-white shadow-sm' : ''}`}
+                    >
+                        <Text className={`font-inter-bold text-sm ${activeTab === 'inbox' ? 'text-primary' : 'text-muted'}`}>
+                            Inbox
+                        </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        onPress={() => {
+                            setActiveTab('history');
+                            setSelectedRepo('all');
+                        }}
+                        className={`flex-1 py-3 rounded-2xl items-center ${activeTab === 'history' ? 'bg-white shadow-sm' : ''}`}
+                    >
+                        <Text className={`font-inter-bold text-sm ${activeTab === 'history' ? 'text-primary' : 'text-muted'}`}>
+                            History
+                        </Text>
+                    </TouchableOpacity>
+                </View>
+
+                {repoOptions.length > 0 && (
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-2" contentContainerStyle={{ paddingRight: 24 }}>
+                        <TouchableOpacity
+                            onPress={() => setSelectedRepo('all')}
+                            className={`mr-2 px-3 py-2 rounded-full border ${selectedRepo === 'all' ? 'bg-brand border-brand' : 'bg-white border-border'}`}
+                        >
+                            <Text className={`text-xs font-inter-bold ${selectedRepo === 'all' ? 'text-white' : 'text-muted'}`}>
+                                All Repos
+                            </Text>
+                        </TouchableOpacity>
+                        {repoOptions.map((repo) => {
+                            const repoId = repo._id || repo.name;
+                            const label = `${repo.owner}/${repo.name}`;
+
+                            return (
+                                <TouchableOpacity
+                                    key={repoId}
+                                    onPress={() => setSelectedRepo(repoId)}
+                                    className={`mr-2 px-3 py-2 rounded-full border ${selectedRepo === repoId ? 'bg-brand border-brand' : 'bg-white border-border'}`}
+                                >
+                                    <Text className={`text-xs font-inter-bold ${selectedRepo === repoId ? 'text-white' : 'text-muted'}`} numberOfLines={1}>
+                                        {label}
+                                    </Text>
+                                </TouchableOpacity>
+                            );
+                        })}
+                    </ScrollView>
+                )}
 
                 {/* Stats Bar */}
                 {notifs.length > 0 && (
@@ -237,7 +317,7 @@ const NotificationsScreen = ({ navigation }) => {
                 )}
             </View>
 
-            {loading && (
+                {loading && (
                 <View className="px-6">
                     <ListSkeleton count={5} />
                 </View>
@@ -258,17 +338,18 @@ const NotificationsScreen = ({ navigation }) => {
                             animate={{ opacity: 1, scale: 1 }}
                             className="items-center py-20"
                         >
-                            <AnimatedMascot
-                                source={require('../maskot/confused.png')}
-                                style={{ width: 300, height: 300 }}
-                            />
-                            <Text className="text-primary text-3xl font-poppins-bold text-center mt-6">All Caught Up!</Text>
+                            <AnimatedMascot source={require('../maskot/confused.png')} style={{ width: 300, height: 300 }} />
+                            <Text className="text-primary text-3xl font-poppins-bold text-center mt-6">
+                                {activeTab === 'history' ? 'No History Yet' : 'All Caught Up!'}
+                            </Text>
                             <Text className="text-muted text-base font-inter-medium text-center px-10 mt-2 mb-2 leading-6">
-                                No new notifications. We'll alert you when issues matching your filters appear.
+                                {activeTab === 'history'
+                                    ? 'Read notifications from the last 30 days will appear here after you dismiss them.'
+                                    : "No new notifications. We'll alert you when issues matching your filters appear."}
                             </Text>
                             <Button
-                                title="Back to Dashboard"
-                                onPress={() => navigation.goBack()}
+                                title={activeTab === 'history' ? 'Switch to Inbox' : 'Back to Dashboard'}
+                                onPress={() => activeTab === 'history' ? setActiveTab('inbox') : navigation.goBack()}
                                 className="mt-10 px-8"
                                 variant="outline"
                             />

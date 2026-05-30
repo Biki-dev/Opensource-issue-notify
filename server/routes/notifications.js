@@ -22,7 +22,28 @@ router.post('/mark-all-read', auth, async (req, res) => {
 // Get all notifications for current user
 router.get('/', auth, async (req, res) => {
     try {
-        let notifications = await Notification.find({ user: req.user.id })
+        const { view, isRead, repository, days } = req.query;
+
+        const query = { user: req.user.id };
+
+        if (typeof isRead === 'string') {
+            query.isRead = isRead === 'true';
+        } else if (view === 'history') {
+            query.isRead = true;
+        } else if (view === 'inbox') {
+            query.isRead = false;
+        }
+
+        const historyDays = Number(days);
+        if (query.isRead === true && Number.isFinite(historyDays) && historyDays > 0) {
+            query.createdAt = { $gte: new Date(Date.now() - historyDays * 24 * 60 * 60 * 1000) };
+        }
+
+        if (repository) {
+            query.repository = repository;
+        }
+
+        let notifications = await Notification.find(query)
             .sort({ createdAt: -1 })
             .populate('repository', 'name owner ownerAvatarUrl')
             .lean();
