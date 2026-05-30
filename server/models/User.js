@@ -47,10 +47,16 @@ const UserSchema = new mongoose.Schema({
         default: 'default'
     },
 
-     // Push notification token from Expo
-    expoPushToken: { 
-        type: String, 
-        default: null 
+    // Push notification tokens from Expo
+    expoPushTokens: {
+        type: [String],
+        default: []
+    },
+
+     // Legacy single-token field kept for compatibility/debugging
+    expoPushToken: {
+        type: String,
+        default: null
     },
 
      // Device info for debugging

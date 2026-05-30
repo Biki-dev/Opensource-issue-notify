@@ -3,6 +3,7 @@ const cron = require('node-cron');
 const mongoose = require('mongoose');
 const User = require('../models/User');
 const Notification = require('../models/Notification');
+const { mergeExpoPushTokens, normalizeExpoPushTokens } = require('../utils/expoPushTokens');
 
 // Create Expo SDK client
 const expo = new Expo();
@@ -20,7 +21,7 @@ const sendPushNotification = async (userId, notification, retries = 2) => {
             console.log(`\n🔔 === PUSH NOTIFICATION ATTEMPT ${attempt}/${retries} ===`);
             console.log(`   User ID: ${userId}`);
 
-            const user = await User.findById(userId).select('expoPushToken notificationsEnabled deviceInfo email');
+            const user = await User.findById(userId).select('expoPushTokens expoPushToken notificationsEnabled deviceInfo email');
 
             if (!user) {
                 console.error(`   ❌ User not found`);
@@ -29,7 +30,8 @@ const sendPushNotification = async (userId, notification, retries = 2) => {
 
             console.log(`   User Email: ${user.email}`);
             console.log(`   Notifications Enabled: ${user.notificationsEnabled}`);
-            console.log(`   Has Token: ${!!user.expoPushToken}`);
+            const expoPushTokens = mergeExpoPushTokens(user.expoPushTokens, user.expoPushToken);
+            console.log(`   Has Token: ${expoPushTokens.length > 0}`);
             console.log(`   Platform: ${user.deviceInfo?.platform || 'unknown'}`);
 
             if (!user.notificationsEnabled) {
@@ -37,20 +39,22 @@ const sendPushNotification = async (userId, notification, retries = 2) => {
                 return { success: false, reason: 'notifications_disabled' };
             }
 
-            if (!user.expoPushToken) {
+            if (expoPushTokens.length === 0) {
                 console.error(`   ❌ No push token registered`);
                 return { success: false, reason: 'no_token' };
             }
 
-            if (!Expo.isExpoPushToken(user.expoPushToken)) {
-                console.error(`   ❌ Invalid token format: ${user.expoPushToken}`);
+            const validTokens = expoPushTokens.filter(token => Expo.isExpoPushToken(token));
+
+            if (validTokens.length === 0) {
+                console.error(`   ❌ No valid Expo push tokens found`);
                 return { success: false, reason: 'invalid_token' };
             }
 
-            console.log(`   Token: ${user.expoPushToken.substring(0, 30)}...`);
+            console.log(`   Token Count: ${validTokens.length}`);
 
-            const message = {
-                to: user.expoPushToken,
+            const messages = validTokens.map(token => ({
+                to: token,
                 sound: 'default',
                 title: '🔔 New Issue Matched!',
                 body: notification.issueTitle || 'New issue matched your subscription',
@@ -63,51 +67,85 @@ const sendPushNotification = async (userId, notification, retries = 2) => {
                 },
                 badge: 1,
                 priority: 'high',
-                vibrate: true, // ✅ Force vibration/heads-up
+                vibrate: true,
                 channelId: 'default',
-                categoryIdentifier: 'new_issue' // ✅ Link to custom actions
-            };
+                categoryIdentifier: 'new_issue'
+            }));
+
+            const ticketRecords = [];
+            let hasSuccess = false;
+            let lastError = null;
 
             console.log(`   📤 Sending to Expo...`);
-            const chunks = expo.chunkPushNotifications([message]);
-            const tickets = await expo.sendPushNotificationsAsync(chunks[0]);
-            const ticket = tickets[0];
+            const chunks = expo.chunkPushNotifications(messages);
 
-            console.log(`   📨 Expo Response:`, ticket);
+            for (const chunk of chunks) {
+                const chunkTickets = await expo.sendPushNotificationsAsync(chunk);
 
-            if (ticket.status === 'error') {
-                console.error(`   ❌ Expo error: ${ticket.message}`);
+                chunkTickets.forEach((ticket, index) => {
+                    const token = chunk[index]?.to;
+                    ticketRecords.push({
+                        token,
+                        ticketId: ticket.id || null,
+                        status: ticket.status === 'ok' ? 'pending' : 'error',
+                        error: ticket.status === 'error' ? ticket.message || null : null,
+                        checkedAt: null
+                    });
 
-                // ✅ Handle specific error types
-                if (ticket.details?.error === 'DeviceNotRegistered') {
-                    console.error(`   ⚠️  Device not registered - clearing token`);
-                    await User.findByIdAndUpdate(userId, { expoPushToken: null });
-                    return { success: false, reason: 'device_not_registered', error: ticket.message };
-                }
+                    console.log(`   📨 Expo Response [${token?.substring(0, 20) || 'unknown'}...]:`, ticket);
 
-                throw new Error(`Expo error: ${ticket.message}`);
+                    if (ticket.status === 'ok') {
+                        hasSuccess = true;
+                        return;
+                    }
+
+                    lastError = ticket.message || `Unexpected status: ${ticket.status}`;
+
+                    if (ticket.details?.error === 'DeviceNotRegistered' && token) {
+                        console.error(`   ⚠️  Device not registered - clearing token ${token.substring(0, 20)}...`);
+                    }
+                });
             }
 
-            if (ticket.status === 'ok') {
-                console.log(`   ✅ Push notification sent successfully!`);
-                console.log(`   📮 Ticket ID: ${ticket.id}`);
+            if (ticketRecords.length === 0) {
+                return { success: false, reason: 'no_tickets', error: 'No push tickets returned by Expo' };
+            }
 
-                if (notification?._id && mongoose.isValidObjectId(notification._id)) {
-                    await Notification.findByIdAndUpdate(notification._id, {
-                        pushTicketId: ticket.id || null,
-                        pushTicketStatus: 'pending',
-                        pushTicketError: null,
-                        pushTicketCheckedAt: null
-                    }).catch(error => {
-                        console.warn(`   ⚠️ Failed to store push ticket metadata: ${error.message}`);
+            if (notification?._id && mongoose.isValidObjectId(notification._id)) {
+                await Notification.findByIdAndUpdate(notification._id, {
+                    pushTickets: ticketRecords,
+                    pushTicketId: ticketRecords[0]?.ticketId || null,
+                    pushTicketStatus: hasSuccess ? 'pending' : 'error',
+                    pushTicketError: hasSuccess ? null : lastError,
+                    pushTicketCheckedAt: null
+                }).catch(error => {
+                    console.warn(`   ⚠️ Failed to store push ticket metadata: ${error.message}`);
+                });
+            }
+
+            for (const record of ticketRecords) {
+                if (record.status === 'error' && record.error === 'DeviceNotRegistered' && record.token) {
+                    await User.findByIdAndUpdate(userId, {
+                        $pull: { expoPushTokens: record.token }
+                    });
+
+                    const refreshedUser = await User.findById(userId).select('expoPushTokens');
+                    const remainingTokens = normalizeExpoPushTokens(refreshedUser?.expoPushTokens);
+
+                    await User.findByIdAndUpdate(userId, {
+                        $set: {
+                            expoPushToken: remainingTokens[0] || null
+                        }
                     });
                 }
-
-                return { success: true, ticket };
             }
 
-            console.error(`   ⚠️  Unexpected ticket status: ${ticket.status}`);
-            throw new Error(`Unexpected status: ${ticket.status}`);
+            if (!hasSuccess) {
+                return { success: false, error: lastError || 'All push deliveries failed' };
+            }
+
+            console.log(`   ✅ Push notification sent to ${ticketRecords.length} device(s)`);
+            return { success: true, tickets: ticketRecords };
 
         } catch (error) {
             console.error(`\n❌ === PUSH NOTIFICATION ERROR (Attempt ${attempt}) ===`);
@@ -142,19 +180,27 @@ const verifyPushReceipts = async (ticketIds) => {
 
             for (const [ticketId, receipt] of Object.entries(receipts)) {
                 const notification = await Notification.findOne({
-                    pushTicketId: ticketId,
-                    pushTicketStatus: 'pending'
-                }).select('user pushTicketId');
+                    pushTickets: { $elemMatch: { ticketId, status: 'pending' } }
+                }).select('user pushTicketId pushTickets');
 
                 if (!notification) {
                     continue;
                 }
 
+                const ticketEntry = notification.pushTickets?.find(ticket => ticket.ticketId === ticketId);
+
                 if (receipt.status === 'ok') {
                     await Notification.findByIdAndUpdate(notification._id, {
-                        pushTicketStatus: 'ok',
-                        pushTicketError: null,
-                        pushTicketCheckedAt: new Date()
+                        $set: {
+                            'pushTickets.$[ticket].status': 'ok',
+                            'pushTickets.$[ticket].error': null,
+                            'pushTickets.$[ticket].checkedAt': new Date(),
+                            pushTicketStatus: 'ok',
+                            pushTicketError: null,
+                            pushTicketCheckedAt: new Date()
+                        }
+                    }, {
+                        arrayFilters: [{ 'ticket.ticketId': ticketId }]
                     });
                     continue;
                 }
@@ -162,14 +208,32 @@ const verifyPushReceipts = async (ticketIds) => {
                 const receiptError = receipt.details?.error || receipt.message || 'Unknown receipt error';
 
                 await Notification.findByIdAndUpdate(notification._id, {
-                    pushTicketStatus: 'error',
-                    pushTicketError: receiptError,
-                    pushTicketCheckedAt: new Date()
+                    $set: {
+                        'pushTickets.$[ticket].status': 'error',
+                        'pushTickets.$[ticket].error': receiptError,
+                        'pushTickets.$[ticket].checkedAt': new Date(),
+                        pushTicketStatus: 'error',
+                        pushTicketError: receiptError,
+                        pushTicketCheckedAt: new Date()
+                    }
+                }, {
+                    arrayFilters: [{ 'ticket.ticketId': ticketId }]
                 });
 
-                if (receipt.details?.error === 'DeviceNotRegistered') {
+                if (receipt.details?.error === 'DeviceNotRegistered' && ticketEntry?.token) {
                     console.error(`   ⚠️ Receipt says device is not registered, clearing token for user ${notification.user}`);
-                    await User.findByIdAndUpdate(notification.user, { expoPushToken: null });
+                    await User.findByIdAndUpdate(notification.user, {
+                        $pull: { expoPushTokens: ticketEntry.token }
+                    });
+
+                    const refreshedUser = await User.findById(notification.user).select('expoPushTokens');
+                    const remainingTokens = normalizeExpoPushTokens(refreshedUser?.expoPushTokens);
+
+                    await User.findByIdAndUpdate(notification.user, {
+                        $set: {
+                            expoPushToken: remainingTokens[0] || null
+                        }
+                    });
                 } else {
                     console.error(`   ❌ Push receipt error for ${ticketId}: ${receiptError}`);
                 }
@@ -189,14 +253,15 @@ const startPushReceiptVerificationJob = () => {
 
         try {
             const pendingNotifications = await Notification.find({
-                pushTicketStatus: 'pending',
-                pushTicketId: { $ne: null }
+                pushTickets: { $elemMatch: { status: 'pending', ticketId: { $ne: null } } }
             })
-                .select('pushTicketId')
+                .select('pushTicketId pushTickets')
                 .limit(300);
 
             const ticketIds = pendingNotifications
-                .map(notification => notification.pushTicketId)
+                .flatMap(notification => (notification.pushTickets || [])
+                    .filter(ticket => ticket.status === 'pending' && ticket.ticketId)
+                    .map(ticket => ticket.ticketId))
                 .filter(Boolean);
 
             if (ticketIds.length === 0) {

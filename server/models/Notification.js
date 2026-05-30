@@ -7,6 +7,17 @@ const NotificationSchema = new mongoose.Schema({
     issueUrl: { type: String, required: true },
     matchedLabels: [{ type: String }],
     isRead: { type: Boolean, default: false },
+    pushTickets: [{
+        token: { type: String, default: null },
+        ticketId: { type: String, default: null },
+        status: {
+            type: String,
+            enum: ['pending', 'ok', 'error', null],
+            default: 'pending'
+        },
+        error: { type: String, default: null },
+        checkedAt: { type: Date, default: null }
+    }],
     pushTicketId: { type: String, default: null },
     pushTicketStatus: {
         type: String,

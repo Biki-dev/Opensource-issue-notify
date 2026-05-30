@@ -6,6 +6,7 @@ const connectDB = require('./utils/db');
 const { startScheduler, checkIssues } = require('./services/scheduler');
 const { startCleanupJob } = require('./services/cleanup');
 const { startPushReceiptVerificationJob } = require('./services/pushNotifications');
+const { mergeExpoPushTokens } = require('./utils/expoPushTokens');
 
 dotenv.config();
 connectDB();
@@ -37,14 +38,15 @@ app.post('/api/debug/check', async (req, res) => {
 app.get('/api/debug/push-tokens', async (req, res) => {
     try {
         const User = require('./models/User');
-        const users = await User.find({}, 'email expoPushToken deviceInfo notificationsEnabled').limit(10);
+        const users = await User.find({}, 'email expoPushTokens expoPushToken deviceInfo notificationsEnabled').limit(10);
         
         const { Expo } = require('expo-server-sdk');
         const status = users.map(u => ({
             email: u.email,
-            hasToken: !!u.expoPushToken,
-            tokenValid: u.expoPushToken ? Expo.isExpoPushToken(u.expoPushToken) : false,
-            token: u.expoPushToken ? u.expoPushToken.substring(0, 20) + '...' : 'none',
+            hasToken: mergeExpoPushTokens(u.expoPushTokens, u.expoPushToken).length > 0,
+            tokenCount: mergeExpoPushTokens(u.expoPushTokens, u.expoPushToken).length,
+            tokenValid: mergeExpoPushTokens(u.expoPushTokens, u.expoPushToken).some(token => Expo.isExpoPushToken(token)),
+            token: mergeExpoPushTokens(u.expoPushTokens, u.expoPushToken)[0] ? mergeExpoPushTokens(u.expoPushTokens, u.expoPushToken)[0].substring(0, 20) + '...' : 'none',
             notificationsEnabled: u.notificationsEnabled,
             device: u.deviceInfo?.platform || 'unknown'
         }));
@@ -66,12 +68,12 @@ app.post('/api/debug/test-push/:userId', async (req, res) => {
         const User = require('./models/User');
         const { sendPushNotification } = require('./services/pushNotifications');
 
-        const user = await User.findById(userId).select('email expoPushToken deviceInfo notificationsEnabled');
+        const user = await User.findById(userId).select('email expoPushTokens expoPushToken deviceInfo notificationsEnabled');
         if (!user) return res.status(404).json({ error: 'User not found' });
 
         console.log(`\n🧪🧪🧪 SENDING TEST NOTIFICATION TO USER: ${userId}`);
         console.log(`   Email: ${user.email}`);
-        console.log(`   Has Token: ${!!user.expoPushToken}`);
+        console.log(`   Has Token: ${mergeExpoPushTokens(user.expoPushTokens, user.expoPushToken).length > 0}`);
         console.log(`   Notifications Enabled: ${user.notificationsEnabled}`);
         console.log(`   Device: ${user.deviceInfo?.platform || 'unknown'}\n`);
 
@@ -91,8 +93,9 @@ app.post('/api/debug/test-push/:userId', async (req, res) => {
             result,
             userInfo: {
                 email: user.email,
-                hasToken: !!user.expoPushToken,
-                token: user.expoPushToken ? user.expoPushToken.substring(0, 50) + '...' : null,
+                hasToken: mergeExpoPushTokens(user.expoPushTokens, user.expoPushToken).length > 0,
+                tokenCount: mergeExpoPushTokens(user.expoPushTokens, user.expoPushToken).length,
+                token: mergeExpoPushTokens(user.expoPushTokens, user.expoPushToken)[0] ? mergeExpoPushTokens(user.expoPushTokens, user.expoPushToken)[0].substring(0, 50) + '...' : null,
                 deviceInfo: user.deviceInfo,
                 notificationsEnabled: user.notificationsEnabled
             }

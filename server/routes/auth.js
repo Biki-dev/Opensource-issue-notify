@@ -5,6 +5,7 @@ const rateLimit = require('express-rate-limit');
 const { Expo } = require('expo-server-sdk');
 const User = require('../models/User');
 const auth = require('../middleware/auth');
+const { mergeExpoPushTokens } = require('../utils/expoPushTokens');
 const router = express.Router();
 
 const generateToken = (id) => {
@@ -327,9 +328,12 @@ router.post('/register-push-token', auth, async (req, res) => {
         const user = await User.findByIdAndUpdate(
             req.user.id,
             {
-                expoPushToken,
-                deviceInfo,
-                notificationsEnabled: true // ✅ Ensure enabled by default
+                $addToSet: { expoPushTokens: expoPushToken },
+                $set: {
+                    expoPushToken,
+                    deviceInfo,
+                    notificationsEnabled: true // ✅ Ensure enabled by default
+                }
             },
             {
                 new: true,
@@ -342,9 +346,8 @@ router.post('/register-push-token', auth, async (req, res) => {
             return res.status(404).json({ message: 'User not found' });
         }
 
-        // ✅ VERIFY token was saved
-        const savedToken = user.expoPushToken;
-        if (savedToken !== expoPushToken) {
+        const savedTokens = mergeExpoPushTokens(user.expoPushTokens, user.expoPushToken);
+        if (!savedTokens.includes(expoPushToken)) {
             throw new Error('Token save verification failed');
         }
 
@@ -355,7 +358,8 @@ router.post('/register-push-token', auth, async (req, res) => {
         res.json({
             message: 'Push token registered successfully',
             success: true,
-            token: savedToken.substring(0, 30) + '...' // Return partial token for verification
+            token: expoPushToken.substring(0, 30) + '...', // Return partial token for verification
+            tokenCount: savedTokens.length
         });
     } catch (error) {
         console.error(`❌ Error registering push token:`, error.message);
@@ -366,19 +370,21 @@ router.post('/register-push-token', auth, async (req, res) => {
 // 🆕 DEBUG: Check if user has push token registered
 router.get('/debug/push-status', auth, async (req, res) => {
     try {
-        const user = await User.findById(req.user.id).select('expoPushToken deviceInfo notificationsEnabled');
+        const user = await User.findById(req.user.id).select('expoPushTokens expoPushToken deviceInfo notificationsEnabled');
 
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
 
         const { Expo } = require('expo-server-sdk');
-        const hasValidToken = user.expoPushToken && Expo.isExpoPushToken(user.expoPushToken);
+        const tokens = mergeExpoPushTokens(user.expoPushTokens, user.expoPushToken);
+        const hasValidToken = tokens.some(token => Expo.isExpoPushToken(token));
 
         res.json({
             userId: req.user.id,
-            hasToken: !!user.expoPushToken,
-            token: user.expoPushToken ? user.expoPushToken.substring(0, 30) + '...' : null,
+            hasToken: tokens.length > 0,
+            tokenCount: tokens.length,
+            tokens: tokens.map(token => token.substring(0, 30) + '...'),
             hasValidToken,
             notificationsEnabled: user.notificationsEnabled,
             deviceInfo: user.deviceInfo,
