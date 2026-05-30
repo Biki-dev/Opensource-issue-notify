@@ -261,30 +261,24 @@ const checkRepositoriesForTier = async (tierName, frequencyMinutes) => {
  * Start the tiered scheduler
  */
 const startScheduler = () => {
-    // Personal tier: Every 1 minute (Testing)
-    cron.schedule('* * * * *', () => {
-        console.log('🔍 Personal Tier Check (1min)');
-        checkRepositoriesForTier('personal', 1);
-    });
+    const scheduleTier = (tierName, cronExpression, frequencyMinutes) => {
+        cron.schedule(cronExpression, () => {
+            console.log(`🔍 ${tierName.charAt(0).toUpperCase() + tierName.slice(1)} Tier Check (${frequencyMinutes}min)`);
+            checkRepositoriesForTier(tierName, frequencyMinutes);
+        });
+    };
 
-    // Default tier: Every 1 minute (Testing)
-    cron.schedule('* * * * *', () => {
-        console.log('🔍 Default Tier Check (1min)');
-        checkRepositoriesForTier('default', 1);
-    });
-
-    // Premium tier: Every 1 minute (Testing)
-    cron.schedule('* * * * *', () => {
-        console.log('🔍 Premium Tier Check (1min)');
-        checkRepositoriesForTier('premium', 1);
-    });
+    // Match the actual tier cadence so repos are not checked multiple times per minute.
+    scheduleTier('default', '0 * * * *', 60);
+    scheduleTier('personal', '*/30 * * * *', 30);
+    scheduleTier('premium', '*/15 * * * *', 15);
 
     // Run initial checks after 10 seconds
     setTimeout(() => {
         console.log('⏳ Running initial checks...');
-        checkRepositoriesForTier('default', 1);
-        checkRepositoriesForTier('personal', 1);
-        checkRepositoriesForTier('premium', 1);
+        checkRepositoriesForTier('default', 60);
+        checkRepositoriesForTier('personal', 30);
+        checkRepositoriesForTier('premium', 15);
     }, 10000);
 
     console.log('📅 Multi-Tier Scheduler Started');
