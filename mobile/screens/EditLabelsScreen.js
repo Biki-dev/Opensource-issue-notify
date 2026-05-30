@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
 import { Button, Card, LabelChip, shadowStyles } from '../components/UI';
-import { ArrowLeft, GitFork, Tag, Github, Search, Filter } from 'lucide-react-native';
+import { ArrowLeft, GitFork, Tag, Github, Search, Filter, Bell, BellOff } from 'lucide-react-native';
 import { MotiView, AnimatePresence } from 'moti';
 import { StatusBar } from 'expo-status-bar';
 
@@ -15,6 +15,7 @@ const EditLabelsScreen = ({ route, navigation }) => {
     const [loading, setLoading] = useState(false);
     const [repoData, setRepoData] = useState(null);
     const [selectedLabels, setSelectedLabels] = useState(sub.labels || []);
+    const [muted, setMuted] = useState(!!sub.muted);
     const [searchQuery, setSearchQuery] = useState('');
 
     useEffect(() => {
@@ -44,6 +45,24 @@ const EditLabelsScreen = ({ route, navigation }) => {
             setSelectedLabels(selectedLabels.filter(l => l !== labelName));
         } else {
             setSelectedLabels([...selectedLabels, labelName]);
+        }
+    };
+
+    const toggleMute = async () => {
+        setLoading(true);
+        try {
+            const res = await axios.patch(
+                `${BASE_URL}/repos/${sub._id}`,
+                { muted: !muted },
+                { headers: { Authorization: `Bearer ${userToken}` } }
+            );
+            setMuted(!!res.data.muted);
+            navigation.setParams({ sub: res.data });
+        } catch (e) {
+            console.log(e);
+            Alert.alert('Error', 'Failed to update notification mute state.');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -120,7 +139,20 @@ const EditLabelsScreen = ({ route, navigation }) => {
                                     <Text className="text-muted text-[10px] font-inter-bold uppercase">Active Subscription</Text>
                                 </View>
                             </View>
+                            <TouchableOpacity
+                                onPress={toggleMute}
+                                className={`w-11 h-11 rounded-2xl items-center justify-center ${muted ? 'bg-amber-100 border border-amber-200' : 'bg-slate-100 border border-border'}`}
+                            >
+                                {muted ? (
+                                    <BellOff size={18} color="#F59E0B" fill="none" />
+                                ) : (
+                                    <Bell size={18} color="#94A3B8" fill="none" />
+                                )}
+                            </TouchableOpacity>
                         </View>
+                        <Text className={`text-xs font-inter-semibold uppercase tracking-wider ${muted ? 'text-amber-600' : 'text-success'}`}>
+                            {muted ? 'Notifications muted' : 'Notifications enabled'}
+                        </Text>
                     </Card>
                 </MotiView>
 

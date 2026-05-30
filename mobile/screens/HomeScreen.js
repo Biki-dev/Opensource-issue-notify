@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
 import { Button, Card, AnimatedMascot, FAB, shadowStyles, LabelChip, SectionHeader, ListSkeleton, cn } from '../components/UI';
-import { Clock, Tag, Search, Plus, Bell, Edit2, GitFork, Star, Code2, Trash2, Filter, Eye, EyeOff } from 'lucide-react-native';
+import { Clock, Tag, Search, Plus, Bell, BellOff, Edit2, GitFork, Star, Code2, Trash2, Filter, Eye, EyeOff } from 'lucide-react-native';
 import { MotiView, AnimatePresence } from 'moti';
 import { StatusBar } from 'expo-status-bar';
 
@@ -70,6 +70,19 @@ const HomeScreen = ({ navigation }) => {
         }
     };
 
+    const toggleMute = async (id, currentMuted) => {
+        try {
+            const res = await axios.patch(
+                `${BASE_URL}/repos/${id}`,
+                { muted: !currentMuted },
+                { headers: { Authorization: `Bearer ${userToken}` } }
+            );
+            setSubs(prev => prev.map(s => s._id === id ? res.data : s));
+        } catch (e) {
+            console.log(e);
+        }
+    };
+
     const renderCompactCard = ({ item, index }) => (
         <MotiView
             from={{ opacity: 0, translateY: 15, scale: 0.98 }}
@@ -77,7 +90,7 @@ const HomeScreen = ({ navigation }) => {
             transition={{ type: 'timing', duration: 300, delay: index * 40 }}
             style={{ width: '48%', marginRight: index % 2 === 0 ? '4%' : 0 }}
         >
-            <Card className="mb-4 p-3" containerStyle={{ opacity: item.visible === false ? 0.6 : 1 }}>
+            <Card className="mb-4 p-3" containerStyle={{ opacity: item.visible === false ? 0.6 : item.muted ? 0.82 : 1 }}>
                 <View className="items-center mb-2">
                     <View className="w-10 h-10 rounded-xl bg-[#EEF2FF] items-center justify-center mb-2 overflow-hidden">
                         {item.repository?.ownerAvatarUrl ? (
@@ -112,9 +125,9 @@ const HomeScreen = ({ navigation }) => {
                 </View>
 
                 <View className="flex-row items-center justify-center mb-2 pb-2 border-b border-border/50">
-                    <View className={cn("w-1.5 h-1.5 rounded-full mr-1.5", item.visible === false ? "bg-muted" : "bg-success")} />
+                    <View className={cn("w-1.5 h-1.5 rounded-full mr-1.5", item.visible === false ? "bg-muted" : item.muted ? "bg-amber-500" : "bg-success")} />
                     <Text className="text-muted text-[8px] font-inter-bold uppercase tracking-tighter">
-                        {item.visible === false ? "Hidden" : "Monitoring"}
+                        {item.visible === false ? "Hidden" : item.muted ? "Muted" : "Monitoring"}
                     </Text>
                 </View>
 
@@ -124,6 +137,12 @@ const HomeScreen = ({ navigation }) => {
                         className="w-8 h-8 rounded-lg bg-slate-50 border border-border items-center justify-center"
                     >
                         {item.visible === false ? <Eye size={12} color="#6366F1" fill="none" /> : <EyeOff size={12} color="#94A3B8" fill="none" />}
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        onPress={() => toggleMute(item._id, item.muted)}
+                        className="w-8 h-8 rounded-lg bg-slate-50 border border-border items-center justify-center"
+                    >
+                        {item.muted ? <BellOff size={12} color="#F59E0B" fill="none" /> : <Bell size={12} color="#94A3B8" fill="none" />}
                     </TouchableOpacity>
                     <TouchableOpacity
                         onPress={() => navigation.navigate('EditLabels', { sub: item })}

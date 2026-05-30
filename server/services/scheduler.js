@@ -50,6 +50,11 @@ const checkRepositoriesForTier = async (tierName, frequencyMinutes) => {
                 return false;
             }
 
+            // Skip subscriptions that were explicitly muted by the user
+            if (sub.muted) {
+                return false;
+            }
+
             // Check if user tier matches
             if (tierName === 'personal' && sub.user.rateLimitTier !== 'personal') return false;
             if (tierName === 'premium' && sub.user.rateLimitTier !== 'premium') return false;

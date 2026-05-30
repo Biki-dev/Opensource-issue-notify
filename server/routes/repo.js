@@ -160,7 +160,7 @@ router.get('/', auth, async (req, res) => {
 // UPDATE SUBSCRIPTION (labels / active / visibility)
 router.patch('/:id', auth, async (req, res) => {
     try {
-        const allowed = ['labels', 'active', 'visible'];
+        const allowed = ['labels', 'active', 'visible', 'muted'];
         const updates = {};
         for (const key of allowed) {
             if (Object.prototype.hasOwnProperty.call(req.body, key)) {
