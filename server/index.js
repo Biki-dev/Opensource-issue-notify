@@ -11,6 +11,8 @@ const { mergeExpoPushTokens } = require('./utils/expoPushTokens');
 dotenv.config();
 connectDB();
 
+console.log(`🔐 GitHub token configured: ${process.env.GITHUB_TOKEN ? 'yes' : 'no'}`);
+
 const app = express();
 app.use(express.json());
 app.use(cors());
