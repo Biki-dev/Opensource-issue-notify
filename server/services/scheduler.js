@@ -261,24 +261,32 @@ const checkRepositoriesForTier = async (tierName, frequencyMinutes) => {
  * Start the tiered scheduler
  */
 const startScheduler = () => {
-    const scheduleTier = (tierName, cronExpression, frequencyMinutes) => {
+    const isDebugScheduler = process.env.SCHEDULER_DEBUG === 'true';
+    const tierConfig = {
+        default: { cron: isDebugScheduler ? '* * * * *' : '0 * * * *', frequencyMinutes: isDebugScheduler ? 1 : 60 },
+        personal: { cron: isDebugScheduler ? '* * * * *' : '*/30 * * * *', frequencyMinutes: isDebugScheduler ? 1 : 30 },
+        premium: { cron: isDebugScheduler ? '* * * * *' : '*/15 * * * *', frequencyMinutes: isDebugScheduler ? 1 : 15 }
+    };
+
+    const scheduleTier = (tierName) => {
+        const { cron: cronExpression, frequencyMinutes } = tierConfig[tierName];
         cron.schedule(cronExpression, () => {
-            console.log(`🔍 ${tierName.charAt(0).toUpperCase() + tierName.slice(1)} Tier Check (${frequencyMinutes}min)`);
+            const modeLabel = isDebugScheduler ? 'DEBUG' : 'PROD';
+            console.log(`🔍 [${modeLabel}] ${tierName.charAt(0).toUpperCase() + tierName.slice(1)} Tier Check (${frequencyMinutes}min)`);
             checkRepositoriesForTier(tierName, frequencyMinutes);
         });
     };
 
-    // Match the actual tier cadence so repos are not checked multiple times per minute.
-    scheduleTier('default', '0 * * * *', 60);
-    scheduleTier('personal', '*/30 * * * *', 30);
-    scheduleTier('premium', '*/15 * * * *', 15);
+    scheduleTier('default');
+    scheduleTier('personal');
+    scheduleTier('premium');
 
     // Run initial checks after 10 seconds
     setTimeout(() => {
         console.log('⏳ Running initial checks...');
-        checkRepositoriesForTier('default', 60);
-        checkRepositoriesForTier('personal', 30);
-        checkRepositoriesForTier('premium', 15);
+        checkRepositoriesForTier('default', tierConfig.default.frequencyMinutes);
+        checkRepositoriesForTier('personal', tierConfig.personal.frequencyMinutes);
+        checkRepositoriesForTier('premium', tierConfig.premium.frequencyMinutes);
     }, 10000);
 
     console.log('📅 Multi-Tier Scheduler Started');
