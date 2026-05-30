@@ -4,6 +4,7 @@
  */
 
 let activeRequests = new Map();
+let requestCounter = 0;
 
 
 export const registerRequest = (requestId, cancelTokenSource) => {
@@ -18,8 +19,12 @@ export const setupRequestCancellation = (axiosInstance) => {
     axiosInstance.interceptors.request.use(
         config => {
             const source = axiosInstance.CancelToken.source();
+            const requestId = `${Date.now()}-${++requestCounter}`;
+
             config.cancelToken = source.token;
-            activeRequests.push(source);
+            config.__requestId = requestId;
+            activeRequests.set(requestId, source);
+
             return config;
         },
         error => Promise.reject(error)
@@ -28,14 +33,14 @@ export const setupRequestCancellation = (axiosInstance) => {
     // Clean up completed requests
     axiosInstance.interceptors.response.use(
         response => {
-            if (activeRequests.length > 0) {
-                activeRequests.shift();
+            if (response?.config?.__requestId) {
+                activeRequests.delete(response.config.__requestId);
             }
             return response;
         },
         error => {
-            if (activeRequests.length > 0) {
-                activeRequests.shift();
+            if (error?.config?.__requestId) {
+                activeRequests.delete(error.config.__requestId);
             }
             return Promise.reject(error);
         }
