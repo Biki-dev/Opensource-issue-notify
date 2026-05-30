@@ -21,6 +21,8 @@ export const AuthProvider = ({ children }) => {
 
     const BASE_URL = 'https://opensource-issue-notify-production-e468.up.railway.app/api';
 
+    const getPushTokenCacheKey = (authToken) => `expoPushToken:${authToken}`;
+
     // Register push token with backend
     const registerPushToken = async (token) => {
         try {
@@ -32,6 +34,14 @@ export const AuthProvider = ({ children }) => {
 
             if (pushToken) {
                 try {
+                    const cacheKey = getPushTokenCacheKey(token);
+                    const cachedPushToken = await AsyncStorage.getItem(cacheKey);
+
+                    if (cachedPushToken === pushToken) {
+                        console.log('✅ [AUTH] Push token unchanged, skipping backend sync');
+                        return { success: true, skipped: true, token: pushToken };
+                    }
+
                     console.log('🔔 [AUTH] Sending token to backend:', pushToken.substring(0, 15) + '...');
                     const response = await axios.post(
                         `${BASE_URL}/auth/register-push-token`,
@@ -45,13 +55,17 @@ export const AuthProvider = ({ children }) => {
                         },
                         { headers: { Authorization: `Bearer ${token}` } }
                     );
+
+                    await AsyncStorage.setItem(cacheKey, pushToken);
                     console.log('✅ [AUTH] Push token registered with backend successfully');
+                    return { success: true, token: pushToken };
                 } catch (error) {
                     const serverMessage = error.response?.data?.message || error.message;
                     console.error('❌ [AUTH] Backend registration failed:', serverMessage);
                     if (Platform.OS !== 'web') {
                         Alert.alert('Server Error', `Backend rejected token: ${serverMessage}`);
                     }
+                    return { success: false, error: serverMessage };
                 }
             } else {
                 console.warn('⚠️ [AUTH] No push token obtained:', error);
@@ -60,9 +74,11 @@ export const AuthProvider = ({ children }) => {
                     // Show detailed error for debugging
                     Alert.alert('Notification Setup', message);
                 }
+                return { success: false, error: message };
             }
         } catch (error) {
             console.error('❌ [AUTH] Critical error in registerPushToken:', error.message);
+            return { success: false, error: error.message };
         }
     };
 
@@ -181,6 +197,9 @@ export const AuthProvider = ({ children }) => {
         } catch (e) {
             console.log('Logout error:', e.message);
         } finally {
+            if (userToken) {
+                await AsyncStorage.removeItem(getPushTokenCacheKey(userToken));
+            }
             setUserToken(null);
             setUnreadCount(0);
             await AsyncStorage.removeItem('userToken');
@@ -195,7 +214,7 @@ export const AuthProvider = ({ children }) => {
 
             if (token) {
                 updateUnreadCount(token);
-                registerPushToken(token);
+                await registerPushToken(token);
             }
         } catch (e) {
             console.log(`isLoggedIn error ${e}`);
