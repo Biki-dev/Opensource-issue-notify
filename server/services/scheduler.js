@@ -10,7 +10,7 @@ const { issueMatchesSubscription, toLowercaseList } = require('../utils/subscrip
  * Check repositories for a specific tier
  */
 const checkRepositoriesForTier = async (tierName, frequencyMinutes, options = {}) => {
-    const { skipRateLimitSleep = false, requestTimeoutMs = 15000 } = options;
+    const { skipRateLimitSleep = false, requestTimeoutMs = 15000, forceCheck = false } = options;
     const now = new Date();
     const cutoffTime = new Date(now - frequencyMinutes * 60 * 1000);
 
@@ -22,12 +22,14 @@ const checkRepositoriesForTier = async (tierName, frequencyMinutes, options = {}
         })
             .populate({
                 path: 'repository',
-                match: {
-                    $or: [
-                        { lastChecked: { $lt: cutoffTime } },
-                        { lastChecked: null }
-                    ]
-                }
+                match: forceCheck
+                    ? {}
+                    : {
+                        $or: [
+                            { lastChecked: { $lt: cutoffTime } },
+                            { lastChecked: null }
+                        ]
+                    }
             })
             .populate('user');
 
@@ -329,9 +331,9 @@ const startScheduler = () => {
 // Legacy function for backwards compatibility
 const checkIssues = async () => {
     console.log('🔍 Manual check triggered...');
-    await checkRepositoriesForTier('default', 60, { skipRateLimitSleep: true });
-    await checkRepositoriesForTier('personal', 30, { skipRateLimitSleep: true });
-    await checkRepositoriesForTier('premium', 15, { skipRateLimitSleep: true });
+    await checkRepositoriesForTier('default', 60, { skipRateLimitSleep: true, forceCheck: true });
+    await checkRepositoriesForTier('personal', 30, { skipRateLimitSleep: true, forceCheck: true });
+    await checkRepositoriesForTier('premium', 15, { skipRateLimitSleep: true, forceCheck: true });
 };
 
 module.exports = { startScheduler, checkIssues };
