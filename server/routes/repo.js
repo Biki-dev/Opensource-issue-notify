@@ -76,6 +76,7 @@ const fetchRepoDataWithFallback = async (owner, repo, headerCandidates) => {
 
     for (const headers of headerCandidates) {
         try {
+            console.log(`🔑 Preview GitHub auth source: ${headers.Authorization ? 'authenticated' : 'anonymous'}`);
             const [repoRes, labelsRes] = await Promise.all([
                 axios.get(`https://api.github.com/repos/${owner}/${repo}`, getGitHubRequestConfig(headers)),
                 axios.get(`https://api.github.com/repos/${owner}/${repo}/labels`, getGitHubRequestConfig(headers))
@@ -147,6 +148,7 @@ router.post('/subscribe', auth, async (req, res) => {
             let lastError;
             for (const headers of headerCandidates) {
                 try {
+                            console.log(`🔑 Repo fetch GitHub auth source: ${headers.Authorization ? 'authenticated' : 'anonymous'}`);
                     return await axios.get(`https://api.github.com/repos/${owner}/${repo}${path}`, getGitHubRequestConfig(headers));
                 } catch (error) {
                     lastError = error;
