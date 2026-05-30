@@ -62,14 +62,23 @@ const isAuthOrRateLimitError = (error) => {
     return status === 401 || status === 403;
 };
 
+const getGitHubRequestConfig = (headers = {}) => ({
+    headers: {
+        Accept: 'application/vnd.github+json',
+        'X-GitHub-Api-Version': '2022-11-28',
+        'User-Agent': 'IssueWatch-App',
+        ...headers
+    }
+});
+
 const fetchRepoDataWithFallback = async (owner, repo, headerCandidates) => {
     let lastError;
 
     for (const headers of headerCandidates) {
         try {
             const [repoRes, labelsRes] = await Promise.all([
-                axios.get(`https://api.github.com/repos/${owner}/${repo}`, { headers }),
-                axios.get(`https://api.github.com/repos/${owner}/${repo}/labels`, { headers })
+                axios.get(`https://api.github.com/repos/${owner}/${repo}`, getGitHubRequestConfig(headers)),
+                axios.get(`https://api.github.com/repos/${owner}/${repo}/labels`, getGitHubRequestConfig(headers))
             ]);
             return { repoRes, labelsRes };
         } catch (error) {
@@ -109,7 +118,11 @@ router.post('/preview', auth, async (req, res) => {
             return res.status(404).json({ message: 'Repository not found or private' });
         }
         if (status === 401 || status === 403) {
-            return res.status(503).json({ message: 'GitHub API authentication failed. Please try again shortly.' });
+            const githubMessage = error.response?.data?.message;
+            return res.status(503).json({
+                message: 'GitHub API authentication/rate limit failed. Please try again shortly.',
+                githubMessage: githubMessage || null
+            });
         }
         res.status(500).json({ message: 'Failed to preview repository' });
     }
@@ -129,7 +142,7 @@ router.post('/subscribe', auth, async (req, res) => {
             let lastError;
             for (const headers of headerCandidates) {
                 try {
-                    return await axios.get(`https://api.github.com/repos/${owner}/${repo}${path}`, { headers });
+                    return await axios.get(`https://api.github.com/repos/${owner}/${repo}${path}`, getGitHubRequestConfig(headers));
                 } catch (error) {
                     lastError = error;
                     if (isAuthOrRateLimitError(error)) {
@@ -292,7 +305,7 @@ router.get('/activity', auth, async (req, res) => {
 
                     for (const requestHeaders of candidateHeaders) {
                         try {
-                            return await axios.get(url, { headers: requestHeaders });
+                            return await axios.get(url, getGitHubRequestConfig(requestHeaders));
                         } catch (error) {
                             lastError = error;
                             if (isAuthOrRateLimitError(error)) {

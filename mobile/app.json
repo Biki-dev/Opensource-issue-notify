@@ -38,12 +38,13 @@
     "extra": {
       "apiUrl": "https://opensource-issue-notify.onrender.com/api",
       "eas": {
-        "projectId": "d01a75e4-4cba-4431-8de8-e190e6c6fb9c"
+        "projectId": "b7237777-4b8d-46ed-aed0-f3a3f4ca8827"
       }
     },
     "android": {
       "package": "com.biki.IssueWatch",
       "googleServicesFile": "./google-services.json"
-    }
+    },
+    "owner": "trialssd"
   }
 }
