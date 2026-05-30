@@ -1,5 +1,6 @@
 import React, { useContext, useEffect, useState, useCallback } from 'react';
-import { View, Text, FlatList, TouchableOpacity, Image, RefreshControl, Linking, Alert, Platform } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, Image, RefreshControl, Linking, Alert, Platform, Share } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
@@ -61,6 +62,50 @@ const DashboardScreen = ({ navigation }) => {
         } catch (e) {
             console.log(e);
         }
+    };
+
+    const handleCopyIssueUrl = async (url) => {
+        try {
+            if (Platform.OS === 'web' && typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+                await navigator.clipboard.writeText(url);
+            } else {
+                await Clipboard.setStringAsync(url);
+            }
+
+            Alert.alert('Copied', 'GitHub URL copied to clipboard.');
+        } catch (e) {
+            console.log(e);
+            Alert.alert('Copy failed', 'Unable to copy the GitHub URL right now.');
+        }
+    };
+
+    const handleShareIssueUrl = async (url) => {
+        try {
+            if (Platform.OS === 'web' && typeof navigator !== 'undefined' && navigator.share) {
+                await navigator.share({ url, text: url, title: 'GitHub Issue' });
+                return;
+            }
+
+            await Share.share({
+                message: url,
+                url,
+                title: 'GitHub Issue'
+            });
+        } catch (e) {
+            console.log(e);
+        }
+    };
+
+    const handleIssueLongPress = (item) => {
+        const url = item.issueUrl;
+
+        if (!url) return;
+
+        Alert.alert('Issue options', 'Choose an action for this GitHub issue.', [
+            { text: 'Copy GitHub URL', onPress: () => handleCopyIssueUrl(url) },
+            { text: 'Share', onPress: () => handleShareIssueUrl(url) },
+            { text: 'Cancel', style: 'cancel' }
+        ]);
     };
 
     const totalLabels = subs.reduce((sum, s) => sum + (s.labels?.length || 0), 0);
@@ -137,6 +182,8 @@ const DashboardScreen = ({ navigation }) => {
                     variant="outline"
                     icon={ExternalLink}
                     onPress={() => Linking.openURL(item.issueUrl)}
+                    onLongPress={() => handleIssueLongPress(item)}
+                    delayLongPress={250}
                     className="h-14"
                 />
             </Card>

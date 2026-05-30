@@ -62,7 +62,7 @@ export const AnimatedMascot = ({ source, style, className }) => {
     );
 };
 
-export const Button = ({ title, onPress, variant = 'primary', className, loading, icon: Icon, size = 'default' }) => {
+export const Button = ({ title, onPress, onLongPress, delayLongPress, variant = 'primary', className, loading, icon: Icon, size = 'default' }) => {
     const baseStyle = "rounded-2xl items-center justify-center flex-row";
 
     // Size variants
@@ -105,6 +105,8 @@ export const Button = ({ title, onPress, variant = 'primary', className, loading
             <TouchableOpacity
                 activeOpacity={1}
                 onPress={handlePress}
+                onLongPress={onLongPress}
+                delayLongPress={delayLongPress}
                 disabled={loading}
                 className={cn(baseStyle, sizes[size], variants[variant], className)}
                 style={variant === 'primary' || variant === 'accent' ? shadowStyles.fab : {}}

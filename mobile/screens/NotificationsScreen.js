@@ -1,5 +1,6 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { View, Text, FlatList, Linking, TouchableOpacity, RefreshControl, Alert, Platform, Image, ScrollView } from 'react-native';
+import { View, Text, FlatList, Linking, TouchableOpacity, RefreshControl, Alert, Platform, Image, ScrollView, Share } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
@@ -71,6 +72,64 @@ const NotificationsScreen = ({ navigation }) => {
         }
     };
 
+    const handleCopyIssueUrl = async (url) => {
+        try {
+            if (Platform.OS === 'web' && typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+                await navigator.clipboard.writeText(url);
+            } else {
+                await Clipboard.setStringAsync(url);
+            }
+
+            Alert.alert('Copied', 'GitHub URL copied to clipboard.');
+        } catch (e) {
+            console.log(e);
+            Alert.alert('Copy failed', 'Unable to copy the GitHub URL right now.');
+        }
+    };
+
+    const handleShareIssueUrl = async (url) => {
+        try {
+            if (Platform.OS === 'web' && typeof navigator !== 'undefined' && navigator.share) {
+                await navigator.share({ url, text: url, title: 'GitHub Issue' });
+                return;
+            }
+
+            await Share.share({
+                message: url,
+                url,
+                title: 'GitHub Issue'
+            });
+        } catch (e) {
+            console.log(e);
+        }
+    };
+
+    const handleNotificationLongPress = (item) => {
+        const url = item.issueUrl;
+
+        if (!url) return;
+
+        const options = [
+            'Copy GitHub URL',
+            'Share'
+        ];
+
+        if (Platform.OS === 'web') {
+            Alert.alert('Issue options', 'Choose an action for this GitHub issue.', [
+                { text: options[0], onPress: () => handleCopyIssueUrl(url) },
+                { text: options[1], onPress: () => handleShareIssueUrl(url) },
+                { text: 'Cancel', style: 'cancel' }
+            ]);
+            return;
+        }
+
+        Alert.alert('Issue options', 'Choose an action for this GitHub issue.', [
+            { text: options[0], onPress: () => handleCopyIssueUrl(url) },
+            { text: options[1], onPress: () => handleShareIssueUrl(url) },
+            { text: 'Cancel', style: 'cancel' }
+        ]);
+    };
+
     const handleMarkAllRead = async () => {
         if (notifs.length === 0) return;
         try {
@@ -121,6 +180,8 @@ const NotificationsScreen = ({ navigation }) => {
             >
                 <TouchableOpacity
                     onPress={() => handleOpenNotification(item, activeTab === 'inbox')}
+                    onLongPress={() => handleNotificationLongPress(item)}
+                    delayLongPress={250}
                     activeOpacity={0.7}
                     className="mb-3"
                 >
