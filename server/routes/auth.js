@@ -1,6 +1,7 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const axios = require('axios');
+const rateLimit = require('express-rate-limit');
 const { Expo } = require('expo-server-sdk');
 const User = require('../models/User');
 const auth = require('../middleware/auth');
@@ -10,8 +11,18 @@ const generateToken = (id) => {
     return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '30d' });
 };
 
+const authRateLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: 10,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: {
+        message: 'Too many authentication attempts. Please try again in 15 minutes.'
+    }
+});
+
 // Regular Email/Password Signup
-router.post('/signup', async (req, res) => {
+router.post('/signup', authRateLimiter, async (req, res) => {
     const { name, email, password } = req.body;
     console.log('Signup request received:', { name, email, passwordLength: password?.length });
     try {
@@ -40,7 +51,7 @@ router.post('/signup', async (req, res) => {
 });
 
 // Regular Email/Password Login
-router.post('/login', async (req, res) => {
+router.post('/login', authRateLimiter, async (req, res) => {
     const { email, password } = req.body;
     try {
         const user = await User.findOne({ email });
