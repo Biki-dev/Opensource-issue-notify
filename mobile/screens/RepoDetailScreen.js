@@ -315,7 +315,7 @@ const RepoDetailScreen = ({ route, navigation }) => {
                         transition={{ type: 'timing', duration: 350, delay: 200 }}
                     >
                         <View className="bg-white rounded-3xl p-5 mb-5 border border-border"
-                            style={shadowStyles.light}>
+                            >
                             <View className="flex-row items-center justify-between mb-4">
                                 <Text className="text-base font-poppins-bold text-primary">
                                     README

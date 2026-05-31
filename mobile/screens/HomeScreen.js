@@ -115,7 +115,7 @@ const HomeScreen = ({ navigation }) => {
                         </Text>
                     </View>
 
-                    <View className="flex-row flex-wrap justify-center mb-2 h-14 overflow-hidden">
+                    <View className="flex-row flex-wrap justify-center h-14 overflow-hidden">
                         {item.labels.slice(0, 3).map((label, idx) => (
                             <View key={idx} className="bg-[#EEF2FF] rounded-full px-2 py-0.5 m-0.5">
                                 <Text className="text-brand text-[8px] font-inter-bold" numberOfLines={1}>{label}</Text>
@@ -136,7 +136,7 @@ const HomeScreen = ({ navigation }) => {
                     </View>
                 </TouchableOpacity>
 
-                <View className="flex-row justify-between">
+                <View className="flex-row justify-center">
                     <TouchableOpacity
                         onPress={() => toggleVisibility(item._id, item.visible)}
                         className="w-8 h-8 rounded-lg bg-slate-50 border border-border items-center justify-center"
