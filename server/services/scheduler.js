@@ -246,10 +246,18 @@ const checkRepositoriesForTier = async (tierName, frequencyMinutes, options = {}
                             { upsert: true }
                         );
 
-                        const insertedId = writeResult.upsertedId && (writeResult.upsertedId._id || writeResult.upsertedId);
-                        if (!insertedId) {
+                        const createdNow = Number(writeResult.upsertedCount || 0) > 0;
+                        if (!createdNow) {
                             stats.duplicates++;
                             continue;
+                        }
+
+                        let notificationId = writeResult.upsertedId && (writeResult.upsertedId._id || writeResult.upsertedId);
+                        if (!notificationId) {
+                            const insertedNotification = await Notification.findOne(uniqueFilter)
+                                .select('_id')
+                                .lean();
+                            notificationId = insertedNotification?._id || null;
                         }
 
                         stats.inserted++;
@@ -261,7 +269,7 @@ const checkRepositoriesForTier = async (tierName, frequencyMinutes, options = {}
                         // ✅ DETAILED push notification attempt
                         try {
                             const pushResult = await sendPushNotification(sub.user._id, {
-                                _id: insertedId,
+                                _id: notificationId,
                                 issueTitle: issue.title,
                                 issueUrl: issue.html_url,
                                 matchedLabels,
