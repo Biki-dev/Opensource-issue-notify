@@ -12,67 +12,41 @@ const { issueMatchesSubscription, toLowercaseList } = require('../utils/subscrip
 const checkRepositoriesForTier = async (tierName, frequencyMinutes, options = {}) => {
     const { skipRateLimitSleep = false, requestTimeoutMs = 15000, forceCheck = false, backfill = false } = options;
     const now = new Date();
-    const cutoffTime = new Date(now - frequencyMinutes * 60 * 1000);
 
     try {
-        // Find subscriptions that belong to this tier
-        // IMPORTANT: Only fetch ACTIVE subscriptions
-        const activeSubscriptions = await Subscription.find({
-            active: true  // ✅ This filters out logged-out users
-        })
-            .populate({
-                path: 'repository',
-                match: forceCheck
-                    ? {}
-                    : {
-                        $or: [
-                            { lastChecked: { $lt: cutoffTime } },
-                            { lastChecked: null }
-                        ]
-                    }
-            })
+        // In checkRepositoriesForTier(), replace from the find() call through
+        // the closing of the tierSubscriptions filter (roughly lines 18-70)
+
+        const activeSubscriptions = await Subscription.find({ active: true })
+            .populate('repository')
             .populate('user');
 
-        // Additional safety checks
+        const cutoffTime = new Date(now - frequencyMinutes * 60 * 1000);
+
         const tierSubscriptions = activeSubscriptions.filter(sub => {
-            // Check if repository exists in population
-            if (!sub.repository) {
-                // This happens if:
-                // 1. Repo document was deleted from DB
-                // 2. Repo document didn't match the 'match' filter (lastChecked too recent)
-                return false;
-            }
-
-            // Skip if user doesn't exist (was deleted)
+            if (!sub.repository) return false;
             if (!sub.user) {
-                console.warn(`⚠️  Subscription ${sub._id} has no user, skipping...`);
+                console.warn(`⚠️  Subscription ${sub._id} has no user, skipping`);
                 return false;
             }
+            if (!sub.user.notificationsEnabled) return false;
+            if (sub.muted) return false;
 
-            // Skip if user has notifications disabled
-            if (!sub.user.notificationsEnabled) {
-                return false;
-            }
-
-            // Skip subscriptions that were explicitly muted by the user
-            if (sub.muted) {
-                return false;
-            }
-
-            // Check if user tier matches
             if (tierName === 'personal' && sub.user.rateLimitTier !== 'personal') return false;
             if (tierName === 'premium' && sub.user.rateLimitTier !== 'premium') return false;
             if (tierName === 'default' && sub.user.rateLimitTier !== 'default') return false;
 
+            if (!forceCheck) {
+                const lc = sub.repository.lastChecked;
+                if (lc && new Date(lc) > cutoffTime) return false;
+            }
+
             return true;
         });
 
-        if (tierSubscriptions.length === 0) {
-            return;
-        }
-
+        if (tierSubscriptions.length === 0) return;
         console.log(`🔍 Checking ${tierSubscriptions.length} ${tierName} tier repos...`);
-
+        
         // Group by repository
         const repoSubscriptionsMap = new Map();
         for (const sub of tierSubscriptions) {
