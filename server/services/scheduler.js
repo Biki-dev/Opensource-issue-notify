@@ -177,26 +177,46 @@ const checkRepositoriesForTier = async (tierName, frequencyMinutes, options = {}
                 const issues = allIssues;
 
                 if (issues.length === 0) {
+                    console.log(`   ℹ️ No candidate issues fetched for ${repository.owner}/${repository.name}`);
                     repository.lastChecked = new Date();
                     await repository.save();
                     continue;
                 }
 
                 let maxIssueNumber = repository.latestIssueNumber || 0;
+                const stats = {
+                    fetched: issues.length,
+                    oldSkipped: 0,
+                    prSkipped: 0,
+                    subscriptionChecks: 0,
+                    matched: 0,
+                    inserted: 0,
+                    duplicates: 0,
+                    pushSuccess: 0,
+                    pushFailed: 0
+                };
 
                 // Process in chronological order
                 for (const issue of issues.reverse()) {
                     // CRITICAL: Skip already processed issues unless we are backfilling
-                    if (!backfill && issue.number <= repository.latestIssueNumber) continue;
+                    if (!backfill && issue.number <= repository.latestIssueNumber) {
+                        stats.oldSkipped++;
+                        continue;
+                    }
 
                     // CRITICAL: Skip pull requests
-                    if (issue.pull_request) continue;
+                    if (issue.pull_request) {
+                        stats.prSkipped++;
+                        continue;
+                    }
 
                     if (issue.number > maxIssueNumber) maxIssueNumber = issue.number;
 
                     // Create notifications for matching subscriptions
                     for (const sub of subscriptions) {
+                        stats.subscriptionChecks++;
                         if (!issueMatchesSubscription(issue, sub)) continue;
+                        stats.matched++;
 
                         const issueLabels = (issue.labels || []).map(l => l.name).filter(Boolean);
                         const subscriptionLabelSet = new Set(toLowercaseList(sub.labels));
@@ -227,7 +247,12 @@ const checkRepositoriesForTier = async (tierName, frequencyMinutes, options = {}
                         );
 
                         const insertedId = writeResult.upsertedId && (writeResult.upsertedId._id || writeResult.upsertedId);
-                        if (!insertedId) continue;
+                        if (!insertedId) {
+                            stats.duplicates++;
+                            continue;
+                        }
+
+                        stats.inserted++;
 
                         console.log(`✓ Notify user for issue #${issue.number}`);
                         console.log(`  👤 User: ${sub.user.email || sub.user._id}`);
@@ -248,19 +273,26 @@ const checkRepositoriesForTier = async (tierName, frequencyMinutes, options = {}
 
                             // ✅ LOG result
                             if (pushResult.success) {
+                                stats.pushSuccess++;
                                 console.log(`     ✅ Push sent successfully!`);
                             } else {
+                                stats.pushFailed++;
                                 console.error(`     ❌ Push failed: ${pushResult.reason}`);
                                 if (pushResult.error) {
                                     console.error(`        Error: ${pushResult.error}`);
                                 }
                             }
                         } catch (pushError) {
+                            stats.pushFailed++;
                             console.error(`     ❌ Push error:`, pushError.message);
                             console.error(`        Stack:`, pushError.stack); // ✅ Full stack trace
                         }
                     }
                 }
+
+                console.log(
+                    `   📈 ${repository.owner}/${repository.name} summary | fetched=${stats.fetched} oldSkipped=${stats.oldSkipped} prSkipped=${stats.prSkipped} checks=${stats.subscriptionChecks} matched=${stats.matched} inserted=${stats.inserted} duplicates=${stats.duplicates} pushOk=${stats.pushSuccess} pushFail=${stats.pushFailed}`
+                );
 
                 repository.latestIssueNumber = maxIssueNumber;
                 repository.lastChecked = new Date();
