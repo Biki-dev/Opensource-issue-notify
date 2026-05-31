@@ -175,7 +175,15 @@ export function setupNotificationListeners(navigation) {
     });
 
     return () => {
-        Notifications.removeNotificationSubscription(responseListener);
-        Notifications.removeNotificationSubscription(notificationListener);
+        try {
+            responseListener?.remove?.();
+        } catch (e) {
+            console.warn('Failed to remove response listener:', e?.message || e);
+        }
+        try {
+            notificationListener?.remove?.();
+        } catch (e) {
+            console.warn('Failed to remove notification listener:', e?.message || e);
+        }
     };
 }
