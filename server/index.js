@@ -33,10 +33,15 @@ app.use('/api/health', require('./routes/health'));
 
 // Manual Trigger for Debugging
 app.post('/api/debug/check', async (req, res) => {
-    res.json({ message: 'Check triggered' });
-    checkIssues().catch(error => {
+    const backfill = req.body?.backfill === true || req.query?.backfill === '1' || req.query?.backfill === 'true';
+
+    try {
+        await checkIssues({ backfill });
+        res.json({ message: 'Check completed', backfill });
+    } catch (error) {
         console.error('Debug check failed:', error.message);
-    });
+        res.status(500).json({ message: 'Debug check failed', error: error.message, backfill });
+    }
 });
 
 // Debug: Check push token registration status

@@ -10,7 +10,7 @@ const { issueMatchesSubscription, toLowercaseList } = require('../utils/subscrip
  * Check repositories for a specific tier
  */
 const checkRepositoriesForTier = async (tierName, frequencyMinutes, options = {}) => {
-    const { skipRateLimitSleep = false, requestTimeoutMs = 15000, forceCheck = false } = options;
+    const { skipRateLimitSleep = false, requestTimeoutMs = 15000, forceCheck = false, backfill = false } = options;
     const now = new Date();
     const cutoffTime = new Date(now - frequencyMinutes * 60 * 1000);
 
@@ -150,7 +150,7 @@ const checkRepositoriesForTier = async (tierName, frequencyMinutes, options = {}
                     if (pageIssues.length === 0) break;
 
                     // 🆕 OPTIMIZATION: Stop early if we see old issues
-                    const hasOldIssue = pageIssues.some(issue =>
+                    const hasOldIssue = !backfill && pageIssues.some(issue =>
                         issue.number <= repository.latestIssueNumber
                     );
 
@@ -207,8 +207,8 @@ const checkRepositoriesForTier = async (tierName, frequencyMinutes, options = {}
 
                 // Process in chronological order
                 for (const issue of issues.reverse()) {
-                    // CRITICAL: Skip already processed issues
-                    if (issue.number <= repository.latestIssueNumber) continue;
+                    // CRITICAL: Skip already processed issues unless we are backfilling
+                    if (!backfill && issue.number <= repository.latestIssueNumber) continue;
 
                     // CRITICAL: Skip pull requests
                     if (issue.pull_request) continue;
@@ -329,11 +329,12 @@ const startScheduler = () => {
 };
 
 // Legacy function for backwards compatibility
-const checkIssues = async () => {
+const checkIssues = async (options = {}) => {
+    const { backfill = false } = options;
     console.log('🔍 Manual check triggered...');
-    await checkRepositoriesForTier('default', 60, { skipRateLimitSleep: true, forceCheck: true });
-    await checkRepositoriesForTier('personal', 30, { skipRateLimitSleep: true, forceCheck: true });
-    await checkRepositoriesForTier('premium', 15, { skipRateLimitSleep: true, forceCheck: true });
+    await checkRepositoriesForTier('default', 60, { skipRateLimitSleep: true, forceCheck: true, backfill });
+    await checkRepositoriesForTier('personal', 30, { skipRateLimitSleep: true, forceCheck: true, backfill });
+    await checkRepositoriesForTier('premium', 15, { skipRateLimitSleep: true, forceCheck: true, backfill });
 };
 
 module.exports = { startScheduler, checkIssues };
