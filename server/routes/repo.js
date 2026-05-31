@@ -158,10 +158,11 @@ router.post('/subscribe', auth, async (req, res) => {
         if (!repository) {
             const [repoInfoRes, issuesRes] = await Promise.all([
                 ghGet(''),
-                ghGet('/issues?per_page=1')
+                ghGet('/issues?per_page=1&state=all&sort=created&direction=desc')
             ]);
 
-            const latestNum = issuesRes.data.length > 0 ? issuesRes.data[0].number : 0;
+            const latestIssue = (issuesRes.data || []).find(item => !item.pull_request);
+            const latestNum = latestIssue ? latestIssue.number : 0;
 
             repository = await Repository.create({
                 githubUrl: url,
