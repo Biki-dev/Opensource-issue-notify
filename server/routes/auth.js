@@ -309,7 +309,6 @@ router.patch('/me', auth, async (req, res) => {
     }
 });
 
-// server/routes/auth.js
 
 // Register Expo push token for push notifications
 router.post('/register-push-token', auth, async (req, res) => {
@@ -324,7 +323,7 @@ router.post('/register-push-token', auth, async (req, res) => {
             return res.status(400).json({ message: 'Invalid Expo push token format' });
         }
 
-        // ✅ SAVE and VERIFY
+        // SAVE and VERIFY
         const user = await User.findByIdAndUpdate(
             req.user.id,
             {
@@ -332,13 +331,13 @@ router.post('/register-push-token', auth, async (req, res) => {
                 $set: {
                     expoPushToken,
                     deviceInfo,
-                    notificationsEnabled: true // ✅ Ensure enabled by default
+                    notificationsEnabled: true // Ensure enabled by default
                 }
             },
             {
                 new: true,
                 select: '-password -personalGitHubToken',
-                runValidators: true // ✅ Run schema validation
+                runValidators: true // Run schema validation
             }
         );
 
@@ -367,7 +366,7 @@ router.post('/register-push-token', auth, async (req, res) => {
     }
 });
 
-// 🆕 DEBUG: Check if user has push token registered
+// DEBUG: Check if user has push token registered
 router.get('/debug/push-status', auth, async (req, res) => {
     try {
         const user = await User.findById(req.user.id).select('expoPushTokens expoPushToken deviceInfo notificationsEnabled');
@@ -396,7 +395,7 @@ router.get('/debug/push-status', auth, async (req, res) => {
     }
 });
 
-// 🆕 DEBUG: Explicitly trigger a test notification to the current user
+// DEBUG: Explicitly trigger a test notification to the current user
 router.post('/debug/test-push', auth, async (req, res) => {
     try {
         console.log(`🧪 Received test-push request for user: ${req.user.email}`);
