@@ -69,11 +69,16 @@ const checkRepositoriesForTier = async (tierName, frequencyMinutes, options = {}
 
         // Process each repository
         for (const [repoId, { repository, subscriptions, labelSet }] of repoSubscriptionsMap.entries()) {
-            const headers = await getBestTokenForRepo(subscriptions);
+            const tokenResult = await getBestTokenForRepo(subscriptions);
 
-            if (!headers.Authorization && headers.source === 'none') {
-                console.warn(`⚠️ No token available for ${repository.owner}/${repository.name}`);
+            if (!tokenResult.hasToken) {
+                console.warn(`⚠️  No auth token for ${repository.owner}/${repository.name} - using anonymous (60 req/hr limit)`);
             }
+
+            // Only pass valid HTTP headers to axios.
+            const headers = tokenResult.Authorization
+                ? { Authorization: tokenResult.Authorization }
+                : {};
 
             try {
                 // 🆕 CRITICAL FIX: Limit pagination to prevent API abuse

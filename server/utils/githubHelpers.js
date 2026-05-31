@@ -25,7 +25,13 @@ const getBestTokenForRepo = async (subscriptions) => {
             if (user?.personalGitHubToken && user?.tokenIsValid !== false) {
                 try {
                     const token = user.getPersonalGitHubToken();
-                    if (token) return { Authorization: `Bearer ${token}`, source: 'personal', userId: user._id };
+                    if (token) {
+                        return {
+                            Authorization: `Bearer ${token}`,
+                            source: 'personal',
+                            hasToken: true
+                        };
+                    }
                 } catch (error) {
                     console.warn(`⚠️  Personal token decryption failed for user ${userId} — marking invalid`);
                     await User.findByIdAndUpdate(userId, { tokenIsValid: false, rateLimitTier: 'default' }).catch(() => {});
@@ -35,22 +41,36 @@ const getBestTokenForRepo = async (subscriptions) => {
             if (user?.authMethod === 'github') {
                 try {
                     const token = user.getGithubAccessToken?.();
-                    if (token) return { Authorization: `Bearer ${token}`, source: 'oauth', userId: user._id };
+                    if (token) {
+                        return {
+                            Authorization: `Bearer ${token}`,
+                            source: 'oauth',
+                            hasToken: true
+                        };
+                    }
                 } catch (_) {}
             }
         }
 
         if (process.env.GITHUB_TOKEN) {
-            return { Authorization: `Bearer ${process.env.GITHUB_TOKEN}`, source: 'global', userId: null };
+            return {
+                Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
+                source: 'global',
+                hasToken: true
+            };
         }
 
-        return { source: 'none', userId: null };
+        return { source: 'none', hasToken: false };
     } catch (error) {
         console.error('❌ Error getting token:', error.message);
         if (process.env.GITHUB_TOKEN) {
-            return { Authorization: `Bearer ${process.env.GITHUB_TOKEN}`, source: 'global' };
+            return {
+                Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
+                source: 'global',
+                hasToken: true
+            };
         }
-        return { source: 'none' };
+        return { source: 'none', hasToken: false };
     }
 };
 
