@@ -91,45 +91,50 @@ const HomeScreen = ({ navigation }) => {
             style={{ width: '48%', marginRight: index % 2 === 0 ? '4%' : 0 }}
         >
             <Card className="mb-4 p-3" containerStyle={{ opacity: item.visible === false ? 0.6 : item.muted ? 0.82 : 1 }}>
-                <View className="items-center mb-2">
-                    <View className="w-10 h-10 rounded-xl bg-[#EEF2FF] items-center justify-center mb-2 overflow-hidden">
-                        {item.repository?.ownerAvatarUrl ? (
-                            <Image
-                                source={{ uri: item.repository.ownerAvatarUrl }}
-                                className="w-full h-full"
-                                resizeMode="cover"
-                            />
-                        ) : (
-                            <GitFork size={18} color="#6366F1" fill="none" />
+                <TouchableOpacity
+                    onPress={() => navigation.navigate('RepoDetail', { subscriptionId: item._id })}
+                    activeOpacity={0.7}
+                >
+                    <View className="items-center mb-2">
+                        <View className="w-10 h-10 rounded-xl bg-[#EEF2FF] items-center justify-center mb-2 overflow-hidden">
+                            {item.repository?.ownerAvatarUrl ? (
+                                <Image
+                                    source={{ uri: item.repository.ownerAvatarUrl }}
+                                    className="w-full h-full"
+                                    resizeMode="cover"
+                                />
+                            ) : (
+                                <GitFork size={18} color="#6366F1" fill="none" />
+                            )}
+                        </View>
+                        <Text className="text-[9px] text-muted font-mono mb-0.5" numberOfLines={1}>
+                            {item.repository.owner}
+                        </Text>
+                        <Text className="text-xs font-poppins-bold text-primary text-center leading-4" numberOfLines={2}>
+                            {item.repository.name}
+                        </Text>
+                    </View>
+
+                    <View className="flex-row flex-wrap justify-center mb-2 h-14 overflow-hidden">
+                        {item.labels.slice(0, 3).map((label, idx) => (
+                            <View key={idx} className="bg-[#EEF2FF] rounded-full px-2 py-0.5 m-0.5">
+                                <Text className="text-brand text-[8px] font-inter-bold" numberOfLines={1}>{label}</Text>
+                            </View>
+                        ))}
+                        {item.labels.length > 3 && (
+                            <View className="bg-slate-100 rounded-full px-2 py-0.5 m-0.5">
+                                <Text className="text-muted text-[8px] font-inter-bold">+{item.labels.length - 3}</Text>
+                            </View>
                         )}
                     </View>
-                    <Text className="text-[9px] text-muted font-mono mb-0.5" numberOfLines={1}>
-                        {item.repository.owner}
-                    </Text>
-                    <Text className="text-xs font-poppins-bold text-primary text-center leading-4" numberOfLines={2}>
-                        {item.repository.name}
-                    </Text>
-                </View>
 
-                <View className="flex-row flex-wrap justify-center mb-2 h-14 overflow-hidden">
-                    {item.labels.slice(0, 3).map((label, idx) => (
-                        <View key={idx} className="bg-[#EEF2FF] rounded-full px-2 py-0.5 m-0.5">
-                            <Text className="text-brand text-[8px] font-inter-bold" numberOfLines={1}>{label}</Text>
-                        </View>
-                    ))}
-                    {item.labels.length > 3 && (
-                        <View className="bg-slate-100 rounded-full px-2 py-0.5 m-0.5">
-                            <Text className="text-muted text-[8px] font-inter-bold">+{item.labels.length - 3}</Text>
-                        </View>
-                    )}
-                </View>
-
-                <View className="flex-row items-center justify-center mb-2 pb-2 border-b border-border/50">
-                    <View className={cn("w-1.5 h-1.5 rounded-full mr-1.5", item.visible === false ? "bg-muted" : item.muted ? "bg-amber-500" : "bg-success")} />
-                    <Text className="text-muted text-[8px] font-inter-bold uppercase tracking-tighter">
-                        {item.visible === false ? "Hidden" : item.muted ? "Muted" : "Monitoring"}
-                    </Text>
-                </View>
+                    <View className="flex-row items-center justify-center mb-2 pb-2 border-b border-border/50">
+                        <View className={cn("w-1.5 h-1.5 rounded-full mr-1.5", item.visible === false ? "bg-muted" : item.muted ? "bg-amber-500" : "bg-success")} />
+                        <Text className="text-muted text-[8px] font-inter-bold uppercase tracking-tighter">
+                            {item.visible === false ? "Hidden" : item.muted ? "Muted" : "Monitoring"}
+                        </Text>
+                    </View>
+                </TouchableOpacity>
 
                 <View className="flex-row justify-between">
                     <TouchableOpacity

@@ -8,7 +8,26 @@ const RepositorySchema = new mongoose.Schema({
     ownerAvatarUrl: { type: String },
     lastChecked: { type: Date, default: null },
     latestIssueNumber: { type: Number, default: 0 }, // Track the latest issue number we've seen
-    createdAt: { type: Date, default: Date.now }
+    createdAt: { type: Date, default: Date.now },
+
+    // NEW: rich metadata fetched once at subscribe time
+    description: { type: String, default: null },
+    stars: { type: Number, default: 0 },
+    forks: { type: Number, default: 0 },
+    watchers: { type: Number, default: 0 },
+    openIssuesCount: { type: Number, default: 0 },
+    openPRsCount: { type: Number, default: 0 },
+    language: { type: String, default: null },
+    license: { type: String, default: null },
+    topics: [{ type: String }],
+    isPrivate: { type: Boolean, default: false },
+    defaultBranch: { type: String, default: 'main' },
+    homepageUrl: { type: String, default: null },
+    pushedAt: { type: Date, default: null },
+    repoCreatedAt: { type: Date, default: null },
+    readmeContent: { type: String, default: null },    // raw markdown
+    readmeFetchedAt: { type: Date, default: null },
+    metadataFetchedAt: { type: Date, default: null }
 });
 
 // Add indexes for better query performance

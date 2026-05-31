@@ -100,6 +100,80 @@ const githubGet = async (url, authCandidates) => {
     throw lastError || new Error('All GitHub auth candidates failed');
 };
 
+/**
+ * Fetch full repository metadata + README from GitHub
+ * and return a MongoDB-ready object.
+ */
+const fetchRepoMetadata = async (owner, repo, authCandidates) => {
+    const ghGet = (path) =>
+        githubGet(`https://api.github.com/repos/${owner}/${repo}${path}`, authCandidates);
+
+    // Fetch repo info, open PR count, and README in parallel
+    const [repoRes, prsRes, readmeRes] = await Promise.allSettled([
+        ghGet(''),
+        ghGet('/pulls?state=open&per_page=1'),
+        ghGet('/readme')
+    ]);
+
+    const repoData = repoRes.status === 'fulfilled' ? repoRes.value.data : null;
+    const prsData  = prsRes.status  === 'fulfilled' ? prsRes.value.data  : [];
+
+    let readmeMarkdown = null;
+    if (readmeRes.status === 'fulfilled') {
+        try {
+            // README content is base64-encoded by GitHub
+            readmeMarkdown = Buffer.from(
+                readmeRes.value.data.content.replace(/\n/g, ''),
+                'base64'
+            ).toString('utf8');
+
+            // Cap at 50KB to avoid storing massive READMEs
+            if (readmeMarkdown.length > 51200) {
+                readmeMarkdown = readmeMarkdown.substring(0, 51200) + '\n\n...(truncated)';
+            }
+        } catch (_) {
+            readmeMarkdown = null;
+        }
+    }
+
+    if (!repoData) return null;
+
+    // GitHub's issues endpoint includes PRs in the count.
+    // Subtract open PRs to get real open issue count.
+    const openPRsCount = prsData.length > 0
+        ? (await githubGet(
+            `https://api.github.com/repos/${owner}/${repo}/pulls?state=open&per_page=1`,
+            authCandidates
+          ).then(r => {
+              // Parse the last page number from Link header
+              const link = r.headers?.link || '';
+              const match = link.match(/page=(\d+)>; rel="last"/);
+              return match ? parseInt(match[1]) : r.data.length;
+          }).catch(() => 0))
+        : 0;
+
+    return {
+        description:        repoData.description || null,
+        stars:              repoData.stargazers_count || 0,
+        forks:              repoData.forks_count || 0,
+        watchers:           repoData.subscribers_count || 0,
+        openIssuesCount:    Math.max(0, (repoData.open_issues_count || 0) - openPRsCount),
+        openPRsCount,
+        language:           repoData.language || null,
+        license:            repoData.license?.spdx_id || repoData.license?.name || null,
+        topics:             repoData.topics || [],
+        isPrivate:          repoData.private || false,
+        defaultBranch:      repoData.default_branch || 'main',
+        homepageUrl:        repoData.homepage || null,
+        pushedAt:           repoData.pushed_at ? new Date(repoData.pushed_at) : null,
+        repoCreatedAt:      repoData.created_at ? new Date(repoData.created_at) : null,
+        ownerAvatarUrl:     repoData.owner?.avatar_url || null,
+        readmeContent:      readmeMarkdown,
+        readmeFetchedAt:    readmeMarkdown ? new Date() : null,
+        metadataFetchedAt:  new Date()
+    };
+};
+
 // PREVIEW: Fetch Repo details + Labels
 router.post('/preview', auth, async (req, res) => {
     const { url } = req.body;
@@ -162,20 +236,39 @@ router.post('/subscribe', auth, async (req, res) => {
             ]);
 
             const latestIssue = (issuesRes.data || []).find(item => !item.pull_request);
-            const latestNum = latestIssue ? latestIssue.number : 0;
+            const latestNum   = latestIssue ? latestIssue.number : 0;
+
+            // Fetch full metadata (parallel with the above would be even faster,
+            // but keeping it sequential here to reuse repoInfoRes data)
+            const metadata = await fetchRepoMetadata(owner, repo, candidates);
 
             repository = await Repository.create({
                 githubUrl: url,
                 owner,
                 name: repo,
-                ownerAvatarUrl: repoInfoRes.data.owner.avatar_url,
                 latestIssueNumber: latestNum,
-                lastChecked: null
+                lastChecked: null,
+                // Spread all rich metadata fields
+                ...(metadata || {
+                    ownerAvatarUrl: repoInfoRes.data.owner?.avatar_url || null
+                })
             });
-        } else if (!repository.ownerAvatarUrl) {
-            const repoInfoRes = await ghGet('');
-            repository.ownerAvatarUrl = repoInfoRes.data.owner.avatar_url;
-            await repository.save();
+
+        } else {
+            // Repository already exists — backfill metadata if it was never fetched
+            if (!repository.metadataFetchedAt) {
+                const metadata = await fetchRepoMetadata(owner, repo, candidates);
+                if (metadata) {
+                    Object.assign(repository, metadata);
+                    await repository.save();
+                    console.log(`📦 Backfilled metadata for existing repo ${owner}/${repo}`);
+                }
+            } else if (!repository.ownerAvatarUrl) {
+                // Legacy: just fetch the avatar if missing
+                const repoInfoRes = await ghGet('');
+                repository.ownerAvatarUrl = repoInfoRes.data.owner.avatar_url;
+                await repository.save();
+            }
         }
 
         const existingSub = await Subscription.findOne({ user: req.user.id, repository: repository._id });
@@ -416,6 +509,106 @@ router.delete('/:id', auth, async (req, res) => {
         res.json({ message: 'Subscription deleted' });
     } catch (error) {
         console.error('Delete subscription error:', error.message);
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
+
+/**
+ * GET /api/repos/:id/details
+ * Returns full repository metadata from MongoDB — no GitHub call.
+ */
+router.get('/:id/details', auth, async (req, res) => {
+    try {
+        const sub = await Subscription.findOne({
+            _id: req.params.id,
+            user: req.user.id
+        }).populate('repository');
+
+        if (!sub) {
+            return res.status(404).json({ message: 'Subscription not found' });
+        }
+
+        const repo = sub.repository;
+        if (!repo) {
+            return res.status(404).json({ message: 'Repository not found' });
+        }
+
+        res.json({
+            _id: repo._id,
+            owner: repo.owner,
+            name: repo.name,
+            githubUrl: repo.githubUrl,
+            ownerAvatarUrl: repo.ownerAvatarUrl,
+            description: repo.description,
+            stars: repo.stars,
+            forks: repo.forks,
+            watchers: repo.watchers,
+            openIssuesCount: repo.openIssuesCount,
+            openPRsCount: repo.openPRsCount,
+            language: repo.language,
+            license: repo.license,
+            topics: repo.topics || [],
+            isPrivate: repo.isPrivate,
+            defaultBranch: repo.defaultBranch,
+            homepageUrl: repo.homepageUrl,
+            pushedAt: repo.pushedAt,
+            repoCreatedAt: repo.repoCreatedAt,
+            readmeContent: repo.readmeContent,
+            metadataFetchedAt: repo.metadataFetchedAt,
+            // Subscription-level info
+            labels: sub.labels,
+            keywords: sub.keywords,
+            muted: sub.muted
+        });
+    } catch (error) {
+        console.error('Get repo details error:', error.message);
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
+
+/**
+ * POST /api/repos/:id/refresh
+ * Re-fetches metadata from GitHub and updates MongoDB.
+ * Only allowed once per hour to prevent abuse.
+ */
+router.post('/:id/refresh', auth, async (req, res) => {
+    try {
+        const sub = await Subscription.findOne({
+            _id: req.params.id,
+            user: req.user.id
+        }).populate('repository');
+
+        if (!sub) {
+            return res.status(404).json({ message: 'Subscription not found' });
+        }
+
+        const repo = sub.repository;
+
+        // Rate limit: only allow refresh once per hour
+        if (repo.metadataFetchedAt) {
+            const hourAgo = new Date(Date.now() - 60 * 60 * 1000);
+            if (repo.metadataFetchedAt > hourAgo) {
+                const minutesLeft = Math.ceil(
+                    (repo.metadataFetchedAt - hourAgo) / 60000
+                );
+                return res.status(429).json({
+                    message: `Please wait ${minutesLeft} more minute${minutesLeft !== 1 ? 's' : ''} before refreshing`
+                });
+            }
+        }
+
+        const candidates = await getAuthCandidates(req.user.id);
+        const metadata = await fetchRepoMetadata(repo.owner, repo.name, candidates);
+
+        if (!metadata) {
+            return res.status(502).json({ message: 'Failed to fetch from GitHub' });
+        }
+
+        await Repository.findByIdAndUpdate(repo._id, metadata);
+
+        res.json({ message: 'Repository data refreshed', metadataFetchedAt: metadata.metadataFetchedAt });
+    } catch (error) {
+        console.error('Refresh repo error:', error.message);
         res.status(500).json({ message: 'Server Error' });
     }
 });
