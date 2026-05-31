@@ -59,7 +59,7 @@ const BillingScreen = ({ navigation }) => {
                     <View className="w-24 h-24 rounded-full bg-brand/10 items-center justify-center mb-8">
                         <Sparkles size={48} color="#6366F1" fill="none" />
                     </View>
-                    <Text className="text-3xl font-poppins-bold text-primary mb-4">Coming Soon</Text>
+                    <Text className="text-2xl font-poppins-bold text-primary mb-4">Coming Soon</Text>
                     <Text className="text-muted text-lg font-inter-medium text-center px-8">
                         Subscription features will be added shortly. Stay tuned!
                     </Text>

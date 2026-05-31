@@ -254,7 +254,7 @@ const NotificationsScreen = ({ navigation }) => {
                             <ArrowLeft size={22} color="#0F172A" fill="none" />
                         </TouchableOpacity>
                         <View className="flex-1">
-                            <Text className="text-3xl font-poppins-bold text-primary">Inbox</Text>
+                            <Text className="text-2xl font-poppins-bold text-primary">Inbox</Text>
                             <View className="flex-row items-center mt-1">
                                 <View className="w-2 h-2 rounded-full bg-brand mr-2" />
                                 <Text className="text-muted text-xs font-inter-semibold uppercase tracking-wider">
@@ -352,13 +352,13 @@ const NotificationsScreen = ({ navigation }) => {
                         <MotiView
                             from={{ opacity: 0, scale: 0.9 }}
                             animate={{ opacity: 1, scale: 1 }}
-                            className="items-center py-20"
+                            className="items-center"
                         >
                             <AnimatedMascot source={require('../maskot/confused.png')} style={{ width: 300, height: 300 }} />
-                            <Text className="text-primary text-3xl font-poppins-bold text-center mt-6">
+                            <Text className="text-primary text-3xl font-poppins-bold text-center mt-3">
                                 {activeTab === 'history' ? 'No History Yet' : 'All Caught Up!'}
                             </Text>
-                            <Text className="text-muted text-base font-inter-medium text-center px-10 mt-2 mb-2 leading-6">
+                            <Text className="text-muted text-base font-inter-medium text-center px-10 mt-2 mb-6 leading-6">
                                 {activeTab === 'history'
                                     ? 'Read notifications from the last 30 days will appear here after you dismiss them.'
                                     : "No new notifications. We'll alert you when issues matching your filters appear."}

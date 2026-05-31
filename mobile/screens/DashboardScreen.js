@@ -201,7 +201,7 @@ const DashboardScreen = ({ navigation }) => {
                     animate={{ opacity: 1, translateX: 0 }}
                     transition={{ type: 'timing', duration: 400 }}
                 >
-                    <Text className="text-4xl font-poppins-bold text-primary">Dashboard</Text>
+                    <Text className="text-2xl font-poppins-bold text-primary">Dashboard</Text>
                 </MotiView>
 
                 <TouchableOpacity
@@ -233,7 +233,7 @@ const DashboardScreen = ({ navigation }) => {
                                 transition={{ type: 'timing', duration: 400, delay: 200 }}
                             >
 
-                                <Card className="p-0 overflow-hidden mb-8" containerStyle={{
+                                <View className="p-0 overflow-hidden mb-8" style={{
                                     backgroundColor: "transparent",
                                     borderWidth: 0,
                                     shadowColor: "transparent",
@@ -270,7 +270,7 @@ const DashboardScreen = ({ navigation }) => {
                                             <ChevronRight size={14} color="white" className="ml-1" />
                                         </TouchableOpacity>
                                     </LinearGradient>
-                                </Card>
+                                </View>
                             </MotiView>
 
                             <IssueActivityChart
@@ -295,7 +295,7 @@ const DashboardScreen = ({ navigation }) => {
                     <MotiView
                         from={{ opacity: 0, scale: 0.9 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        className="items-center mt-8"
+                        className="items-center"
                     >
                         <AnimatedMascot
                             source={require('../maskot/add.png')}
@@ -310,7 +310,7 @@ const DashboardScreen = ({ navigation }) => {
                             variant="ghost"
                             icon={GitBranch}
                             onPress={() => navigation.navigate('SubscriptionsTab')}
-                            className="mt-6"
+                            className="mt-6 self-center"
                         />
                     </MotiView>
                 )}

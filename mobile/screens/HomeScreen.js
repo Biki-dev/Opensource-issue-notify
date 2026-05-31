@@ -186,7 +186,7 @@ const HomeScreen = ({ navigation }) => {
                         from={{ opacity: 0, translateX: -20 }}
                         animate={{ opacity: 1, translateX: 0 }}
                     >
-                        <Text className="text-4xl font-poppins-bold text-primary">Subscriptions</Text>
+                        <Text className="text-2xl font-poppins-bold text-primary">Subscriptions</Text>
                     </MotiView>
                     <View className="flex-row">
                         <TouchableOpacity
@@ -262,10 +262,10 @@ const HomeScreen = ({ navigation }) => {
                             source={require('../maskot/subadd.png')}
                             style={{ width: 280, height: 280 }}
                         />
-                        <Text className="text-primary text-3xl font-poppins-bold text-center mt-4">
+                        <Text className="text-primary text-3xl font-poppins-bold text-center">
                             {searchQuery ? "No matches found" : "Ready to track?"}
                         </Text>
-                        <Text className="text-muted text-base font-inter-medium text-center px-12 mb-2 mt-2 leading-6">
+                        <Text className="text-muted text-base font-inter-medium text-center px-12 mb-4 mt-2 leading-6">
                             {searchQuery ? `We couldn't find any repositories matching "${searchQuery}"` : "Add a GitHub repository to start tracking issues that matter to you."}
                         </Text>
                         {!searchQuery && (

@@ -73,10 +73,7 @@ const IssueActivityChart = ({
             <Card className="p-6 mb-8">
                 <View className="flex-row items-start justify-between mb-4">
                     <View className="flex-1 pr-4">
-                        <Text className="text-xl font-poppins-bold text-primary mb-1">Issue Activity</Text>
-                        <Text className="text-xs text-muted font-inter-medium leading-5">
-                            Compare how active your subscribed repos have been over the last 7 or 30 days.
-                        </Text>
+                        <Text className="text-xl font-poppins-bold text-primary mb-1">Activity</Text>
                     </View>
                     <View className="flex-row bg-slate-100 rounded-2xl p-1">
                         <TouchableOpacity

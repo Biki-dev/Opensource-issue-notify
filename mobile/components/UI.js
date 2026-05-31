@@ -95,6 +95,12 @@ export const Button = ({ title, onPress, onLongPress, delayLongPress, variant = 
         onPress?.();
     };
 
+    const iconColor = variant === 'secondary' || variant === 'outline'
+        ? '#94A3B8'
+        : variant === 'ghost'
+            ? '#6366F1'
+            : '#fff';
+
     return (
         <MotiView
             animate={({ pressed }) => ({
@@ -115,7 +121,7 @@ export const Button = ({ title, onPress, onLongPress, delayLongPress, variant = 
                     <ActivityIndicator color={variant === 'secondary' || variant === 'outline' ? '#6366F1' : '#fff'} />
                 ) : (
                     <>
-                        {Icon && <Icon size={24} color={variant === 'secondary' || variant === 'outline' ? '#94A3B8' : '#fff'} className="mr-3" fill="none" />}
+                        {Icon && <Icon size={24} color={iconColor} className="mr-3" fill="none" />}
                         {typeof title === 'string' ? <Text className={textVariants[variant]}>{title}</Text> : title}
                     </>
                 )}
