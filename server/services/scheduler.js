@@ -204,55 +204,60 @@ const checkRepositoriesForTier = async (tierName, frequencyMinutes, options = {}
                             subscriptionLabelSet.has(label.toLowerCase())
                         );
 
-                        if (matchedLabels.length > 0) {
-                            // CRITICAL: Prevent duplicates
-                            const exists = await Notification.findOne({
-                                user: sub.user._id,
-                                repository: repository._id,
-                                issueUrl: issue.html_url
-                            });
+                        // Use atomic upsert to prevent races between duplicate checks and insert.
+                        const uniqueFilter = {
+                            user: sub.user._id,
+                            repository: repository._id,
+                            issueUrl: issue.html_url
+                        };
 
-                            if (!exists) {
-                                const notification = await Notification.create({
+                        const writeResult = await Notification.updateOne(
+                            uniqueFilter,
+                            {
+                                $setOnInsert: {
                                     user: sub.user._id,
                                     repository: repository._id,
                                     issueTitle: issue.title,
                                     issueUrl: issue.html_url,
-                                    matchedLabels: matchedLabels,
+                                    matchedLabels,
                                     isRead: false
-                                });
+                                }
+                            },
+                            { upsert: true }
+                        );
 
-                                console.log(`✓ Notify user for issue #${issue.number}`);
-                                console.log(`  👤 User: ${sub.user.email || sub.user._id}`);
-                                console.log(`  📖 Issue: ${issue.title}`);
+                        const insertedId = writeResult.upsertedId && (writeResult.upsertedId._id || writeResult.upsertedId);
+                        if (!insertedId) continue;
 
-                                // ✅ DETAILED push notification attempt
-                                try {
-                                    const pushResult = await sendPushNotification(sub.user._id, {
-                                        _id: notification._id,
-                                        issueTitle: issue.title,
-                                        issueUrl: issue.html_url,
-                                        matchedLabels: matchedLabels,
-                                        repository: {
-                                            owner: repository.owner,
-                                            name: repository.name
-                                        }
-                                    });
+                        console.log(`✓ Notify user for issue #${issue.number}`);
+                        console.log(`  👤 User: ${sub.user.email || sub.user._id}`);
+                        console.log(`  📖 Issue: ${issue.title}`);
 
-                                    // ✅ LOG result
-                                    if (pushResult.success) {
-                                        console.log(`     ✅ Push sent successfully!`);
-                                    } else {
-                                        console.error(`     ❌ Push failed: ${pushResult.reason}`);
-                                        if (pushResult.error) {
-                                            console.error(`        Error: ${pushResult.error}`);
-                                        }
-                                    }
-                                } catch (pushError) {
-                                    console.error(`     ❌ Push error:`, pushError.message);
-                                    console.error(`        Stack:`, pushError.stack); // ✅ Full stack trace
+                        // ✅ DETAILED push notification attempt
+                        try {
+                            const pushResult = await sendPushNotification(sub.user._id, {
+                                _id: insertedId,
+                                issueTitle: issue.title,
+                                issueUrl: issue.html_url,
+                                matchedLabels,
+                                repository: {
+                                    owner: repository.owner,
+                                    name: repository.name
+                                }
+                            });
+
+                            // ✅ LOG result
+                            if (pushResult.success) {
+                                console.log(`     ✅ Push sent successfully!`);
+                            } else {
+                                console.error(`     ❌ Push failed: ${pushResult.reason}`);
+                                if (pushResult.error) {
+                                    console.error(`        Error: ${pushResult.error}`);
                                 }
                             }
+                        } catch (pushError) {
+                            console.error(`     ❌ Push error:`, pushError.message);
+                            console.error(`        Stack:`, pushError.stack); // ✅ Full stack trace
                         }
                     }
                 }
