@@ -11,14 +11,15 @@ import OnboardingScreen from './screens/OnboardingScreen';
 import LoginScreen from './screens/LoginScreen';
 import HomeScreen from './screens/HomeScreen';
 import DashboardScreen from './screens/DashboardScreen';
-import BillingScreen from './screens/BillingScreen';
 import SettingsScreen from './screens/SettingsScreen';
 import AddRepoScreen from './screens/AddRepoScreen';
 import NotificationsScreen from './screens/NotificationsScreen';
+import TrackedIssuesScreen from './screens/TrackedIssuesScreen';
+import IssueDetailScreen from './screens/IssueDetailScreen';
 import EditLabelsScreen from './screens/EditLabelsScreen';
 import GitHubTokenSettings from './screens/GitHubTokenSettings';
 import RepoDetailScreen from './screens/RepoDetailScreen';
-import { Home, Bell, CreditCard, Settings } from 'lucide-react-native';
+import { Home, Bell, Bookmark, Settings } from 'lucide-react-native';
 import { MotiView } from 'moti';
 import { useFonts, Poppins_600SemiBold, Poppins_700Bold } from '@expo-google-fonts/poppins';
 import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold } from '@expo-google-fonts/inter';
@@ -100,7 +101,7 @@ const CustomTabBar = ({ state, descriptors, navigation }) => {
                 let IconComponent;
                 if (route.name === 'HomeTab') IconComponent = Home;
                 else if (route.name === 'SubscriptionsTab') IconComponent = Bell;
-                else if (route.name === 'BillingTab') IconComponent = CreditCard;
+                else if (route.name === 'FollowingTab') IconComponent = Bookmark;
                 else if (route.name === 'SettingsTab') IconComponent = Settings;
 
                 return (
@@ -149,7 +150,7 @@ const AppTabs = () => {
         >
             <Tab.Screen name="HomeTab" component={DashboardScreen} options={{ title: 'Home' }} />
             <Tab.Screen name="SubscriptionsTab" component={HomeScreen} options={{ title: 'Subscriptions' }} />
-            <Tab.Screen name="BillingTab" component={BillingScreen} options={{ title: 'Billing' }} />
+            <Tab.Screen name="FollowingTab" component={TrackedIssuesScreen} options={{ title: 'Following' }} />
             <Tab.Screen name="SettingsTab" component={SettingsScreen} options={{ title: 'Settings' }} />
         </Tab.Navigator>
     );
@@ -282,6 +283,7 @@ const AppNav = () => {
                         <Stack.Screen name="EditLabels" component={EditLabelsScreen} options={{ presentation: 'modal' }} />
                         <Stack.Screen name="GitHubTokenSettings" component={GitHubTokenSettings} options={{ presentation: 'modal' }} />
                         <Stack.Screen name="Notifications" component={NotificationsScreen} />
+                        <Stack.Screen name="IssueDetail" component={IssueDetailScreen} />
                         <Stack.Screen
                             name="RepoDetail"
                             component={RepoDetailScreen}

@@ -56,20 +56,21 @@ const sendPushNotification = async (userId, notification, retries = 2) => {
             const messages = validTokens.map(token => ({
                 to: token,
                 sound: 'default',
-                title: '🔔 New Issue Matched!',
-                body: notification.issueTitle || 'New issue matched your subscription',
+                title: notification.pushTitle || '🔔 New Issue Matched!',
+                body: notification.pushBody || notification.issueTitle || 'New issue matched your subscription',
                 data: {
-                    type: 'new_issue',
+                    type: notification.data?.type || 'new_issue',
                     notificationId: notification._id?.toString(),
                     issueUrl: notification.issueUrl,
                     repositoryName: `${notification.repository.owner}/${notification.repository.name}`,
-                    labels: notification.matchedLabels || []
+                    labels: notification.matchedLabels || [],
+                    ...(notification.data || {})
                 },
                 badge: 1,
                 priority: 'high',
                 vibrate: true,
                 channelId: 'default',
-                categoryIdentifier: 'new_issue'
+                categoryIdentifier: notification.categoryIdentifier || 'new_issue'
             }));
 
             const ticketRecords = [];

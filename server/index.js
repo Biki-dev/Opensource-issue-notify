@@ -7,6 +7,7 @@ const connectDB = require('./utils/db');
 const { startScheduler, checkIssues } = require('./services/scheduler');
 const { startCleanupJob } = require('./services/cleanup');
 const { startPushReceiptVerificationJob } = require('./services/pushNotifications');
+const { startCommentPoller } = require('./services/commentPoller');
 const { mergeExpoPushTokens } = require('./utils/expoPushTokens');
 
 dotenv.config();
@@ -28,6 +29,7 @@ app.use((req, res, next) => {
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/repos', require('./routes/repo'));
 app.use('/api/notifications', require('./routes/notifications'));
+app.use('/api/issue-tracker', require('./routes/issueTracker'));
 app.use('/api/user/token', require('./routes/token'));
 app.use('/api/health', require('./routes/health'));
 
@@ -66,6 +68,7 @@ const startServer = async () => {
         startScheduler();
         startCleanupJob(); // 🆕 Add this
         startPushReceiptVerificationJob();
+        startCommentPoller();
     });
 };
 

@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
 import { Card, AnimatedMascot, LabelChip, Button, shadowStyles, ListSkeleton } from '../components/UI';
-import { ArrowLeft, Bell, CheckCheck, Trash2, Github } from 'lucide-react-native';
+import { ArrowLeft, Bell, CheckCheck, Trash2, Github, Bookmark, Loader2 } from 'lucide-react-native';
 import { MotiView } from 'moti';
 import { StatusBar } from 'expo-status-bar';
 
@@ -16,6 +16,7 @@ const NotificationsScreen = ({ navigation }) => {
     const [refreshing, setRefreshing] = useState(false);
     const [activeTab, setActiveTab] = useState('inbox');
     const [selectedRepo, setSelectedRepo] = useState('all');
+    const [trackingIssueUrl, setTrackingIssueUrl] = useState(null);
 
     // Use refs so the fetch callback always reads current values without
     // being re-created on every render (avoids multiple simultaneous fetches)
@@ -95,6 +96,35 @@ const NotificationsScreen = ({ navigation }) => {
             }
             await Share.share({ message: url, url, title: 'GitHub Issue' });
         } catch (e) { console.log(e); }
+    };
+
+    const handleFollowIssue = async (item) => {
+        if (!item?.issueUrl || !item?.repository?._id) return;
+
+        setTrackingIssueUrl(item.issueUrl);
+        try {
+            await axios.post(
+                `${BASE_URL}/issue-tracker`,
+                {
+                    issueUrl: item.issueUrl,
+                    repositoryId: item.repository._id
+                },
+                { headers: { Authorization: `Bearer ${userToken}` } }
+            );
+
+            Alert.alert('Following', 'You will get updates when this issue changes.', [
+                { text: 'Later', style: 'cancel' },
+                { text: 'Open Following', onPress: () => navigation.navigate('Main', { screen: 'FollowingTab' }) }
+            ]);
+        } catch (error) {
+            if (error.response?.status === 409) {
+                Alert.alert('Already following', 'This issue is already in your Following list.');
+            } else {
+                Alert.alert('Could not follow', 'Please try again in a moment.');
+            }
+        } finally {
+            setTrackingIssueUrl(null);
+        }
     };
 
     const handleNotificationLongPress = (item) => {
@@ -212,6 +242,24 @@ const NotificationsScreen = ({ navigation }) => {
                                         </View>
                                     )}
                                 </View>
+
+                                {!!item.issueUrl && !!item.repository?._id && (
+                                    <TouchableOpacity
+                                        onPress={() => handleFollowIssue(item)}
+                                        disabled={trackingIssueUrl === item.issueUrl}
+                                        className="flex-row items-center mt-3 pt-3 border-t border-border/40"
+                                        activeOpacity={0.8}
+                                    >
+                                        {trackingIssueUrl === item.issueUrl ? (
+                                            <Loader2 size={12} color="#6366F1" fill="none" />
+                                        ) : (
+                                            <Bookmark size={12} color="#6366F1" fill="none" />
+                                        )}
+                                        <Text className="text-brand text-[11px] font-inter-semibold ml-1.5">
+                                            {trackingIssueUrl === item.issueUrl ? 'Following...' : 'Follow this issue'}
+                                        </Text>
+                                    </TouchableOpacity>
+                                )}
                             </View>
 
                             {activeTab === 'inbox' && (
