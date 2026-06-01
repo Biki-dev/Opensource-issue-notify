@@ -49,7 +49,9 @@ const pollComments = async () => {
     console.log('💬 Polling tracked issues for new comments...');
 
     try {
-        const cutoff = new Date(Date.now() - 30 * 60 * 1000);
+        const isDebugScheduler = process.env.SCHEDULER_DEBUG === 'true';
+        const frequencyMinutes = isDebugScheduler ? 1 : 30;
+        const cutoff = new Date(Date.now() - frequencyMinutes * 60 * 1000);
         const trackers = await IssueTracker.find({
             active: true,
             $or: [{ lastChecked: { $lt: cutoff } }, { lastChecked: null }]
