@@ -176,8 +176,11 @@ const pollComments = async () => {
 };
 
 const startCommentPoller = () => {
-    cron.schedule('*/30 * * * *', pollComments);
-    console.log('📅 Comment poller scheduled (every 30 minutes)');
+    const isDebugScheduler = process.env.SCHEDULER_DEBUG === 'true';
+    const cronExpression = isDebugScheduler ? '* * * * *' : '*/30 * * * *';
+
+    cron.schedule(cronExpression, pollComments);
+    console.log(`📅 Comment poller scheduled (${isDebugScheduler ? 'every 1 minute' : 'every 30 minutes'})`);
 };
 
 module.exports = { startCommentPoller, pollComments };
