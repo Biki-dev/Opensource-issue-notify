@@ -230,7 +230,7 @@ const SettingsScreen = ({ navigation }) => {
                                 ) : (
                                     <>
                                         <Text className="text-2xl font-poppins-bold text-primary">{profile?.name || 'Maintainer'}</Text>
-                                        <Text className="text-muted font-inter-medium text-base mt-1">{profile?.email}</Text>
+                                        <Text className="text-muted text-base mt-1">{profile?.email}</Text>
 
                                         {/* Auth Method Badge */}
                                         <View className="flex-row items-center mt-3">
@@ -283,7 +283,7 @@ const SettingsScreen = ({ navigation }) => {
                         icon={Bell}
                     />
 
-                    <TouchableOpacity
+                    {/* <TouchableOpacity
                         onPress={handleRegisterPush}
                         className="flex-row items-center justify-between py-4 border-t border-border/50"
                     >
@@ -335,11 +335,11 @@ const SettingsScreen = ({ navigation }) => {
                             </View>
                         </View>
                         <ChevronRight size={20} color="#94A3B8" fill="none" />
-                    </TouchableOpacity>
+                    </TouchableOpacity> */}
                 </Card>
 
                 {/* Privacy Section */}
-                <SectionHeader title="Privacy" icon={Shield} />
+                {/* <SectionHeader title="Privacy" icon={Shield} />
                 <Card className="px-6 py-2 mb-8">
                     <TouchableOpacity className="flex-row items-center justify-between py-4">
                         <View className="flex-row items-center">
@@ -350,7 +350,7 @@ const SettingsScreen = ({ navigation }) => {
                         </View>
                         <ChevronRight size={20} color="#94A3B8" fill="none" />
                     </TouchableOpacity>
-                </Card>
+                </Card> */}
 
                 {/* Developer Settings - GitHub Token */}
                 <SectionHeader title="Developer Settings" icon={Code2} />
