@@ -1,14 +1,86 @@
 const axios = require('axios');
 
+const AI_PROVIDER = process.env.AI_PROVIDER;
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 const OPENROUTER_MODEL = process.env.OPENROUTER_MODEL || 'anthropic/claude-3-haiku';
+const NVIDIA_API_KEY = process.env.NVIDIA_API_KEY;
+const NVIDIA_MODEL = process.env.NVIDIA_MODEL || 'meta/llama-3.1-8b-instruct';
 
 /**
- * Analyze a GitHub issue using OpenRouter AI
+ * Analyze a GitHub issue using AI (OpenRouter or NVIDIA)
  * @param {object} issue - GitHub issue object
  * @returns {Promise<object>} Triage result
  */
 const triageIssue = async (issue) => {
+    if (AI_PROVIDER === 'nvidia') {
+        return triageIssueNVIDIA(issue);
+    } else {
+        return triageIssueOpenRouter(issue);
+    }
+};
+
+/**
+ * Triage using NVIDIA API
+ */
+const triageIssueNVIDIA = async (issue) => {
+    if (!NVIDIA_API_KEY) {
+        console.warn('⚠️  NVIDIA_API_KEY not set, skipping triage');
+        return null;
+    }
+
+    const prompt = buildTriagePrompt(issue);
+
+    try {
+        console.log(`🤖 Triaging issue #${issue.number} via NVIDIA: ${issue.title}`);
+
+        const response = await axios.post(
+            'https://integrate.api.nvidia.com/v1/chat/completions',
+            {
+                model: NVIDIA_MODEL,
+                messages: [
+                    {
+                        role: 'system',
+                        content: `You are a senior software engineer triaging GitHub issues. 
+You analyze issues and respond ONLY with a valid JSON object. 
+No markdown, no explanation, just raw JSON.`
+                    },
+                    {
+                        role: 'user',
+                        content: prompt
+                    }
+                ],
+                max_tokens: 300,
+                temperature: 0.1
+            },
+            {
+                headers: {
+                    'Authorization': `Bearer ${NVIDIA_API_KEY}`,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                timeout: 15000
+            }
+        );
+
+        const content = response.data.choices?.[0]?.message?.content;
+        if (!content) {
+            throw new Error('Empty response from NVIDIA');
+        }
+
+        const triage = parseTriageResponse(content);
+        console.log(`   ✅ Triage complete: ${triage.severity} | ${triage.type}`);
+        return triage;
+
+    } catch (error) {
+        console.error(`   ❌ Triage failed for #${issue.number}:`, error.message);
+        return getFallbackTriage(issue);
+    }
+};
+
+/**
+ * Triage using OpenRouter API
+ */
+const triageIssueOpenRouter = async (issue) => {
     if (!OPENROUTER_API_KEY) {
         console.warn('⚠️  OPENROUTER_API_KEY not set, skipping triage');
         return null;
@@ -17,7 +89,7 @@ const triageIssue = async (issue) => {
     const prompt = buildTriagePrompt(issue);
 
     try {
-        console.log(`🤖 Triaging issue #${issue.number}: ${issue.title}`);
+        console.log(`🤖 Triaging issue #${issue.number} via OpenRouter: ${issue.title}`);
 
         const response = await axios.post(
             'https://openrouter.ai/api/v1/chat/completions',
@@ -36,7 +108,7 @@ No markdown, no explanation, just raw JSON.`
                     }
                 ],
                 max_tokens: 300,
-                temperature: 0.1 // Low temperature for consistent structured output
+                temperature: 0.1
             },
             {
                 headers: {
@@ -54,13 +126,11 @@ No markdown, no explanation, just raw JSON.`
             throw new Error('Empty response from OpenRouter');
         }
 
-        // Parse and validate JSON response
         const triage = parseTriageResponse(content);
         console.log(`   ✅ Triage complete: ${triage.severity} | ${triage.type}`);
         return triage;
 
     } catch (error) {
-        // Triage failure should NEVER block notification delivery
         console.error(`   ❌ Triage failed for #${issue.number}:`, error.message);
         return getFallbackTriage(issue);
     }
@@ -125,7 +195,7 @@ const parseTriageResponse = (content) => {
             : '',
         actionable: typeof parsed.actionable === 'boolean' ? parsed.actionable : true,
         estimatedEffort: validEfforts.includes(parsed.estimatedEffort) ? parsed.estimatedEffort : 'unknown',
-        model: process.env.OPENROUTER_MODEL || 'unknown',
+        model: AI_PROVIDER === 'nvidia' ? NVIDIA_MODEL : OPENROUTER_MODEL,
         analyzedAt: new Date()
     };
 };
@@ -191,7 +261,7 @@ const triageIssueBatch = async (issues, delayMs = 200) => {
         const result = await triageIssue(issue);
         results.push({ issueNumber: issue.number, triage: result });
 
-        // Small delay to be respectful to OpenRouter rate limits
+        // Small delay to be respectful to rate limits
         if (delayMs > 0) {
             await new Promise(r => setTimeout(r, delayMs));
         }
@@ -200,4 +270,25 @@ const triageIssueBatch = async (issues, delayMs = 200) => {
     return results;
 };
 
-module.exports = { triageIssue, triageIssueBatch, getFallbackTriage };
+/**
+ * Get provider information for logging/debugging
+ */
+const getProviderInfo = () => {
+    if (AI_PROVIDER === 'nvidia') {
+        return {
+            provider: 'NVIDIA',
+            model: NVIDIA_MODEL,
+            endpoint: 'https://integrate.api.nvidia.com/v1/chat/completions',
+            configured: !!NVIDIA_API_KEY
+        };
+    } else {
+        return {
+            provider: 'OpenRouter',
+            model: OPENROUTER_MODEL,
+            endpoint: 'https://openrouter.ai/api/v1/chat/completions',
+            configured: !!OPENROUTER_API_KEY
+        };
+    }
+};
+
+module.exports = { triageIssue, triageIssueBatch, getFallbackTriage, getProviderInfo };

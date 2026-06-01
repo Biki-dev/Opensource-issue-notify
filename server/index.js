@@ -9,11 +9,15 @@ const { startCleanupJob } = require('./services/cleanup');
 const { startPushReceiptVerificationJob } = require('./services/pushNotifications');
 const { startCommentPoller } = require('./services/commentPoller');
 const { mergeExpoPushTokens } = require('./utils/expoPushTokens');
+const { getProviderInfo } = require('./services/aiTriage');
 
 dotenv.config();
 connectDB();
 
 console.log(`🔐 GitHub token configured: ${process.env.GITHUB_TOKEN ? 'yes' : 'no'}`);
+
+const providerInfo = getProviderInfo();
+console.log(`🤖 AI Provider: ${providerInfo.provider} (${providerInfo.model}) - ${providerInfo.configured ? '✅ configured' : '❌ NOT configured'}`);
 
 const app = express();
 app.use(express.json());
