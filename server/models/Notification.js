@@ -26,6 +26,30 @@ const NotificationSchema = new mongoose.Schema({
     },
     pushTicketError: { type: String, default: null },
     pushTicketCheckedAt: { type: Date, default: null },
+    aiTriage: {
+        severity: {
+            type: String,
+            enum: ['critical', 'high', 'medium', 'low'],
+            default: null
+        },
+        type: {
+            type: String,
+            enum: ['bug', 'feature', 'question', 'documentation',
+                   'performance', 'security', 'duplicate', 'other'],
+            default: null
+        },
+        summary: { type: String, default: null },
+        reasoning: { type: String, default: null },
+        actionable: { type: Boolean, default: null },
+        estimatedEffort: {
+            type: String,
+            enum: ['quick-fix', 'medium', 'large', 'unknown', null],
+            default: null
+        },
+        model: { type: String, default: null },
+        analyzedAt: { type: Date, default: null },
+        isFallback: { type: Boolean, default: false }
+    },
     createdAt: { type: Date, default: Date.now }
 });
 

@@ -6,6 +6,7 @@ import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
 import { Card, Button, LabelChip, AnimatedMascot, Badge, shadowStyles, SectionHeader, ListSkeleton } from '../components/UI';
 import { GitBranch, ExternalLink, Bell, Trash2, Hash, Layers, ChevronRight, Github } from 'lucide-react-native';
+import { TriageCard } from '../components/TriageBadge';
 import { MotiView } from 'moti';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -170,6 +171,8 @@ const DashboardScreen = ({ navigation }) => {
                 <Text className="text-lg font-poppins-semibold text-primary mb-3 leading-6" numberOfLines={3}>
                     {item.issueTitle}
                 </Text>
+
+                {item.aiTriage && <TriageCard triage={item.aiTriage} />}
 
                 <View className="flex-row flex-wrap mb-6">
                     {item.matchedLabels.map((l, i) => (

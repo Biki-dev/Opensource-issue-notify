@@ -6,6 +6,7 @@ const User = require('../models/User');
 const { getBestTokenForRepo } = require('../utils/githubHelpers');
 const { sendPushNotification } = require('./pushNotifications');
 const { issueMatchesSubscription, toLowercaseList } = require('../utils/subscriptionMatching');
+const { triageIssue } = require('./aiTriage');
 /**
  * Check repositories for a specific tier
  */
@@ -255,16 +256,47 @@ const checkRepositoriesForTier = async (tierName, frequencyMinutes, options = {}
                         console.log(`  👤 User: ${sub.user.email || sub.user._id}`);
                         console.log(`  📖 Issue: ${issue.title}`);
 
+                        // ── NEW: AI Triage (non-blocking) ──────────────────
+                        let triageResult = null;
+                        try {
+                            triageResult = await triageIssue(issue);
+                            if (triageResult) {
+                                await Notification.updateOne(
+                                    uniqueFilter,
+                                    { $set: { aiTriage: triageResult } }
+                                );
+                            }
+                        } catch (triageError) {
+                            console.warn(`   ⚠️  Triage storage failed: ${triageError.message}`);
+                        }
+                        // ───────────────────────────────────────────────────
+
+                        // Enhance push notification title with severity
+                        let pushTitle = '🔔 New Issue Matched!';
+                        if (triageResult?.severity === 'critical') {
+                            pushTitle = '🚨 Critical Issue Detected!';
+                        } else if (triageResult?.severity === 'high') {
+                            pushTitle = '⚠️ High Priority Issue';
+                        } else if (triageResult?.type === 'security') {
+                            pushTitle = '🔐 Security Issue Found!';
+                        }
+
                         // ✅ DETAILED push notification attempt
                         try {
                             const pushResult = await sendPushNotification(sub.user._id, {
                                 _id: notificationId,
-                                issueTitle: issue.title,
+                                issueTitle: triageResult?.summary || issue.title,
                                 issueUrl: issue.html_url,
                                 matchedLabels,
                                 repository: {
                                     owner: repository.owner,
                                     name: repository.name
+                                },
+                                pushTitle,
+                                data: {
+                                    type: 'new_issue',
+                                    severity: triageResult?.severity || 'medium',
+                                    issueType: triageResult?.type || 'other'
                                 }
                             });
 

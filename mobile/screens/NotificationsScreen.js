@@ -6,6 +6,7 @@ import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
 import { Card, AnimatedMascot, LabelChip, Button, shadowStyles, ListSkeleton } from '../components/UI';
 import { ArrowLeft, Bell, CheckCheck, Trash2, Github, Bookmark, Loader2 } from 'lucide-react-native';
+import { SeverityBadge, TypeBadge } from '../components/TriageBadge';
 import { MotiView } from 'moti';
 import { StatusBar } from 'expo-status-bar';
 
@@ -16,6 +17,7 @@ const NotificationsScreen = ({ navigation }) => {
     const [refreshing, setRefreshing] = useState(false);
     const [activeTab, setActiveTab] = useState('inbox');
     const [selectedRepo, setSelectedRepo] = useState('all');
+    const [severityFilter, setSeverityFilter] = useState('all');
     const [trackingIssueUrl, setTrackingIssueUrl] = useState(null);
     const [followedIssueUrls, setFollowedIssueUrls] = useState(() => new Set());
 
@@ -245,8 +247,15 @@ const NotificationsScreen = ({ navigation }) => {
                                     </View>
                                 </View>
 
+                                {item.aiTriage?.severity && (
+                                    <View style={{ flexDirection: 'row', marginBottom: 8 }}>
+                                        <SeverityBadge severity={item.aiTriage.severity} />
+                                        <TypeBadge type={item.aiTriage.type} />
+                                    </View>
+                                )}
+
                                 <Text className="text-sm font-inter-semibold text-primary mb-2 leading-5" numberOfLines={2}>
-                                    {item.issueTitle}
+                                    {item.aiTriage?.summary || item.issueTitle}
                                 </Text>
 
                                 <View className="flex-row flex-wrap">
@@ -386,6 +395,47 @@ const NotificationsScreen = ({ navigation }) => {
                     </ScrollView>
                 )}
 
+                {/* Severity filter chips */}
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} 
+                    className="mb-2" 
+                    contentContainerStyle={{ paddingRight: 24 }}>
+                    {['all', 'critical', 'high', 'medium', 'low'].map(sev => {
+                        const colors = {
+                            all: { active: '#6366F1', bg: '#EEF2FF' },
+                            critical: { active: '#DC2626', bg: '#FEF2F2' },
+                            high: { active: '#EA580C', bg: '#FFF7ED' },
+                            medium: { active: '#CA8A04', bg: '#FEFCE8' },
+                            low: { active: '#16A34A', bg: '#F0FDF4' }
+                        };
+                        const c = colors[sev];
+                        const isActive = severityFilter === sev;
+                        return (
+                            <TouchableOpacity
+                                key={sev}
+                                onPress={() => setSeverityFilter(sev)}
+                                style={{
+                                    marginRight: 8,
+                                    paddingHorizontal: 12,
+                                    paddingVertical: 6,
+                                    borderRadius: 20,
+                                    backgroundColor: isActive ? c.active : c.bg,
+                                    borderWidth: 1,
+                                    borderColor: isActive ? c.active : 'transparent'
+                                }}
+                            >
+                                <Text style={{
+                                    fontSize: 11,
+                                    fontWeight: '700',
+                                    color: isActive ? '#fff' : c.active,
+                                    textTransform: 'capitalize'
+                                }}>
+                                    {sev === 'all' ? 'All' : `${sev.charAt(0).toUpperCase() + sev.slice(1)}`}
+                                </Text>
+                            </TouchableOpacity>
+                        );
+                    })}
+                </ScrollView>
+
                 {notifs.length > 0 && (
                     <MotiView
                         from={{ opacity: 0, height: 0 }}
@@ -408,40 +458,52 @@ const NotificationsScreen = ({ navigation }) => {
                 </View>
             )}
 
-            <FlatList
-                data={notifs}
-                renderItem={renderItem}
-                keyExtractor={item => item._id}
-                contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 10, paddingBottom: 40 }}
-                refreshControl={
-                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#6366F1" />
+            {/* Apply filters */}
+            {(() => {
+                let displayedNotifs = notifs;
+                if (selectedRepo !== 'all') {
+                    displayedNotifs = displayedNotifs.filter(n => (n.repository?._id || n.repository?.name) === selectedRepo);
                 }
-                ListEmptyComponent={
-                    !loading && (
-                        <MotiView
-                            from={{ opacity: 0, scale: 0.9 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            className="items-center"
-                        >
-                            <AnimatedMascot source={require('../maskot/confused.png')} style={{ width: 300, height: 300 }} />
-                            <Text className="text-primary text-3xl font-poppins-bold text-center mt-3">
-                                {activeTab === 'history' ? 'No History Yet' : 'All Caught Up!'}
-                            </Text>
-                            <Text className="text-muted text-base font-inter-medium text-center px-10 mt-2 mb-6 leading-6">
-                                {activeTab === 'history'
-                                    ? 'Read notifications from the last 30 days will appear here after you dismiss them.'
-                                    : "No new notifications. We'll alert you when issues matching your filters appear."}
-                            </Text>
-                            <Button
-                                title={activeTab === 'history' ? 'Switch to Inbox' : 'Back to Dashboard'}
-                                onPress={() => activeTab === 'history' ? setActiveTab('inbox') : navigation.goBack()}
-                                className="mt-10 px-8"
-                                variant="outline"
-                            />
-                        </MotiView>
-                    )
+                if (severityFilter !== 'all') {
+                    displayedNotifs = displayedNotifs.filter(n => n.aiTriage?.severity === severityFilter);
                 }
-            />
+                return (
+                    <FlatList
+                        data={displayedNotifs}
+                        renderItem={renderItem}
+                        keyExtractor={item => item._id}
+                        contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 10, paddingBottom: 40 }}
+                        refreshControl={
+                            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#6366F1" />
+                        }
+                        ListEmptyComponent={
+                            !loading && (
+                                <MotiView
+                                    from={{ opacity: 0, scale: 0.9 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    className="items-center"
+                                >
+                                    <AnimatedMascot source={require('../maskot/confused.png')} style={{ width: 300, height: 300 }} />
+                                    <Text className="text-primary text-3xl font-poppins-bold text-center mt-3">
+                                        {activeTab === 'history' ? 'No History Yet' : 'All Caught Up!'}
+                                    </Text>
+                                    <Text className="text-muted text-base font-inter-medium text-center px-10 mt-2 mb-6 leading-6">
+                                        {activeTab === 'history'
+                                            ? 'Read notifications from the last 30 days will appear here after you dismiss them.'
+                                            : "No new notifications. We'll alert you when issues matching your filters appear."}
+                                    </Text>
+                                    <Button
+                                        title={activeTab === 'history' ? 'Switch to Inbox' : 'Back to Dashboard'}
+                                        onPress={() => activeTab === 'history' ? setActiveTab('inbox') : navigation.goBack()}
+                                        className="mt-10 px-8"
+                                        variant="outline"
+                                    />
+                                </MotiView>
+                            )
+                        }
+                    />
+                );
+            })()}
         </SafeAreaView>
     );
 };

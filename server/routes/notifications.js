@@ -19,6 +19,35 @@ router.post('/mark-all-read', auth, async (req, res) => {
     }
 });
 
+// Get triage summary (severity counts)
+router.get('/triage-summary', auth, async (req, res) => {
+    try {
+        const summary = await Notification.aggregate([
+            { $match: { user: req.user._id, isRead: false } },
+            {
+                $group: {
+                    _id: '$aiTriage.severity',
+                    count: { $sum: 1 }
+                }
+            }
+        ]);
+
+        const result = { critical: 0, high: 0, medium: 0, low: 0, unanalyzed: 0 };
+        for (const item of summary) {
+            if (item._id && result[item._id] !== undefined) {
+                result[item._id] = item.count;
+            } else {
+                result.unanalyzed += item.count;
+            }
+        }
+
+        res.json(result);
+    } catch (error) {
+        console.error('Triage summary error:', error);
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
+
 // Get all notifications for current user
 router.get('/', auth, async (req, res) => {
     try {
