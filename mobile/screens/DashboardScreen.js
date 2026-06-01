@@ -6,10 +6,11 @@ import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
 import { Card, Button, LabelChip, AnimatedMascot, Badge, shadowStyles, SectionHeader, ListSkeleton } from '../components/UI';
 import { GitBranch, ExternalLink, Bell, Trash2, Hash, Layers, ChevronRight, Github } from 'lucide-react-native';
-import { TriageCard } from '../components/TriageBadge';
+import { TriageCard, SeverityBadge, TypeBadge } from '../components/TriageBadge';
 import { MotiView } from 'moti';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
+import Swipeable from 'react-native-gesture-handler/Swipeable';
 import IssueActivityChart from '../components/IssueActivityChart';
 const DashboardScreen = ({ navigation }) => {
     const { userToken, BASE_URL, unreadCount, updateUnreadCount } = useContext(AuthContext);
@@ -21,6 +22,7 @@ const DashboardScreen = ({ navigation }) => {
     const [refreshing, setRefreshing] = useState(false);
     const [activityPeriod, setActivityPeriod] = useState('weekly');
     const [selectedRepo, setSelectedRepo] = useState('all');
+    const [expandedIssueId, setExpandedIssueId] = useState(null);
 
     const fetchData = async () => {
         try {
@@ -116,80 +118,143 @@ const DashboardScreen = ({ navigation }) => {
         name: item.name,
     }));
 
+    const handleSwipeDelete = async (item) => {
+        await handleDeleteNotification(item._id);
+        if (expandedIssueId === item._id) {
+            setExpandedIssueId(null);
+        }
+    };
+
+    const renderDeleteAction = () => (
+        <View style={{
+            width: 92,
+            height: '100%',
+            marginHorizontal: 6,
+            alignSelf: 'stretch',
+            borderRadius: 22,
+            backgroundColor: '#FEF2F2',
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderWidth: 1,
+            borderColor: '#FECACA',
+            overflow: 'hidden'
+        }}>
+            <View style={{
+                width: '100%',
+                height: '100%',
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: 'rgba(255,255,255,0.45)'
+            }}>
+                <Trash2 size={20} color="#EF4444" fill="none" />
+                <Text style={{ marginTop: 6, fontSize: 11, fontFamily: 'Inter_600SemiBold', color: '#DC2626' }}>
+                    Delete
+                </Text>
+            </View>
+        </View>
+    );
+
     const renderIssue = ({ item, index }) => (
         <MotiView
             from={{ opacity: 0, translateY: 15, scale: 0.98 }}
             animate={{ opacity: 1, translateY: 0, scale: 1 }}
-            transition={{ type: 'timing', duration: 300, delay: index * 50 }}
+            transition={{ type: 'timing', duration: 300, delay: index * 35 }}
         >
-            <Card className="mb-6 p-6">
-                <View className="flex-row justify-between items-start mb-4">
-                    <View className="flex-row items-center flex-1">
-                        <View className="w-10 h-10 rounded-full bg-slate-100 items-center justify-center mr-3 overflow-hidden">
-                            {item.repository?.ownerAvatarUrl ? (
-                                <Image
-                                    source={{ uri: item.repository.ownerAvatarUrl }}
-                                    className="w-full h-full"
-                                    resizeMode="cover"
-                                />
-                            ) : (
-                                <Github size={20} color="#6366F1" fill="none" />
-                            )}
-                        </View>
-                        <View className="flex-1">
-                            <Text className="text-xs text-muted font-mono" numberOfLines={1}>
-                                {item.repository?.owner}
-                            </Text>
-                            <Text className="text-sm text-primary font-poppins-semibold" numberOfLines={1}>
-                                {item.repository?.name}
-                            </Text>
-                        </View>
-                    </View>
+            <Swipeable
+                renderLeftActions={renderDeleteAction}
+                renderRightActions={renderDeleteAction}
+                overshootLeft={false}
+                overshootRight={false}
+                friction={2}
+                leftThreshold={48}
+                rightThreshold={48}
+                onSwipeableOpen={() => handleSwipeDelete(item)}
+            >
+                <Card className="p-4 overflow-hidden">
                     <TouchableOpacity
-                        onPress={() => {
-                            if (Platform.OS === 'web') {
-                                if (window.confirm('Are you sure you want to delete this notification?')) {
-                                    handleDeleteNotification(item._id);
-                                }
-                            } else {
-                                Alert.alert(
-                                    'Remove Update',
-                                    'Are you sure you want to delete this notification?',
-                                    [
-                                        { text: 'Cancel', style: 'cancel' },
-                                        { text: 'Delete', style: 'destructive', onPress: () => handleDeleteNotification(item._id) }
-                                    ]
-                                );
-                            }
-                        }}
-                        className="w-10 h-10 items-center justify-center rounded-full bg-danger/10"
+                        activeOpacity={0.8}
+                        onPress={() => setExpandedIssueId(prev => (prev === item._id ? null : item._id))}
                     >
-                        <Trash2 size={18} color="#EF4444" fill="none" />
+                        <View className="flex-row justify-between items-start">
+                            <View className="flex-row items-center flex-1 mr-3">
+                                <View className="w-9 h-9 rounded-full bg-slate-100 items-center justify-center mr-3 overflow-hidden">
+                                    {item.repository?.ownerAvatarUrl ? (
+                                        <Image
+                                            source={{ uri: item.repository.ownerAvatarUrl }}
+                                            className="w-full h-full"
+                                            resizeMode="cover"
+                                        />
+                                    ) : (
+                                        <Github size={18} color="#6366F1" fill="none" />
+                                    )}
+                                </View>
+                                <View className="flex-1">
+                                    <View className="flex-row items-center mb-1">
+                                        <Text className="text-[11px] text-muted font-mono" numberOfLines={1}>
+                                            {item.repository?.owner}
+                                        </Text>
+                                        <Text className="text-[11px] text-muted font-mono mx-1">/</Text>
+                                        <Text className="text-[11px] text-primary font-poppins-semibold" numberOfLines={1}>
+                                            {item.repository?.name}
+                                        </Text>
+                                        <View className="bg-slate-100 rounded-full px-2 py-0.5 ml-2">
+                                            <Text className="text-muted text-[10px] font-inter-semibold">{item.createdAt ? `${(new Date() - new Date(item.createdAt)) < 3600000 ? `${Math.max(1, Math.floor((new Date() - new Date(item.createdAt)) / 60000))}m` : `${Math.floor((new Date() - new Date(item.createdAt)) / 3600000)}h`} ago` : ''}</Text>
+                                        </View>
+                                    </View>
+                                    <Text className="text-base font-poppins-semibold text-primary leading-5" numberOfLines={2}>
+                                        {item.aiTriage?.summary || item.issueTitle}
+                                    </Text>
+                                </View>
+                            </View>
+
+                            <MotiView
+                                animate={{ rotate: expandedIssueId === item._id ? '90deg' : '0deg' }}
+                                transition={{ type: 'timing', duration: 180 }}
+                                style={{ marginTop: 6 }}
+                            >
+                                <ChevronRight size={18} color="#94A3B8" fill="none" />
+                            </MotiView>
+                        </View>
+
+                        <View className="flex-row items-center mt-3 flex-wrap">
+                            {item.aiTriage?.severity && <SeverityBadge severity={item.aiTriage.severity} />}
+                            {item.aiTriage?.type && <TypeBadge type={item.aiTriage.type} />}
+                         
+                        </View>
                     </TouchableOpacity>
-                </View>
 
-                <Text className="text-lg font-poppins-semibold text-primary mb-3 leading-6" numberOfLines={3}>
-                    {item.issueTitle}
-                </Text>
+                    {expandedIssueId === item._id && (
+                        <MotiView
+                            from={{ opacity: 0, translateY: -6 }}
+                            animate={{ opacity: 1, translateY: 0 }}
+                            transition={{ type: 'timing', duration: 220 }}
+                            className="mt-3 pt-3 border-t border-slate-100"
+                        >
+                            {item.aiTriage && (
+                                <View className="mb-3">
+                                    <TriageCard triage={item.aiTriage} />
+                                </View>
+                            )}
 
-                {item.aiTriage && <TriageCard triage={item.aiTriage} />}
+                            <View className="flex-row flex-wrap mb-4">
+                                {(item.matchedLabels || []).map((l, i) => (
+                                    <LabelChip key={i} label={l} selected />
+                                ))}
+                            </View>
 
-                <View className="flex-row flex-wrap mb-6">
-                    {item.matchedLabels.map((l, i) => (
-                        <LabelChip key={i} label={l} selected />
-                    ))}
-                </View>
-
-                <Button
-                    title="View on GitHub"
-                    variant="outline"
-                    icon={ExternalLink}
-                    onPress={() => Linking.openURL(item.issueUrl)}
-                    onLongPress={() => handleIssueLongPress(item)}
-                    delayLongPress={250}
-                    className="h-14"
-                />
-            </Card>
+                            <Button
+                                title="View on GitHub"
+                                variant="outline"
+                                icon={ExternalLink}
+                                onPress={() => Linking.openURL(item.issueUrl)}
+                                onLongPress={() => handleIssueLongPress(item)}
+                                delayLongPress={250}
+                                className="h-12"
+                            />
+                        </MotiView>
+                    )}
+                </Card>
+            </Swipeable>
         </MotiView>
     );
 

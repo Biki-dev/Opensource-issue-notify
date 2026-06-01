@@ -21,6 +21,7 @@ import GitHubTokenSettings from './screens/GitHubTokenSettings';
 import RepoDetailScreen from './screens/RepoDetailScreen';
 import { Home, Bell, Bookmark, Settings } from 'lucide-react-native';
 import { MotiView } from 'moti';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useFonts, Poppins_600SemiBold, Poppins_700Bold } from '@expo-google-fonts/poppins';
 import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold } from '@expo-google-fonts/inter';
 import { Montserrat_700Bold } from '@expo-google-fonts/montserrat';
@@ -316,10 +317,12 @@ export default function App() {
     }
 
     return (
-        <SafeAreaProvider>
-            <AuthProvider>
-                <AppNav />
-            </AuthProvider>
-        </SafeAreaProvider>
+        <GestureHandlerRootView style={{ flex: 1 }}>
+            <SafeAreaProvider>
+                <AuthProvider>
+                    <AppNav />
+                </AuthProvider>
+            </SafeAreaProvider>
+        </GestureHandlerRootView>
     );
 }
