@@ -55,16 +55,10 @@ const checkRepositoriesForTier = async (tierName, frequencyMinutes, options = {}
                 repoSubscriptionsMap.set(repoId, {
                     repository: sub.repository,
                     subscriptions: [],
-                    labelSet: new Set()
                 });
             }
             const repoEntry = repoSubscriptionsMap.get(repoId);
             repoEntry.subscriptions.push(sub);
-            for (const label of sub.labels || []) {
-                if (label) {
-                    repoEntry.labelSet.add(label);
-                }
-            }
         }
 
         // Process each repository
@@ -84,17 +78,12 @@ const checkRepositoriesForTier = async (tierName, frequencyMinutes, options = {}
                 // 🆕 CRITICAL FIX: Limit pagination to prevent API abuse
                 const MAX_PAGES = 3; // Only fetch 3 pages (300 issues max)
                 const PER_PAGE = 100;
-                const apiLabels = Array.from(labelSet);
                 const queryParams = new URLSearchParams({
                     state: 'all',
                     per_page: String(PER_PAGE),
                     sort: 'created',
                     direction: 'desc'
                 });
-
-                if (apiLabels.length > 0) {
-                    queryParams.set('labels', apiLabels.join(','));
-                }
 
                 let nextUrl = `https://api.github.com/repos/${repository.owner}/${repository.name}/issues?${queryParams.toString()}`;
                 let allIssues = [];
