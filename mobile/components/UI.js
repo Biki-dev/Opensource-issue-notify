@@ -12,11 +12,11 @@ export const cn = (...inputs) => twMerge(clsx(inputs));
 // Shadow Styles Helper
 export const shadowStyles = {
     light: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.06,
-        shadowRadius: 8,
-        elevation: 2,
+        shadowColor: 'transparent',
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0,
+        shadowRadius: 0,
+        elevation: 0,
     },
     medium: {
         shadowColor: '#6366F1',
@@ -162,7 +162,7 @@ export const Card = ({ children, className, containerStyle }) => {
     return (
         <View
             className={cn("bg-card rounded-3xl p-6 mb-4 border border-border", className)}
-            style={[shadowStyles.light, containerStyle]}
+            style={[containerStyle]}
         >
             {children}
         </View>
