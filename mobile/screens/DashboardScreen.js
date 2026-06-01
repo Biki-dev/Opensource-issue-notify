@@ -194,10 +194,17 @@ const DashboardScreen = ({ navigation }) => {
                                             {item.repository?.owner}
                                         </Text>
                                         <Text className="text-[11px] text-muted font-mono mx-1">/</Text>
-                                        <Text className="text-[11px] text-primary font-poppins-semibold" numberOfLines={1}>
-                                            {item.repository?.name}
-                                        </Text>
-                                        <View className="bg-slate-100 rounded-full px-2 py-0.5 ml-2">
+                            
+                                        {item.repository?.name.length > 4 ? (
+                                            <Text className="text-[11px] text-primary font-poppins-semibold" numberOfLines={1}>
+                                                {item.repository?.name.substring(0, 4)}...
+                                            </Text>
+                                        ) : (
+                                            <Text className="text-[11px] text-primary font-poppins-semibold" numberOfLines={1}>
+                                                {item.repository?.name}
+                                            </Text>
+                                        )}
+                                        <View className="bg-slate-100 rounded-full px-2 py-0.5 ml-2 position-absolute">
                                             <Text className="text-muted text-[10px] font-inter-semibold">{item.createdAt ? `${(new Date() - new Date(item.createdAt)) < 3600000 ? `${Math.max(1, Math.floor((new Date() - new Date(item.createdAt)) / 60000))}m` : `${Math.floor((new Date() - new Date(item.createdAt)) / 3600000)}h`} ago` : ''}</Text>
                                         </View>
                                     </View>
