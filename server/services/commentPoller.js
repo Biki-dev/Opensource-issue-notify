@@ -45,6 +45,7 @@ const mapComment = (comment) => ({
     }
 });
 
+
 const pollComments = async () => {
     console.log('💬 Polling tracked issues for new comments...');
 
