@@ -17,6 +17,7 @@ const NotificationsScreen = ({ navigation }) => {
     const [activeTab, setActiveTab] = useState('inbox');
     const [selectedRepo, setSelectedRepo] = useState('all');
     const [trackingIssueUrl, setTrackingIssueUrl] = useState(null);
+    const [followedIssueUrls, setFollowedIssueUrls] = useState(() => new Set());
 
     // Use refs so the fetch callback always reads current values without
     // being re-created on every render (avoids multiple simultaneous fetches)
@@ -32,11 +33,18 @@ const NotificationsScreen = ({ navigation }) => {
                 params.repository = selectedRepoRef.current;
             }
 
-            const res = await axios.get(`${BASE_URL}/notifications`, {
-                params,
-                headers: { Authorization: `Bearer ${userToken}` }
-            });
-            setNotifs(res.data || []);
+            const [notifRes, trackerRes] = await Promise.all([
+                axios.get(`${BASE_URL}/notifications`, {
+                    params,
+                    headers: { Authorization: `Bearer ${userToken}` }
+                }),
+                axios.get(`${BASE_URL}/issue-tracker`, {
+                    headers: { Authorization: `Bearer ${userToken}` }
+                })
+            ]);
+
+            setNotifs(notifRes.data || []);
+            setFollowedIssueUrls(new Set((trackerRes.data || []).map(tracker => tracker.issueUrl).filter(Boolean)));
 
             if (activeTabRef.current === 'inbox') {
                 updateUnreadCount();
@@ -112,12 +120,23 @@ const NotificationsScreen = ({ navigation }) => {
                 { headers: { Authorization: `Bearer ${userToken}` } }
             );
 
+            setFollowedIssueUrls(prev => {
+                const next = new Set(prev);
+                next.add(item.issueUrl);
+                return next;
+            });
+
             Alert.alert('Following', 'You will get updates when this issue changes.', [
                 { text: 'Later', style: 'cancel' },
                 { text: 'Open Following', onPress: () => navigation.navigate('Main', { screen: 'FollowingTab' }) }
             ]);
         } catch (error) {
             if (error.response?.status === 409) {
+                setFollowedIssueUrls(prev => {
+                    const next = new Set(prev);
+                    next.add(item.issueUrl);
+                    return next;
+                });
                 Alert.alert('Already following', 'This issue is already in your Following list.');
             } else {
                 Alert.alert('Could not follow', 'Please try again in a moment.');
@@ -246,17 +265,19 @@ const NotificationsScreen = ({ navigation }) => {
                                 {!!item.issueUrl && !!item.repository?._id && (
                                     <TouchableOpacity
                                         onPress={() => handleFollowIssue(item)}
-                                        disabled={trackingIssueUrl === item.issueUrl}
+                                        disabled={trackingIssueUrl === item.issueUrl || followedIssueUrls.has(item.issueUrl)}
                                         className="flex-row items-center mt-3 pt-3 border-t border-border/40"
                                         activeOpacity={0.8}
                                     >
                                         {trackingIssueUrl === item.issueUrl ? (
                                             <Loader2 size={12} color="#6366F1" fill="none" />
+                                        ) : followedIssueUrls.has(item.issueUrl) ? (
+                                            <CheckCheck size={12} color="#10B981" fill="none" />
                                         ) : (
                                             <Bookmark size={12} color="#6366F1" fill="none" />
                                         )}
-                                        <Text className="text-brand text-[11px] font-inter-semibold ml-1.5">
-                                            {trackingIssueUrl === item.issueUrl ? 'Following...' : 'Follow this issue'}
+                                        <Text className={`text-[11px] font-inter-semibold ml-1.5 ${followedIssueUrls.has(item.issueUrl) ? 'text-emerald-600' : 'text-brand'}`}>
+                                            {trackingIssueUrl === item.issueUrl ? 'Following...' : followedIssueUrls.has(item.issueUrl) ? 'Followed' : 'Follow this issue'}
                                         </Text>
                                     </TouchableOpacity>
                                 )}
