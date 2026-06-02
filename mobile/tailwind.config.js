@@ -7,7 +7,7 @@ module.exports = {
                 brand: "#6366F1",
                 brandDark: "#4F46E5",
                 accent: "#8B5CF6",
-                background: "#F8FAFC",
+                background: "#F7F8FA", 
                 backgroundLight: "#F1F5F9",
                 card: "#FFFFFF",
                 border: "#E2E8F0",

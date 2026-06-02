@@ -83,97 +83,194 @@ const HomeScreen = ({ navigation }) => {
         }
     };
 
-    const renderCompactCard = ({ item, index }) => (
-        <MotiView
-            from={{ opacity: 0, translateY: 15, scale: 0.98 }}
-            animate={{ opacity: 1, translateY: 0, scale: 1 }}
-            transition={{ type: 'timing', duration: 300, delay: index * 40 }}
-            style={{ width: '48%', marginRight: index % 2 === 0 ? '4%' : 0 }}
-        >
-            <Card className="mb-4 p-3" containerStyle={{ opacity: item.visible === false ? 0.6 : item.muted ? 0.82 : 1 }}>
+    const renderCompactCard = ({ item, index }) => {
+        const statusColor = item.visible === false ? '#94A3B8' : item.muted ? '#F59E0B' : '#10B981';
+        const statusLabel = item.visible === false ? 'Hidden' : item.muted ? 'Muted' : 'Active';
+
+        return (
+            <MotiView
+                from={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ type: 'timing', duration: 260, delay: index * 35 }}
+                style={{ width: '48%', marginRight: index % 2 === 0 ? '4%' : 0 }}
+            >
                 <TouchableOpacity
                     onPress={() => navigation.navigate('RepoDetail', { subscriptionId: item._id })}
-                    activeOpacity={0.7}
+                    activeOpacity={0.85}
+                    style={{
+                        backgroundColor: '#FFFFFF',
+                        borderRadius: 20,
+                        padding: 14,
+                        marginBottom: 12,
+                        borderWidth: 1,
+                        borderColor: '#F1F5F9',
+                        opacity: item.visible === false ? 0.6 : 1,
+                        ...shadowStyles.light
+                    }}
                 >
-                    <View className="items-center mb-2">
-                        <View className="w-10 h-10 rounded-xl bg-[#EEF2FF] items-center justify-center mb-2 overflow-hidden">
+                    {/* Avatar */}
+                    <View style={{ alignItems: 'center', marginBottom: 10 }}>
+                        <View style={{
+                            width: 44, height: 44,
+                            borderRadius: 14,
+                            backgroundColor: '#EEF2FF',
+                            overflow: 'hidden',
+                            marginBottom: 8,
+                            borderWidth: 1,
+                            borderColor: '#E0E7FF'
+                        }}>
                             {item.repository?.ownerAvatarUrl ? (
-                                <Image
-                                    source={{ uri: item.repository.ownerAvatarUrl }}
-                                    className="w-full h-full"
-                                    resizeMode="cover"
-                                />
+                                <Image source={{ uri: item.repository.ownerAvatarUrl }}
+                                    style={{ width: '100%', height: '100%' }} resizeMode="cover" />
                             ) : (
-                                <GitFork size={18} color="#6366F1" fill="none" />
+                                <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+                                    <GitFork size={20} color="#6366F1" />
+                                </View>
                             )}
                         </View>
-                        <Text className="text-[9px] text-muted font-mono mb-0.5" numberOfLines={1}>
+                        <Text style={{
+                            fontSize: 9, color: '#94A3B8',
+                            fontFamily: 'JetBrainsMono_400Regular',
+                            marginBottom: 2
+                        }} numberOfLines={1}>
                             {item.repository.owner}
                         </Text>
-                        <Text className="text-xs font-poppins-bold text-primary text-center leading-4" numberOfLines={2}>
+                        <Text style={{
+                            fontSize: 12,
+                            fontFamily: 'Poppins_600SemiBold',
+                            color: '#0F172A',
+                            textAlign: 'center'
+                        }} numberOfLines={2}>
                             {item.repository.name}
                         </Text>
                     </View>
 
-                    <View className="flex-row flex-wrap justify-center h-14 overflow-hidden">
+                    {/* Labels */}
+                    <View style={{
+                        flexDirection: 'row',
+                        flexWrap: 'wrap',
+                        justifyContent: 'center',
+                        minHeight: 44,
+                        marginBottom: 10
+                    }}>
                         {item.labels.slice(0, 3).map((label, idx) => (
-                            <View key={idx} className="bg-[#EEF2FF] rounded-full px-2 py-0.5 m-0.5">
-                                <Text className="text-brand text-[8px] font-inter-bold" numberOfLines={1}>{label}</Text>
+                            <View key={idx} style={{
+                                backgroundColor: '#EEF2FF',
+                                borderRadius: 20,
+                                paddingHorizontal: 6,
+                                paddingVertical: 2,
+                                margin: 2
+                            }}>
+                                <Text style={{
+                                    fontSize: 8,
+                                    color: '#6366F1',
+                                    fontFamily: 'Inter_600SemiBold'
+                                }} numberOfLines={1}>
+                                    {label}
+                                </Text>
                             </View>
                         ))}
                         {item.labels.length > 3 && (
-                            <View className="bg-slate-100 rounded-full px-2 py-0.5 m-0.5">
-                                <Text className="text-muted text-[8px] font-inter-bold">+{item.labels.length - 3}</Text>
+                            <View style={{
+                                backgroundColor: '#F1F5F9',
+                                borderRadius: 20,
+                                paddingHorizontal: 6,
+                                paddingVertical: 2,
+                                margin: 2
+                            }}>
+                                <Text style={{ fontSize: 8, color: '#94A3B8', fontFamily: 'Inter_600SemiBold' }}>
+                                    +{item.labels.length - 3}
+                                </Text>
                             </View>
                         )}
                     </View>
 
-                    <View className="flex-row items-center justify-center mb-2 pb-2 border-b border-border/50">
-                        <View className={cn("w-1.5 h-1.5 rounded-full mr-1.5", item.visible === false ? "bg-muted" : item.muted ? "bg-amber-500" : "bg-success")} />
-                        <Text className="text-muted text-[8px] font-inter-bold uppercase tracking-tighter">
-                            {item.visible === false ? "Hidden" : item.muted ? "Muted" : "Monitoring"}
-                        </Text>
+                    {/* Status + divider */}
+                    <View style={{
+                        borderTopWidth: 1,
+                        borderTopColor: '#F8FAFC',
+                        paddingTop: 10
+                    }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}>
+                            <View style={{
+                                width: 6, height: 6,
+                                borderRadius: 3,
+                                backgroundColor: statusColor,
+                                marginRight: 5
+                            }} />
+                            <Text style={{
+                                fontSize: 9,
+                                color: statusColor,
+                                fontFamily: 'Inter_600SemiBold',
+                                textTransform: 'uppercase',
+                                letterSpacing: 0.5
+                            }}>
+                                {statusLabel}
+                            </Text>
+                        </View>
+
+                        {/* Action buttons */}
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                            <TouchableOpacity
+                                onPress={() => toggleVisibility(item._id, item.visible)}
+                                style={{
+                                    flex: 1,
+                                    height: 28,
+                                    backgroundColor: '#F8FAFC',
+                                    borderRadius: 8,
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    marginRight: 3,
+                                    borderWidth: 1,
+                                    borderColor: '#E2E8F0'
+                                }}
+                            >
+                                {item.visible === false
+                                    ? <Eye size={12} color="#6366F1" />
+                                    : <EyeOff size={12} color="#94A3B8" />}
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                onPress={() => toggleMute(item._id, item.muted)}
+                                style={{
+                                    flex: 1,
+                                    height: 28,
+                                    backgroundColor: '#F8FAFC',
+                                    borderRadius: 8,
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    marginHorizontal: 3,
+                                    borderWidth: 1,
+                                    borderColor: '#E2E8F0'
+                                }}
+                            >
+                                {item.muted
+                                    ? <BellOff size={12} color="#F59E0B" />
+                                    : <Bell size={12} color="#94A3B8" />}
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                onPress={() => navigation.navigate('EditLabels', { sub: item })}
+                                style={{
+                                    flex: 1,
+                                    height: 28,
+                                    backgroundColor: '#EEF2FF',
+                                    borderRadius: 8,
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    marginLeft: 3,
+                                    borderWidth: 1,
+                                    borderColor: '#C7D2FE'
+                                }}
+                            >
+                                <Edit2 size={12} color="#6366F1" />
+                            </TouchableOpacity>
+                        </View>
                     </View>
                 </TouchableOpacity>
-
-                <View className="flex-row justify-center">
-                    <TouchableOpacity
-                        onPress={() => toggleVisibility(item._id, item.visible)}
-                        className="w-8 h-8 rounded-lg bg-slate-50 border border-border items-center justify-center"
-                    >
-                        {item.visible === false ? <Eye size={12} color="#6366F1" fill="none" /> : <EyeOff size={12} color="#94A3B8" fill="none" />}
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        onPress={() => toggleMute(item._id, item.muted)}
-                        className="w-8 h-8 rounded-lg bg-slate-50 border border-border items-center justify-center"
-                    >
-                        {item.muted ? <BellOff size={12} color="#F59E0B" fill="none" /> : <Bell size={12} color="#94A3B8" fill="none" />}
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        onPress={() => navigation.navigate('EditLabels', { sub: item })}
-                        className="w-8 h-8 rounded-lg bg-slate-50 border border-border items-center justify-center"
-                    >
-                        <Edit2 size={12} color="#6366F1" fill="none" />
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        onPress={() => {
-                            if (Platform.OS === 'web') {
-                                if (window.confirm('Stop tracking?')) handleDeleteSub(item._id);
-                            } else {
-                                Alert.alert('Delete', 'Stop tracking?', [
-                                    { text: 'Cancel', style: 'cancel' },
-                                    { text: 'Yes', style: 'destructive', onPress: () => handleDeleteSub(item._id) }
-                                ]);
-                            }
-                        }}
-                        className="w-8 h-8 rounded-lg bg-danger/10 items-center justify-center"
-                    >
-                        <Trash2 size={12} color="#EF4444" fill="none" />
-                    </TouchableOpacity>
-                </View>
-            </Card>
-        </MotiView>
-    );
+            </MotiView>
+        );
+    };
 
 
 
@@ -259,26 +356,54 @@ const HomeScreen = ({ navigation }) => {
                 }
                 ListEmptyComponent={!loading && (
                     <MotiView
-                        from={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="items-center px-6"
+                        from={{ opacity: 0, translateY: 30 }}
+                        animate={{ opacity: 1, translateY: 0 }}
+                        transition={{ type: 'spring', damping: 18, stiffness: 120 }}
+                        style={{ alignItems: 'center', paddingHorizontal: 24 }}
                     >
                         <AnimatedMascot
                             source={require('../maskot/subadd.png')}
-                            style={{ width: 280, height: 280 }}
+                            style={{ width: 240, height: 240 }}
                         />
-                        <Text className="text-primary text-3xl font-poppins-bold text-center">
-                            {searchQuery ? "No matches found" : "Ready to track?"}
-                        </Text>
-                        <Text className="text-muted text-base font-inter-medium text-center px-12 mb-4 mt-2 leading-6">
-                            {searchQuery ? `We couldn't find any repositories matching "${searchQuery}"` : "Add a GitHub repository to start tracking issues that matter to you."}
-                        </Text>
+                        <MotiView
+                            from={{ opacity: 0, translateY: 10 }}
+                            animate={{ opacity: 1, translateY: 0 }}
+                            transition={{ delay: 200, type: 'timing', duration: 300 }}
+                        >
+                            <Text style={{
+                                fontSize: 22,
+                                fontFamily: 'Poppins_700Bold',
+                                color: '#0F172A',
+                                textAlign: 'center',
+                                marginBottom: 8
+                            }}>
+                                {searchQuery ? "No matches found" : "Ready to track?"}
+                            </Text>
+                            <Text style={{
+                                fontSize: 14,
+                                fontFamily: 'Inter_400Regular',
+                                color: '#64748B',
+                                textAlign: 'center',
+                                lineHeight: 22,
+                                marginBottom: 24
+                            }}>
+                                {searchQuery
+                                    ? `No repositories match "${searchQuery}"`
+                                    : "Add a GitHub repo to start tracking issues that matter to you."}
+                            </Text>
+                        </MotiView>
                         {!searchQuery && (
-                            <Button
-                                title="Add Your First Repo"
-                                onPress={() => navigation.navigate('AddRepo')}
-                                className="mt-8 px-10"
-                            />
+                            <MotiView
+                                from={{ opacity: 0, scale: 0.9 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                transition={{ delay: 350, type: 'spring', damping: 15 }}
+                            >
+                                <Button
+                                    title="Add Your First Repo"
+                                    onPress={() => navigation.navigate('AddRepo')}
+                                    className="px-10"
+                                />
+                            </MotiView>
                         )}
                     </MotiView>
                 )}
