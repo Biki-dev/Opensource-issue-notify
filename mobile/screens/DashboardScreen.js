@@ -155,168 +155,168 @@ const DashboardScreen = ({ navigation }) => {
     );
 
 
-// const getSeverityAccent = (severity) => {
-//     const map = {
-//         critical: '#DC2626',
-//         high: '#EA580C',
-//         medium: '#CA8A04',
-//         low: '#16A34A'
-//     };
-//     return map[severity] || '#6366F1';
-// };
+    // const getSeverityAccent = (severity) => {
+    //     const map = {
+    //         critical: '#DC2626',
+    //         high: '#EA580C',
+    //         medium: '#CA8A04',
+    //         low: '#16A34A'
+    //     };
+    //     return map[severity] || '#6366F1';
+    // };
 
-const renderIssue = ({ item, index }) => {
-    // const accentColor = getSeverityAccent(item.aiTriage?.severity);
-    const isExpanded = expandedIssueId === item._id;
+    const renderIssue = ({ item, index }) => {
+        // const accentColor = getSeverityAccent(item.aiTriage?.severity);
+        const isExpanded = expandedIssueId === item._id;
 
-    return (
-        <MotiView
-            from={{ opacity: 0, translateY: 15 }}
-            animate={{ opacity: 1, translateY: 0 }}
-            transition={{ type: 'timing', duration: 280, delay: index * 30 }}
-        >
-            <Swipeable
-                renderRightActions={renderDeleteAction}
-                overshootRight={false}
-                friction={2}
-                rightThreshold={48}
-                onSwipeableOpen={() => handleSwipeDelete(item)}
+        return (
+            <MotiView
+                from={{ opacity: 0, translateY: 15 }}
+                animate={{ opacity: 1, translateY: 0 }}
+                transition={{ type: 'timing', duration: 280, delay: index * 30 }}
             >
-                <View style={{
-                    backgroundColor: '#FFFFFF',
-                    borderRadius: 20,
-                    marginBottom: 10,
-                    borderLeftWidth: 1,
-                    borderWidth: 1,
-                    borderColor: '#CBD5E1',
-                    overflow: 'hidden',
-                    ...shadowStyles.light
-                }}>
-                    <TouchableOpacity
-                        activeOpacity={0.8}
-                        onPress={() => setExpandedIssueId(prev => prev === item._id ? null : item._id)}
-                        style={{ padding: 14 }}
-                    >
-                        {/* Top row */}
-                        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
-                            <View style={{
-                                width: 32, height: 32,
-                                borderRadius: 10,
-                                backgroundColor: '#F8FAFC',
-                                overflow: 'hidden',
-                                marginRight: 10,
-                                borderWidth: 1,
-                                borderColor: '#E2E8F0'
-                            }}>
-                                {item.repository?.ownerAvatarUrl ? (
-                                    <Image
-                                        source={{ uri: item.repository.ownerAvatarUrl }}
-                                        style={{ width: '100%', height: '100%' }}
-                                        resizeMode="cover"
-                                    />
-                                ) : (
-                                    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-                                        <Github size={16} color="#6366F1" />
-                                    </View>
-                                )}
-                            </View>
-
-                            <View style={{ flex: 1 }}>
-                                <Text style={{ fontSize: 10, color: '#94A3B8', fontFamily: 'JetBrainsMono_400Regular' }} numberOfLines={1}>
-                                    {item.repository?.owner}/{item.repository?.name}
-                                </Text>
-                            </View>
-
-                            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                <Text style={{ fontSize: 10, color: '#CBD5E1', fontFamily: 'Inter_500Medium', marginRight: 6 }}>
-                                    {item.createdAt ? timeAgo(item.createdAt) : ''}
-                                </Text>
-                                <MotiView
-                                    animate={{ rotate: isExpanded ? '90deg' : '0deg' }}
-                                    transition={{ type: 'timing', duration: 180 }}
-                                >
-                                    <ChevronRight size={16} color="#CBD5E1" />
-                                </MotiView>
-                            </View>
-                        </View>
-
-                        {/* Title */}
-                        <Text style={{
-                            fontSize: 14,
-                            fontFamily: 'Poppins_600SemiBold',
-                            color: '#0F172A',
-                            lineHeight: 20,
-                            marginBottom: 8
-                        }} numberOfLines={isExpanded ? undefined : 2}>
-                            {item.aiTriage?.summary || item.issueTitle}
-                        </Text>
-
-                        {/* Badges row */}
-                        <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 6 }}>
-                            {item.aiTriage?.severity && <SeverityBadge severity={item.aiTriage.severity} />}
-                            {item.aiTriage?.type && <TypeBadge type={item.aiTriage.type} />}
-                            {item.matchedLabels?.slice(0, 2).map((l, i) => (
-                                <View key={i} style={{
-                                    backgroundColor: '#EEF2FF',
-                                    paddingHorizontal: 8,
-                                    paddingVertical: 2,
-                                    borderRadius: 20
+                <Swipeable
+                    renderRightActions={renderDeleteAction}
+                    overshootRight={false}
+                    friction={2}
+                    rightThreshold={48}
+                    onSwipeableOpen={() => handleSwipeDelete(item)}
+                >
+                    <View style={{
+                        backgroundColor: '#FFFFFF',
+                        borderRadius: 20,
+                        marginBottom: 10,
+                        borderLeftWidth: 1,
+                        borderWidth: 1,
+                        borderColor: '#CBD5E1',
+                        overflow: 'hidden',
+                        ...shadowStyles.light
+                    }}>
+                        <TouchableOpacity
+                            activeOpacity={0.8}
+                            onPress={() => setExpandedIssueId(prev => prev === item._id ? null : item._id)}
+                            style={{ padding: 14 }}
+                        >
+                            {/* Top row */}
+                            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+                                <View style={{
+                                    width: 32, height: 32,
+                                    borderRadius: 10,
+                                    backgroundColor: '#F8FAFC',
+                                    overflow: 'hidden',
+                                    marginRight: 10,
+                                    borderWidth: 1,
+                                    borderColor: '#E2E8F0'
                                 }}>
-                                    <Text style={{ fontSize: 10, color: '#6366F1', fontFamily: 'Inter_600SemiBold' }}>
-                                        {l}
+                                    {item.repository?.ownerAvatarUrl ? (
+                                        <Image
+                                            source={{ uri: item.repository.ownerAvatarUrl }}
+                                            style={{ width: '100%', height: '100%' }}
+                                            resizeMode="cover"
+                                        />
+                                    ) : (
+                                        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+                                            <Github size={16} color="#6366F1" />
+                                        </View>
+                                    )}
+                                </View>
+
+                                <View style={{ flex: 1 }}>
+                                    <Text style={{ fontSize: 10, color: '#94A3B8', fontFamily: 'JetBrainsMono_400Regular' }} numberOfLines={1}>
+                                        {item.repository?.owner}/{item.repository?.name}
                                     </Text>
                                 </View>
-                            ))}
-                        </View>
-                    </TouchableOpacity>
 
-                    {/* Expanded section */}
-                    {isExpanded && (
-                        <MotiView
-                            from={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ type: 'timing', duration: 200 }}
-                            style={{
-                                borderTopWidth: 1,
-                                borderTopColor: '#F1F5F9',
-                                padding: 14,
-                                paddingTop: 12
-                            }}
-                        >
-                            {item.aiTriage?.reasoning && !item.aiTriage.isFallback && (
-                                <Text style={{
-                                    fontSize: 12,
-                                    color: '#64748B',
-                                    fontFamily: 'Inter_400Regular',
-                                    fontStyle: 'italic',
-                                    marginBottom: 12,
-                                    lineHeight: 18
-                                }}>
-                                    {item.aiTriage.reasoning}
-                                </Text>
-                            )}
-                            <Button
-                                title="View on GitHub"
-                                variant="outline"
-                                icon={ExternalLink}
-                                onPress={() => Linking.openURL(item.issueUrl)}
-                                size="sm"
-                            />
-                        </MotiView>
-                    )}
-                </View>
-            </Swipeable>
-        </MotiView>
-    );
-};
+                                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                    <Text style={{ fontSize: 10, color: '#CBD5E1', fontFamily: 'Inter_500Medium', marginRight: 6 }}>
+                                        {item.createdAt ? timeAgo(item.createdAt) : ''}
+                                    </Text>
+                                    <MotiView
+                                        animate={{ rotate: isExpanded ? '90deg' : '0deg' }}
+                                        transition={{ type: 'timing', duration: 180 }}
+                                    >
+                                        <ChevronRight size={16} color="#CBD5E1" />
+                                    </MotiView>
+                                </View>
+                            </View>
 
-// Add timeAgo helper inside DashboardScreen (above renderIssue):
-const timeAgo = (date) => {
-    const seconds = Math.floor((new Date() - new Date(date)) / 1000);
-    if (seconds < 3600) return `${Math.floor(seconds / 60)}m`;
-    if (seconds < 86400) return `${Math.floor(seconds / 3600)}h`;
-    return `${Math.floor(seconds / 86400)}d`;
-};
+                            {/* Title */}
+                            <Text style={{
+                                fontSize: 14,
+                                fontFamily: 'Poppins_600SemiBold',
+                                color: '#0F172A',
+                                lineHeight: 20,
+                                marginBottom: 8
+                            }} numberOfLines={isExpanded ? undefined : 2}>
+                                {item.aiTriage?.summary || item.issueTitle}
+                            </Text>
+
+                            {/* Badges row */}
+                            <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 6 }}>
+                                {item.aiTriage?.severity && <SeverityBadge severity={item.aiTriage.severity} />}
+                                {item.aiTriage?.type && <TypeBadge type={item.aiTriage.type} />}
+                                {item.matchedLabels?.slice(0, 2).map((l, i) => (
+                                    <View key={i} style={{
+                                        backgroundColor: '#EEF2FF',
+                                        paddingHorizontal: 8,
+                                        paddingVertical: 2,
+                                        borderRadius: 20
+                                    }}>
+                                        <Text style={{ fontSize: 10, color: '#6366F1', fontFamily: 'Inter_600SemiBold' }}>
+                                            {l}
+                                        </Text>
+                                    </View>
+                                ))}
+                            </View>
+                        </TouchableOpacity>
+
+                        {/* Expanded section */}
+                        {isExpanded && (
+                            <MotiView
+                                from={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                transition={{ type: 'timing', duration: 200 }}
+                                style={{
+                                    borderTopWidth: 1,
+                                    borderTopColor: '#F1F5F9',
+                                    padding: 14,
+                                    paddingTop: 12
+                                }}
+                            >
+                                {item.aiTriage?.reasoning && !item.aiTriage.isFallback && (
+                                    <Text style={{
+                                        fontSize: 12,
+                                        color: '#64748B',
+                                        fontFamily: 'Inter_400Regular',
+                                        fontStyle: 'italic',
+                                        marginBottom: 12,
+                                        lineHeight: 18
+                                    }}>
+                                        {item.aiTriage.reasoning}
+                                    </Text>
+                                )}
+                                <Button
+                                    title="View on GitHub"
+                                    variant="outline"
+                                    icon={ExternalLink}
+                                    onPress={() => Linking.openURL(item.issueUrl)}
+                                    size="sm"
+                                />
+                            </MotiView>
+                        )}
+                    </View>
+                </Swipeable>
+            </MotiView>
+        );
+    };
+
+    // Add timeAgo helper inside DashboardScreen (above renderIssue):
+    const timeAgo = (date) => {
+        const seconds = Math.floor((new Date() - new Date(date)) / 1000);
+        if (seconds < 3600) return `${Math.floor(seconds / 60)}m`;
+        if (seconds < 86400) return `${Math.floor(seconds / 3600)}h`;
+        return `${Math.floor(seconds / 86400)}d`;
+    };
     return (
         <SafeAreaView className="flex-1 bg-background">
             <StatusBar style="dark" />
