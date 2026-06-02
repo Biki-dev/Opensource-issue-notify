@@ -44,6 +44,7 @@ We love new ideas! If you have a suggestion for a new feature or an improvement 
 
 Please note that this project is released with a [Contributor Code of Conduct](CODE_OF_CONDUCT.md). By participating in this project, you agree to abide by its terms.
 
+
 ## ❓ Questions
 
 If you have any questions, feel free to open an issue or reach out to the maintainers.
